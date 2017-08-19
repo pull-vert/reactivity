@@ -1,10 +1,9 @@
 package io.khttp2
 
-import jdk.incubator.http.HttpClient
-import jdk.incubator.http.HttpRequest
-import jdk.incubator.http.HttpResponse
 import io.khttp2.internal.common.Log
 import io.khttp2.internal.common.Utils
+import jdk.incubator.http.HttpRequest
+import jdk.incubator.http.HttpResponse
 import java.io.IOException
 import java.lang.ref.WeakReference
 import java.nio.channels.ClosedChannelException
@@ -21,7 +20,6 @@ import javax.net.ssl.SSLParameters
 
 internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
 
-    private val version = HttpClient.Version.HTTP_2
     private val executor: Executor
     // Security parameters
     private val sslContext: SSLContext
