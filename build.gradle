@@ -1,0 +1,34 @@
+group 'io.khttp2'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    ext.kotlin_version = '1.2-M2'
+
+    repositories {
+        mavenCentral()
+        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'kotlin'
+
+repositories {
+    maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
