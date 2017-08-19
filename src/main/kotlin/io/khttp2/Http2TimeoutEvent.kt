@@ -1,4 +1,4 @@
-package khttp2
+package io.khttp2
 
 import java.time.Duration
 import java.time.Instant

@@ -1,10 +1,10 @@
-package khttp2
+package io.khttp2
 
 import jdk.incubator.http.HttpClient
 import jdk.incubator.http.HttpRequest
 import jdk.incubator.http.HttpResponse
-import khttp2.internal.common.Log
-import khttp2.internal.common.Utils
+import io.khttp2.internal.common.Log
+import io.khttp2.internal.common.Utils
 import java.io.IOException
 import java.lang.ref.WeakReference
 import java.nio.channels.ClosedChannelException
@@ -189,7 +189,7 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
                     val millis = server.purgeTimeoutsAndReturnNextDeadline()
                     server = null // don't hold onto the server ref
 
-                    debugPrint(selector);
+                    debugPrint(selector)
                     // Don't wait for ever as it might prevent the thread to
                     // stop gracefully. millis will be 0 if no deadline was found.
                     val n = selector.select(if (millis == 0L) NODEADLINE else millis)

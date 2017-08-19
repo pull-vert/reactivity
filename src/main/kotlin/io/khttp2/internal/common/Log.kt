@@ -1,4 +1,4 @@
-package khttp2.internal.common
+package io.khttp2.internal.common
 
 import java.util.*
 

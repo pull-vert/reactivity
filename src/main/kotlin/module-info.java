@@ -33,6 +33,6 @@
 module khttp2 {
     requires kotlin.stdlib;
     requires jdk.incubator.httpclient;
-    exports khttp2;
+    exports io.khttp2;
 }
 
