@@ -1,12 +1,11 @@
 package io.khttp2
 
-import io.khttp2.internal.common.SupplierBuilder
+import io.khttp2.internal.common.SuspendingSubscriber
 import io.khttp2.internal.common.Utils
 import io.khttp2.internal.common.buildSupplier
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Flow
-import java.util.function.Function
 import java.util.function.Supplier
 
 internal class Http2RequestProcessors {
@@ -16,9 +15,10 @@ internal class Http2RequestProcessors {
         lateinit var server: Http2ServerImpl
     }
 
-    internal class ByteArrayProcessor<T>(private val finisher: Function<ByteArray, T>) : AbstractProcessor<T>() {
-        private val supplierBuilder = buildSupplier<T>{}
-         private val received = ArrayList<ByteBuffer>()
+    internal class ByteArrayProcessor<T>(val transform: (ByteArray) -> T) : AbstractProcessor<T>(), SuspendingSubscriber<ByteBuffer> {
+
+        private val supplierBuilder = buildSupplier<T> {}
+        private val received = ArrayList<ByteBuffer>()
 
         private var subscription: Flow.Subscription? = null
 
@@ -41,7 +41,7 @@ internal class Http2RequestProcessors {
             }
         }
 
-        override fun onError(throwable: Throwable) {
+        suspend override fun onErrorSuspend(throwable: Throwable) {
             received.clear()
             supplierBuilder.completeExceptionally(throwable)
         }
@@ -58,14 +58,12 @@ internal class Http2RequestProcessors {
             return res
         }
 
-        override fun onComplete() {
-            result = buildSupplier {
-                try {
-                    complete(finisher.apply(join(received)))
-                    received.clear()
-                } catch (e: IllegalArgumentException) {
-                    completeExceptionally(e)
-                }
+        suspend override fun onCompleteSuspend() {
+            try {
+                supplierBuilder.complete(transform.invoke(join(received)))
+                received.clear()
+            } catch (e: IllegalArgumentException) {
+                supplierBuilder.completeExceptionally(e)
             }
         }
 

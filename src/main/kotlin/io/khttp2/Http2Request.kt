@@ -3,7 +3,6 @@ package io.khttp2
 import io.khttp2.Http2Request.Http2BodyHandler
 import jdk.incubator.http.HttpHeaders
 import jdk.incubator.http.HttpResponse
-import jdk.incubator.http.ResponseProcessors
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -191,7 +190,7 @@ abstract class Http2Request<T> {
          * @return a body processor
          */
         fun asString(charset: Charset): Http2BodyProcessor<String> {
-            return ResponseProcessors.ByteArrayProcessor<T> { bytes -> String(bytes, charset) }
+            return Http2RequestProcessors.ByteArrayProcessor{bytes: ByteArray -> String(bytes, charset) }
         }
     }
 }

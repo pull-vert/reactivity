@@ -10,19 +10,19 @@ import kotlin.coroutines.experimental.intrinsics.createCoroutineUnchecked
 import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
 
 @RestrictsSuspension
-interface SupplierBuilder<in T> {
+interface SupplierBuilder<T> : Supplier<T> {
     suspend fun complete(value: T)
 
-    fun completeExceptionally(throwable: Throwable)
+    suspend fun completeExceptionally(throwable: Throwable)
 }
 
-fun <T> buildSupplier(block: suspend SupplierBuilder<T>.() -> Unit): Supplier<T> = io.khttp2.internal.common.Supplier {
-    SupplierCoroutine<T>().apply {
+fun <T> buildSupplier(block: suspend SupplierBuilder<T>.() -> Unit): SupplierBuilder<T> {
+    return SupplierCoroutine<T>().apply {
         nextStep = block.createCoroutineUnchecked(receiver = this, completion = this)
     }
 }
 
-private class SupplierCoroutine<T> : AbstractSupplier<T>(), SupplierBuilder<T>, Continuation<Unit> {
+class SupplierCoroutine<T> : AbstractSupplier<T>(), SupplierBuilder<T>, Continuation<Unit> {
 
     lateinit var nextStep: Continuation<Unit>
 
@@ -43,7 +43,11 @@ private class SupplierCoroutine<T> : AbstractSupplier<T>(), SupplierBuilder<T>, 
         }
     }
 
-    override fun completeExceptionally(throwable: Throwable) {
+    suspend override fun completeExceptionally(throwable: Throwable) {
         nextStep.resumeWithException(throwable)
+        return suspendCoroutineOrReturn { cont ->
+            nextStep = cont
+            COROUTINE_SUSPENDED
+        }
     }
 }
