@@ -48,12 +48,12 @@ abstract class AbstractSupplier<T>: Supplier<T> {
      *
      * Failure to call either method will result in the iteration terminating with a failed state
      */
-    abstract protected fun computeValue(): Unit
+    abstract protected fun computeValue()
 
     /**
      * Sets the next value in the iteration, called from the [computeValue] function
      */
-    protected fun setValue(value: T): Unit {
+    protected fun setValue(value: T) {
         this.value = value
         state = State.Ready
     }

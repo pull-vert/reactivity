@@ -1,12 +1,12 @@
 package io.khttp2
 
 import io.khttp2.internal.common.SuspendingSubscriber
+import io.khttp2.internal.common.SuspendingSuplier
 import io.khttp2.internal.common.Utils
 import io.khttp2.internal.common.buildSupplier
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Flow
-import java.util.function.Supplier
 
 internal class Http2RequestProcessors {
     internal abstract class AbstractProcessor<T> : Http2Request.Http2BodyProcessor<T> {
@@ -41,7 +41,7 @@ internal class Http2RequestProcessors {
             }
         }
 
-        suspend override fun onErrorSuspend(throwable: Throwable) {
+        suspend override fun suspendingOnError(throwable: Throwable) {
             received.clear()
             supplierBuilder.completeExceptionally(throwable)
         }
@@ -58,7 +58,7 @@ internal class Http2RequestProcessors {
             return res
         }
 
-        suspend override fun onCompleteSuspend() {
+        suspend override fun suspendingOnComplete() {
             try {
                 supplierBuilder.complete(transform.invoke(join(received)))
                 received.clear()
@@ -67,7 +67,7 @@ internal class Http2RequestProcessors {
             }
         }
 
-        override fun getBody(): Supplier<T> {
+        override fun getBody(): SuspendingSuplier<T> {
             return supplierBuilder
         }
     }
