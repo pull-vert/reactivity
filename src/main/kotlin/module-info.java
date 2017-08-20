@@ -1,6 +1,5 @@
 /**
  * Defines high-level HTTP2 Server API.
- * {@Incubating}
  *
  * @moduleGraph
  * @since 9

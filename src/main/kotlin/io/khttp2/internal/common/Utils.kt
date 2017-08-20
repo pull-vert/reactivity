@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.io.UnsupportedEncodingException
 import java.net.NetPermission
+import java.nio.ByteBuffer
 
 class Utils {
 
@@ -30,6 +31,14 @@ class Utils {
             val sm = System.getSecurityManager() ?: return
             val np = NetPermission(target)
             sm.checkPermission(np)
+        }
+
+        fun remaining(bufs: List<ByteBuffer>): Int {
+            var remain = 0
+            for (buf in bufs) {
+                remain += buf.remaining()
+            }
+            return remain
         }
     }
 }
