@@ -9,7 +9,7 @@ buildscript {
         maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
     }
     dependencies {
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
@@ -22,10 +22,10 @@ repositories {
 }
 
 dependencies {
-    compile 'org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version'
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-    testCompile 'org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version'
-    testCompile 'org.amshove.kluent:kluent:1.27'
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    testCompile "org.amshove.kluent:kluent:1.27"
 }
 
 compileKotlin {
