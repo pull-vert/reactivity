@@ -1,9 +1,7 @@
 package io.khttp2
 
-import io.khttp2.internal.common.SuspendingSubscriber
-import io.khttp2.internal.common.SuspendingSuplier
 import io.khttp2.internal.common.Utils
-import io.khttp2.internal.common.buildSupplier
+import kotlinx.coroutines.experimental.CompletableDeferred
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.Flow
@@ -15,9 +13,9 @@ internal class Http2RequestProcessors {
         lateinit var server: Http2ServerImpl
     }
 
-    internal class ByteArrayProcessor<T>(val transform: (ByteArray) -> T) : AbstractProcessor<T>(), SuspendingSubscriber<ByteBuffer> {
+    internal class ByteArrayProcessor<T>(val finisher: (ByteArray) -> T) : AbstractProcessor<T>() {
 
-        private val supplierBuilder = buildSupplier<T> {}
+        private val result = CompletableDeferred<T>()
         private val received = ArrayList<ByteBuffer>()
 
         private var subscription: Flow.Subscription? = null
@@ -41,9 +39,9 @@ internal class Http2RequestProcessors {
             }
         }
 
-        suspend override fun suspendingOnError(throwable: Throwable) {
+        override fun onError(throwable: Throwable) {
             received.clear()
-            supplierBuilder.completeExceptionally(throwable)
+            result.completeExceptionally(throwable)
         }
 
         private fun join(bytes: List<ByteBuffer>): ByteArray {
@@ -58,17 +56,15 @@ internal class Http2RequestProcessors {
             return res
         }
 
-        suspend override fun suspendingOnComplete() {
+        override fun onComplete() {
             try {
-                supplierBuilder.complete(transform.invoke(join(received)))
+                result.complete(finisher.invoke(join(received)))
                 received.clear()
             } catch (e: IllegalArgumentException) {
-                supplierBuilder.completeExceptionally(e)
+                result.completeExceptionally(e)
             }
         }
 
-        override fun getBody(): SuspendingSuplier<T> {
-            return supplierBuilder
-        }
+        override fun getBody() = result
     }
 }

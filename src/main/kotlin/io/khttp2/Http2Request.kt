@@ -1,9 +1,9 @@
 package io.khttp2
 
 import io.khttp2.Http2Request.Http2BodyHandler
-import io.khttp2.internal.common.SuspendingSuplier
 import jdk.incubator.http.HttpHeaders
 import jdk.incubator.http.HttpResponse
+import kotlinx.coroutines.experimental.Deferred
 import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
@@ -178,7 +178,7 @@ abstract class Http2Request<T> {
          *
          * @return a Supplier for the response body
          */
-        fun getBody(): SuspendingSuplier<T>
+        fun getBody(): Deferred<T>
 
         /**
          * Returns a body processor which stores the response body as a `String` converted using the given `Charset`.
