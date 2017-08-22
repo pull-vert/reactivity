@@ -3,7 +3,6 @@ package io.khttp2
 import io.khttp2.internal.common.Utils
 import kotlinx.coroutines.experimental.CompletableDeferred
 import java.nio.ByteBuffer
-import java.util.*
 import java.util.concurrent.Flow
 
 internal class Http2RequestProcessors {
@@ -14,9 +13,8 @@ internal class Http2RequestProcessors {
     }
 
     internal class ByteArrayProcessor<T>(val finisher: (ByteArray) -> T) : AbstractProcessor<T>() {
-
         private val result = CompletableDeferred<T>()
-        private val received = ArrayList<ByteBuffer>()
+        private val received = mutableListOf<ByteBuffer>()
 
         private var subscription: Flow.Subscription? = null
 

@@ -1,8 +1,8 @@
 package io.khttp2
 
 import io.khttp2.Http2Request.Http2BodyHandler
+import io.khttp2.internal.common.Utils
 import jdk.incubator.http.HttpHeaders
-import jdk.incubator.http.HttpResponse
 import kotlinx.coroutines.experimental.Deferred
 import java.net.URI
 import java.nio.ByteBuffer
@@ -137,20 +137,53 @@ abstract class Http2Request<T> {
      *
      * @param T the request body type.
      */
-    @FunctionalInterface
-    interface Http2BodyHandler<T> {
-        /**
-         * Returns a [BodyProcessor] considering the given response status
-         * code and headers. This method is always called before the body is read
-         * and its implementation can decide to keep the body and store it somewhere
-         * or else discard it, by  returning the `BodyProcessor` returned
-         * from [discard()][BodyProcessor.discard].
-         *
-         * @param statusCode the HTTP status code received
-         * @param responseHeaders the response headers received
-         * @return a response body handler
-         */
-        abstract fun apply(statusCode: Int, responseHeaders: HttpHeaders): Http2BodyProcessor<T>
+//    @FunctionalInterface
+//    interface Http2BodyHandler<T> {
+//
+//        /**
+//         * Returns a [Http2BodyProcessor] considering the given response status
+//         * code and headers. This method is always called before the body is read
+//         * and its implementation can decide to keep the body and store it somewhere
+//         *
+//         * @param requestHeaders the response headers received
+//         * @return a response body handler
+//         */
+//        fun apply(requestHeaders: (HttpHeaders) -> Http2BodyProcessor<T>): Http2BodyHandler<T>
+//
+//        companion object {
+//
+//            /**
+//             * Returns a `BodyHandler<String>` that returns a
+//             * [BodyProcessor]`<String>` obtained from
+//             * [ BodyProcessor.asString(Charset)][BodyProcessor.asString]. If a charset is provided, the
+//             * body is decoded using it. If charset is `null` then the processor
+//             * tries to determine the character set from the `Content-encoding`
+//             * header. If that charset is not supported then
+//             * [UTF_8][java.nio.charset.StandardCharsets.UTF_8] is used.
+//             *
+//             * @param charset the name of the charset to interpret the body as. If
+//             * `null` then charset determined from Content-encoding header
+//             * @return a response body handler
+//             */
+//            fun asString(charset: Charset?): Http2BodyHandler<String> =
+//                    @this.apply { headers -> Http2BodyProcessor.asString(charset) }
+//        }
+//
+//    }
+
+//    @FunctionalInterface
+    class Http2BodyHandler<T>(apply: (HttpHeaders) -> Http2Request.Http2BodyProcessor<T>) {
+
+//        companion object {
+
+            fun asString(charset: Charset?): Http2BodyHandler<String> = Http2BodyHandler({ headers ->
+                    if (charset != null) {
+                        Http2Request.Http2BodyProcessor.asString(charset)
+                    }
+                    Http2Request.Http2BodyProcessor.asString(Utils.charsetFrom(headers))
+
+            })
+//        }
     }
 
     /**
@@ -180,18 +213,33 @@ abstract class Http2Request<T> {
          */
         fun getBody(): Deferred<T>
 
-        /**
-         * Returns a body processor which stores the response body as a `String` converted using the given `Charset`.
-         *
-         *
-         * The [HttpResponse] using this processor is available after the
-         * entire response has been read.
-         *
-         * @param charset the character set to convert the String with
-         * @return a body processor
-         */
-        fun asString(charset: Charset): Http2BodyProcessor<String> {
-            return Http2RequestProcessors.ByteArrayProcessor{bytes: ByteArray -> String(bytes, charset) }
+        companion object {
+
+            /**
+             * Returns a body processor which stores the response body as a `String` converted using the given `Charset`.
+             *
+             *
+             * The [Http2Request] using this processor is available after the
+             * entire response has been read.
+             *
+             * @param charset the character set to convert the String with
+             * @return a body processor
+             */
+            fun asString(charset: Charset): Http2BodyProcessor<String> =
+                    Http2RequestProcessors.ByteArrayProcessor { bytes: ByteArray -> String(bytes, charset) }
+
+            /**
+             * Returns a `BodyProcessor` which stores the response body as a
+             * byte array.
+             *
+             *
+             * The [Http2Request] using this processor is available after the
+             * entire response has been read.
+             *
+             * @return a body processor
+             */
+            fun asByteArray(): Http2BodyProcessor<ByteArray> =
+                    Http2RequestProcessors.ByteArrayProcessor { bytes: ByteArray -> bytes }// no conversion)
         }
     }
 }

@@ -1,10 +1,13 @@
 package io.khttp2.internal.common
 
+import jdk.incubator.http.HttpHeaders
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.io.UnsupportedEncodingException
 import java.net.NetPermission
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 class Utils {
 
@@ -39,6 +42,21 @@ class Utils {
                 remain += buf.remaining()
             }
             return remain
+        }
+
+        /**
+         * Get the Charset from the Content-encoding header. Defaults to
+         * UTF_8
+         */
+        fun charsetFrom(headers: HttpHeaders): Charset {
+            val encoding = headers.firstValue("Content-encoding")
+                    .orElse("UTF_8")
+            try {
+                return Charset.forName(encoding)
+            } catch (e: IllegalArgumentException) {
+                return StandardCharsets.UTF_8
+            }
+
         }
     }
 }
