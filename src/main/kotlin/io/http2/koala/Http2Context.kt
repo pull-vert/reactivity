@@ -8,18 +8,14 @@ import java.net.InetSocketAddress
  */
 abstract class Http2Context {
     /**
-     * Return remote address if remote channel [Http2Context] otherwise local
-     * address if server selector channel.
+     * Return remote address if remote connection [Http2Context] otherwise local
+     * address if server selector connection.
      *
      * @return remote or local [InetSocketAddress]
      */
-//    fun address(): InetSocketAddress {
-//        val c = channel()
-////        if (c is ServerSocketChannel) {
-//            return c.serverAddress
-////        }
-////        throw IllegalStateException("Does not have an InetSocketAddress")
-//    }
+    fun address(): InetSocketAddress {
+        return connection().serverAddress
+    }
 
     /**
      * Return the underlying [Http2Connection]. Direct interaction might be considered
@@ -29,9 +25,9 @@ abstract class Http2Context {
      *
      * @return the underlying [Http2Pipe]
      */
-    abstract internal fun channel(): MultiplexingConnection
+    abstract internal fun connection(): MultiplexingConnection
 
     fun dispose() {
-        channel().close()
+        connection().close()
     }
 }

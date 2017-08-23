@@ -76,7 +76,7 @@ internal class KHttp2ServerImpl(builder: Http2ServerBuilderImpl) : KHttp2Server 
     }
 
     /**
-     * Only used from RawChannel to disconnect the channel from
+     * Only used from RawChannel to disconnect the connection from
      * the selector
      */
     fun cancelRegistration(s: SocketChannel) {

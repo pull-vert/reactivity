@@ -5,14 +5,14 @@ import java.nio.channels.SelectableChannel
 /**
  * Event handling interface from HttpClientImpl's selector.
  *
- * If BLOCKING is set, then the channel will be put in blocking
+ * If BLOCKING is set, then the connection will be put in blocking
  * mode prior to handle() being called. If false, then it remains non-blocking.
  *
  * If REPEATING is set then the event is not cancelled after being posted.
  */
 internal abstract class Http2AsyncEvent(protected val flags: Int) {
 
-    /** Returns the channel  */
+    /** Returns the connection  */
     abstract fun channel(): SelectableChannel
 
     /** Returns the selector interest op flags OR'd  */
