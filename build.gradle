@@ -25,6 +25,11 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:0.18"
+
+    // Reactive Streams
+    compile "org.reactivestreams:reactive-streams:1.0.1"
+    testCompile "org.reactivestreams:reactive-streams-tck:1.0.1"
+
     compile "io.projectreactor:reactor-core:3.1.0.M3"
 
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"

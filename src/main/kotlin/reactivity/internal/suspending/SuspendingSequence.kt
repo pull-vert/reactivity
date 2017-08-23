@@ -1,4 +1,4 @@
-package io.http2.koala.internal.suspending
+package reactivity.internal.suspending
 
 import kotlin.coroutines.experimental.*
 

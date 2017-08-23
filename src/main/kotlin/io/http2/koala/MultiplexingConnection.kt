@@ -1,7 +1,9 @@
 package io.http2.koala
 
+import reactivity.multiSuspendingSequence
 import java.io.Closeable
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 
@@ -18,9 +20,9 @@ internal class MultiplexingConnection(context: CoroutineContext = EmptyCoroutine
     }
 
     init {
-//        fluxSuspendingSequence(context) {
-//            yield(ByteBuffer.allocate(12))
-//        }.
+        multiSuspendingSequence(context) {
+            yield(ByteBuffer.allocate(12))
+        }/*.reduceWith()*/
     }
 
     // Subscriber of input Request frames, Publisher to Stream input
