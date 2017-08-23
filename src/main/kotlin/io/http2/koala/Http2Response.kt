@@ -1,13 +1,9 @@
-package io.khttp2
-
-import jdk.incubator.http.HttpRequest
+package io.http2.koala
 
 /**
- * @param T the request body type
- * @param U the response body type
  * @since 9
  */
-abstract class Http2Response<T, U> {
+abstract class Http2Response {
     /**
      * Returns the status code for this response.
      *
@@ -20,5 +16,5 @@ abstract class Http2Response<T, U> {
      *
      * @return the request
      */
-    abstract fun request(): Http2Request<T>
+    abstract fun <T> request(): Http2Request<T>
 }

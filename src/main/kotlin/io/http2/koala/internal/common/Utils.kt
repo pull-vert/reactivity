@@ -1,4 +1,4 @@
-package io.khttp2.internal.common
+package io.http2.koala.internal.common
 
 import jdk.incubator.http.HttpHeaders
 import java.io.ByteArrayOutputStream

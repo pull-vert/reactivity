@@ -1,4 +1,4 @@
-package io.khttp2
+package io.http2.koala
 
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -12,7 +12,7 @@ internal data class Http2ServerBuilderImpl(
         var port: Int = 80,
         var sslContext: SSLContext = SSLContext.getDefault(),
         var sslParams: SSLParameters = getDefaultParams(sslContext),
-        var executor: Executor = Executors.newCachedThreadPool(DefaultThreadFactory.INSTANCE)) : Http2Server.Builder {
+        var executor: Executor = Executors.newCachedThreadPool(DefaultThreadFactory.INSTANCE)) : KHttp2Server.Builder {
 
     // Define the default factory as a static inner class
     // that embeds all the necessary logic to avoid
@@ -56,7 +56,7 @@ internal data class Http2ServerBuilderImpl(
         return this
     }
 
-    override fun build(): Http2Server = Http2ServerImpl.create(this)
+    override fun build(): KHttp2Server = KHttp2ServerImpl.create(this)
 }
 
 private fun getDefaultParams(ctx: SSLContext): SSLParameters {

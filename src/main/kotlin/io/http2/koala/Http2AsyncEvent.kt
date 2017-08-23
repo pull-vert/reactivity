@@ -1,4 +1,4 @@
-package io.khttp2
+package io.http2.koala
 
 import java.nio.channels.SelectableChannel
 

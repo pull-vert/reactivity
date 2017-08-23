@@ -1,4 +1,4 @@
-package io.khttp2
+package io.http2.koala
 
 import java.time.Duration
 import java.time.Instant
@@ -8,9 +8,9 @@ import java.util.concurrent.atomic.AtomicLong
  * Timeout event notified by selector thread. Executes the given handler if
  * the timer not canceled first.
  *
- * Register with [Http2ServerImpl.registerTimer].
+ * Register with [KHttp2ServerImpl.registerTimer].
  *
- * Cancel with [Http2ServerImpl.cancelTimer].
+ * Cancel with [KHttp2ServerImpl.cancelTimer].
  */
 internal abstract class Http2TimeoutEvent(duration: Duration) : Comparable<Http2TimeoutEvent> {
     // we use id in compareTo to make compareTo consistent with equals

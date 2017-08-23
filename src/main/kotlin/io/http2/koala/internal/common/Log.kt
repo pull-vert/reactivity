@@ -1,11 +1,11 @@
-package io.khttp2.internal.common
+package io.http2.koala.internal.common
 
 import java.util.*
 
 abstract class Log : System.Logger {
 
     companion object {
-        internal val logProp = "khttp2.Http2Server.log"
+        internal val logProp = "khttp2.KHttp2Server.log"
 
         internal val default = "all,frames:all"
 
@@ -64,7 +64,7 @@ abstract class Log : System.Logger {
                 }
             }
             if (logging != OFF) {
-                logger = System.getLogger("khttp2.Http2Server")
+                logger = System.getLogger("khttp2.KHttp2Server")
             } else {
                 logger = null
             }

@@ -1,9 +1,9 @@
 package client
 
-import io.khttp2.Http2Server
+import io.http2.koala.KHttp2Server
 
 fun syncHtt2Server() {
-    Http2Server.newHttp2Server()
+    KHttp2Server.newHttp2Server()
 }
 
 fun main(args: Array<String>) {

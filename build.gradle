@@ -1,4 +1,4 @@
-group 'io.khttp2'
+group 'io.http2'
 version '1.0-SNAPSHOT'
 
 buildscript {
@@ -17,6 +17,7 @@ apply plugin: 'kotlin'
 
 repositories {
     maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
+    maven { url 'http://repo.spring.io/milestone' }
     mavenCentral()
     jcenter()
 }
@@ -24,6 +25,7 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:0.18"
+    compile "io.projectreactor:reactor-core:3.1.0.M3"
 
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testCompile "org.amshove.kluent:kluent:1.27"

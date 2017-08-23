@@ -1,7 +1,7 @@
-package io.khttp2
+package io.http2.koala
 
-import io.khttp2.Http2Request.Http2BodyHandler
-import io.khttp2.internal.common.Utils
+import io.http2.koala.Http2Request.Http2BodyHandler
+import io.http2.koala.internal.common.Utils
 import jdk.incubator.http.HttpHeaders
 import kotlinx.coroutines.experimental.Deferred
 import java.net.URI
@@ -74,7 +74,7 @@ abstract class Http2Request<T> {
     /**
      * Returns the `URI` that the request was received from.
      *
-     * @return the URI of the response
+     * @return the URI of the request
      */
     abstract fun uri(): URI
 
@@ -137,53 +137,47 @@ abstract class Http2Request<T> {
      *
      * @param T the request body type.
      */
-//    @FunctionalInterface
-//    interface Http2BodyHandler<T> {
-//
-//        /**
-//         * Returns a [Http2BodyProcessor] considering the given response status
-//         * code and headers. This method is always called before the body is read
-//         * and its implementation can decide to keep the body and store it somewhere
-//         *
-//         * @param requestHeaders the response headers received
-//         * @return a response body handler
-//         */
-//        fun apply(requestHeaders: (HttpHeaders) -> Http2BodyProcessor<T>): Http2BodyHandler<T>
-//
-//        companion object {
-//
-//            /**
-//             * Returns a `BodyHandler<String>` that returns a
-//             * [BodyProcessor]`<String>` obtained from
-//             * [ BodyProcessor.asString(Charset)][BodyProcessor.asString]. If a charset is provided, the
-//             * body is decoded using it. If charset is `null` then the processor
-//             * tries to determine the character set from the `Content-encoding`
-//             * header. If that charset is not supported then
-//             * [UTF_8][java.nio.charset.StandardCharsets.UTF_8] is used.
-//             *
-//             * @param charset the name of the charset to interpret the body as. If
-//             * `null` then charset determined from Content-encoding header
-//             * @return a response body handler
-//             */
-//            fun asString(charset: Charset?): Http2BodyHandler<String> =
-//                    @this.apply { headers -> Http2BodyProcessor.asString(charset) }
-//        }
-//
-//    }
+    class Http2BodyHandler<T>(apply: (HttpHeaders) -> Http2BodyProcessor<T>) {
 
-//    @FunctionalInterface
-    class Http2BodyHandler<T>(apply: (HttpHeaders) -> Http2Request.Http2BodyProcessor<T>) {
+        companion object {
 
-//        companion object {
+            /**
+             * Returns a `Http2BodyHandler<byte[]>` that returns a
+             * [Http2BodyProcessor]&lt;`byte[]`&gt; obtained
+             * from [Http2BodyProcessor.asByteArray()][Http2BodyProcessor.asByteArray].
+             *
+             *
+             * When the `Http2Request` object is returned, the body has been completely
+             * written to the byte array.
+             *
+             * @return a request body handler
+             */
+            fun asByteArray(): Http2BodyHandler<ByteArray> = Http2BodyHandler({ headers ->
+                Http2BodyProcessor.asByteArray()
+            })
 
+            /**
+             * Returns a `Http2BodyHandler<String>` that returns a
+             * [Http2BodyProcessor]`<String>` obtained from
+             * [Http2BodyProcessor.asString(Charset)][Http2BodyProcessor.asString].
+             * If a charset is provided, the
+             * body is decoded using it. If charset is `null` then the processor
+             * tries to determine the character set from the `Content-encoding`
+             * header. If that charset is not supported then
+             * [UTF_8][java.nio.charset.StandardCharsets.UTF_8] is used.
+             *
+             * @param charset the name of the charset to interpret the body as. If
+             * `null` then charset determined from Content-encoding header
+             * @return a request body handler
+             */
             fun asString(charset: Charset?): Http2BodyHandler<String> = Http2BodyHandler({ headers ->
                     if (charset != null) {
-                        Http2Request.Http2BodyProcessor.asString(charset)
+                        Http2BodyProcessor.asString(charset)
                     }
-                    Http2Request.Http2BodyProcessor.asString(Utils.charsetFrom(headers))
+                Http2BodyProcessor.asString(Utils.charsetFrom(headers))
 
             })
-//        }
+        }
     }
 
     /**

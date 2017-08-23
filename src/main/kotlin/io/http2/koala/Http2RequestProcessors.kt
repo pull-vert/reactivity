@@ -1,6 +1,6 @@
-package io.khttp2
+package io.http2.koala
 
-import io.khttp2.internal.common.Utils
+import io.http2.koala.internal.common.Utils
 import kotlinx.coroutines.experimental.CompletableDeferred
 import java.nio.ByteBuffer
 import java.util.concurrent.Flow
@@ -9,7 +9,7 @@ internal class Http2RequestProcessors {
     internal abstract class AbstractProcessor<T> : Http2Request.Http2BodyProcessor<T> {
         @get:Synchronized
         @set:Synchronized
-        lateinit var server: Http2ServerImpl
+        lateinit var server: KHttp2ServerImpl
     }
 
     internal class ByteArrayProcessor<T>(val finisher: (ByteArray) -> T) : AbstractProcessor<T>() {

@@ -1,11 +1,10 @@
-package io.khttp2
+package io.http2.koala
 
-import io.khttp2.internal.common.Log
-import io.khttp2.internal.common.Utils
-import jdk.incubator.http.HttpRequest
-import jdk.incubator.http.HttpResponse
+import io.http2.koala.internal.common.Log
+import io.http2.koala.internal.common.Utils
 import java.io.IOException
 import java.lang.ref.WeakReference
+import java.net.InetSocketAddress
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.SelectableChannel
 import java.nio.channels.Selector
@@ -14,11 +13,12 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.Executor
+import java.util.concurrent.Flow
 import java.util.stream.Stream
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLParameters
 
-internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
+internal class KHttp2ServerImpl(builder: Http2ServerBuilderImpl) : KHttp2Server {
 
     private val executor: Executor
     // Security parameters
@@ -45,8 +45,8 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
     }
 
     companion object {
-        fun create(builder : Http2ServerBuilderImpl) : Http2ServerImpl {
-            val impl = Http2ServerImpl(builder)
+        fun create(builder : Http2ServerBuilderImpl) : KHttp2ServerImpl {
+            val impl = KHttp2ServerImpl(builder)
             impl.start()
             return impl
         }
@@ -54,7 +54,7 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
 
     private fun start() {
         selmgr.start()
-        Log.logTrace("Http2ServerImpl started")
+        Log.logTrace("KHttp2ServerImpl started")
     }
 
     /**
@@ -83,15 +83,30 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
         selmgr.cancel(s)
     }
 
-    /**
-     * T is the type of Request body
-     */
-    override fun <T> newHandler(requestHandler: HttpResponse.BodyHandler<T>, response: HttpRequest) {
-//        val mex: Http2ServerMultiExchange<Void, T> = Http2ServerMultiExchange(requestHandler, response, this)
+    override fun <T> newHandler(handler: (Http2Request<T>, Http2Response) -> Flow.Publisher<Void>): Flow.Publisher<Http2Context> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+//    /**
+//     * Create a [ContextHandler] for [ServerBootstrap.childHandler]
+//     *
+//     * @param handler user provided in/out handler
+//     * @param sink user provided bind handler
+//     *
+//     * @return a new [ContextHandler]
+//     */
+//    protected fun doHandler(
+//            handler: BiFunction<in NettyInbound, in NettyOutbound, out Flow.Publisher<Void>>,
+//            sink: MonoSink<Http2Context>): ContextHandler<Channel> {
+//        return ContextHandler.newServerContext(sink,
+//                options,
+//                loggingHandler(),
+//                { ch, c, msg -> ChannelOperations.bind(ch, handler, c) })
+//    }
+
     // Main loop for this server's selector
-    private class SelectorManager internal constructor(ref : Http2ServerImpl) : Thread(null, null, "SelectorManager", 0, false) {
+    // TODO : avoit inherit Thread and use Coroutines
+    private class SelectorManager internal constructor(ref : KHttp2ServerImpl) : Thread(null, null, "SelectorManager", 0, false) {
 
         private val NODEADLINE = 3000L
         private val selector: Selector
@@ -99,17 +114,17 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
         private val readyList: MutableList<Http2AsyncEvent>
         private val registrations: MutableList<Http2AsyncEvent>
 
-        // Uses a weak reference to the Http2Server owning this
+        // Uses a weak reference to the KHttp2Server owning this
         // selector: a strong reference prevents its garbage
         // collection while the thread is running.
         // We want the thread to exit gracefully when the
-        // Http2Server that owns it gets GC'ed.
-        internal var ownerRef: WeakReference<Http2ServerImpl>
+        // KHttp2Server that owns it gets GC'ed.
+        internal var ownerRef: WeakReference<KHttp2ServerImpl>
 
         init {
             ownerRef = WeakReference(ref)
-            readyList = ArrayList()
-            registrations = ArrayList()
+            readyList = mutableListOf()
+            registrations = mutableListOf()
             selector = Selector.open()
         }
 
@@ -146,7 +161,7 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
         override fun run() {
             try {
                 while (!Thread.currentThread().isInterrupted) {
-                    var server: Http2ServerImpl?
+                    var server: KHttp2ServerImpl?
                     synchronized(this) {
                         for (exchange in registrations) {
                             val c = exchange.channel()
@@ -167,7 +182,7 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
                                 }
                                 sa.register(exchange)
                             } catch (e: IOException) {
-                                Log.logError("Http2ServerImpl: " + e)
+                                Log.logError("KHttp2ServerImpl: " + e)
                                 c.close()
                                 // let the exchange deal with it
                                 handleEvent(exchange)
@@ -226,7 +241,7 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
                 if (!closed) {
                     // This terminates thread. So, better just print stack trace
                     val err = Utils.stackTrace(e)
-                    Log.logError("Http2ServerImpl: fatal error: " + err)
+                    Log.logError("KHttp2ServerImpl: fatal error: " + err)
                 }
             } finally {
                 shutdown()
@@ -265,11 +280,11 @@ internal class Http2ServerImpl(builder: Http2ServerBuilderImpl) : Http2Server {
      * connection.
      */
     private class SelectorAttachment internal constructor(private val chan: SelectableChannel, private val selector: Selector) {
-        private val pending: ArrayList<Http2AsyncEvent>
+        private val pending: MutableList<Http2AsyncEvent>
         private var interestOps: Int = 0
 
         init {
-            this.pending = ArrayList()
+            this.pending = mutableListOf()
         }
 
         @Throws(ClosedChannelException::class)

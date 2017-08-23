@@ -1,18 +1,17 @@
-package io.khttp2
+package io.http2.koala
 
-import jdk.incubator.http.HttpRequest
-import jdk.incubator.http.HttpResponse
 import java.util.concurrent.Executor
+import java.util.concurrent.Flow
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLParameters
 
-interface Http2Server {
+interface KHttp2Server {
 
     companion object {
         /**
-         * Returns a new Http2Server with default settings.
+         * Returns a new KHttp2Server with default settings.
          *
-         * @return a new Http2Server
+         * @return a new KHttp2Server
          */
         fun newHttp2Server() = Http2ServerBuilderImpl().build()
 
@@ -26,17 +25,17 @@ interface Http2Server {
         }
     }
 
-    fun <T> newHandler(requestHandler: HttpResponse.BodyHandler<T>, response: HttpRequest)
+    fun <T> newHandler(handler: (Http2Request<T>, Http2Response) -> Flow.Publisher<Void>) : Flow.Publisher<Http2Context>
 
     interface Builder {
 
         /**
-         * Returns a [Http2Server] built from the current state of this
+         * Returns a [KHttp2Server] built from the current state of this
          * builder.
          *
          * @return this builder
          */
-        fun build(): Http2Server
+        fun build(): KHttp2Server
 
         /**
          * The address to listen for (e.g. 0.0.0.0 or 127.0.0.1)

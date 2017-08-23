@@ -1,4 +1,4 @@
-package io.khttp2
+package io.http2.koala
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
