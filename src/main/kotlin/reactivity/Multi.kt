@@ -10,12 +10,10 @@ import kotlin.coroutines.experimental.EmptyCoroutineContext
 fun <T> multi(
         context: CoroutineContext,
         block: suspend ProducerScope<T>.() -> Unit
-): Multi<T> = publish(context, block).toMulti()
+): Multi<T> = object : AbstractMulti<T>(publish(context, block)) {}
 
 interface Multi<T> : Publisher<T>, SubscriberSubscriptionCallbacks<T> {
     companion object {
-        internal fun <T> fromCoroutinesPublisher(publisher: Publisher<T>): Multi<T> = object : AbstractMulti<T>(publisher) {}
-
         fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
             for (x in start until start + count) send(x)
         }
@@ -72,5 +70,3 @@ internal abstract class AbstractMulti<T> internal constructor(override val deleg
         return this
     }
 }
-
-private fun <T> Publisher<T>.toMulti(): Multi<T> = Multi.fromCoroutinesPublisher(this)
