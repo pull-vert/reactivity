@@ -1,5 +1,6 @@
 package reactivity
 
+import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactivity.internal.util.errorInOnSubscribe
@@ -8,7 +9,44 @@ import reactivity.internal.util.onNextDropped
 import reactivity.internal.util.onOperatorError
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
 
-internal class DelegatedSubscriber<T> internal constructor(val parent: DelegatedPublisher<T>,
+/**
+ * This is the interface declaring the callback functions
+ * related to each functions of [Subscriber] & [Subscription]
+ * will be implemented in both [Multi] and [Solo]
+ */
+interface WithCallbacks<T> {
+    fun doOnSubscribe(block: (Subscription) -> Unit): WithCallbacks<T>
+
+    fun doOnNext(block: (T) -> Unit): WithCallbacks<T>
+
+    fun doOnError(block: (Throwable) -> Unit): WithCallbacks<T>
+
+    fun doOnComplete(block: () -> Unit): WithCallbacks<T>
+
+    fun doOnCancel(block: () -> Unit): WithCallbacks<T>
+
+    fun doOnRequest(block: (Long) -> Unit): WithCallbacks<T>
+
+    fun doFinally(block: () -> Unit): WithCallbacks<T>
+}
+
+internal class PublisherCallbacks<T> internal constructor(override val delegate: Publisher<T>) : PublisherDelegated<T> {
+
+    override fun subscribe(s: Subscriber<in T>) {
+        delegate.subscribe(SubscriberCallbacks(this, s))
+    }
+
+    // callbacks
+    internal var onSubscribeBlock: ((Subscription) -> Unit)? = null
+    internal var onNextBlock: ((T) -> Unit)? = null
+    internal var onErrorBlock: ((Throwable) -> Unit)? = null
+    internal var onCompleteBlock: (() -> Unit)? = null
+    internal var onCancelBlock: (() -> Unit)? = null
+    internal var onRequestBlock: ((Long) -> Unit)? = null
+    internal var finallyBlock: (() -> Unit)? = null
+}
+
+private class SubscriberCallbacks<T> internal constructor(val parent: PublisherCallbacks<T>,
                                                            val actual: Subscriber<in T>) : Subscription, Subscriber<T> {
 
     lateinit var subscription: Subscription
@@ -16,8 +54,7 @@ internal class DelegatedSubscriber<T> internal constructor(val parent: Delegated
     var done: Boolean = false
     @Volatile
     var once: Int = 0
-
-    val ONCE: AtomicIntegerFieldUpdater<DelegatedSubscriber<*>> = AtomicIntegerFieldUpdater.newUpdater<DelegatedSubscriber<*>>(DelegatedSubscriber::class.java, "once")
+    val ONCE: AtomicIntegerFieldUpdater<SubscriberCallbacks<*>> = AtomicIntegerFieldUpdater.newUpdater<SubscriberCallbacks<*>>(SubscriberCallbacks::class.java, "once")
 
     // Subscription functions
     override fun request(n: Long) {

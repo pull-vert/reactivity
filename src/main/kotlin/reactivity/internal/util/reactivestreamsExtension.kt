@@ -2,7 +2,6 @@ package reactivity.internal.util
 
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.DelegatedSubscriber
 import reactivity.Exceptions
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 
@@ -161,7 +160,7 @@ fun Subscriber<*>.onErrorDropped(e: Throwable) {
 }
 
 ///**
-// * Method for [DelegatedSubscriber] to deal with a doFinally
+// * Method for [SubscriberCallbacks] to deal with a doFinally
 // * callback that fails during onError. It drops the error to the global hook.
 // *
 // *  * The callback failure is thrown immediately if fatal.
@@ -179,7 +178,7 @@ fun Subscriber<*>.onErrorDropped(e: Throwable) {
 //}
 //
 ///**
-// * Method for [DelegatedSubscriber] to deal with a doFinally
+// * Method for [SubscriberCallbacks] to deal with a doFinally
 // * callback that fails during onComplete. It drops the error to the global hook.
 // *
 // *  * The callback failure is thrown immediately if fatal.
