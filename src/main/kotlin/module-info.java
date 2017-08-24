@@ -11,7 +11,7 @@ module khttp2 {
     requires reactor.core;
     requires reactive.streams;
     exports io.http2.koala;
-    exports reactivity;
+    exports reactivity.experimental;
 //    exports io.khttp2.internal.common;
 }
 
