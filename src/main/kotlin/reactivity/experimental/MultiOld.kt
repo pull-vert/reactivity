@@ -1,15 +1,15 @@
-package reactivity
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.launch
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.internal.suspending.SuspendingIterator
-import reactivity.internal.suspending.SuspendingSequence
-import reactivity.internal.suspending.SuspendingSequenceBuilder
-import reactivity.internal.suspending.suspendingIterator
-import reactivity.internal.util.getAndAddCap
-import reactivity.internal.util.validate
+import reactivity.experimental.internal.suspending.SuspendingIterator
+import reactivity.experimental.internal.suspending.SuspendingSequence
+import reactivity.experimental.internal.suspending.SuspendingSequenceBuilder
+import reactivity.experimental.internal.suspending.suspendingIterator
+import reactivity.experimental.internal.util.getAndAddCap
+import reactivity.experimental.internal.util.validate
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext

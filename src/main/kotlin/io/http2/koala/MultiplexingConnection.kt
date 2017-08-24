@@ -1,6 +1,6 @@
 package io.http2.koala
 
-import reactivity.multiSuspendingSequence
+import reactivity.experimental.multiSuspendingSequence
 import java.io.Closeable
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer

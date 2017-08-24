@@ -1,8 +1,8 @@
-package reactivity.internal.util
+package reactivity.experimental.internal.util
 
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.Exceptions
+import reactivity.experimental.Exceptions
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 
 // Extensions for Subscription

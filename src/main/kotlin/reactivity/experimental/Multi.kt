@@ -1,4 +1,4 @@
-package reactivity
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.reactive.publish

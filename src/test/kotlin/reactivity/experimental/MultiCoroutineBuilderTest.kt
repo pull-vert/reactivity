@@ -1,4 +1,4 @@
-package reactivity
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
@@ -16,7 +16,7 @@ class MultiCoroutineBuilderTest {
         }
         // subscribe on another thread with a slow subscriber using Multi
 //        source
-//                .observeOn(
+//                .publishOn(
 //        count `should equal` 6
     }
 }

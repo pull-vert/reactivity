@@ -1,4 +1,4 @@
-package reactivity.internal.suspending
+package reactivity.experimental.internal.suspending
 
 import kotlin.coroutines.experimental.*
 
