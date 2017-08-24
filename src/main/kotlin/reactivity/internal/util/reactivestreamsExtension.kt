@@ -160,36 +160,36 @@ fun Subscriber<*>.onErrorDropped(e: Throwable) {
    throw Exceptions.bubble(e)
 }
 
-/**
- * Method for [DelegatedSubscriber] to deal with a doFinally
- * callback that fails during onError. It drops the error to the global hook.
- *
- *  * The callback failure is thrown immediately if fatal.
- *  * [onOperatorError] is
- * called, adding the original error as suppressed
- *  * [onErrorDropped] is called
- *
- * @param callbackFailure the afterTerminate callback failure
- * @param originalError the onError throwable
- */
-fun Subscriber<*>.afterErrorWithFailure(callbackFailure: Throwable, originalError: Throwable) {
-    Exceptions.throwIfFatal(callbackFailure)
-    val _e = onOperatorError(null, callbackFailure, originalError)
-    onErrorDropped(_e)
-}
-
-/**
- * Method for [DelegatedSubscriber] to deal with a doFinally
- * callback that fails during onComplete. It drops the error to the global hook.
- *
- *  * The callback failure is thrown immediately if fatal.
- *  * [onOperatorError] is called
- *  * [onErrorDropped] is called
- *
- * @param callbackFailure the afterTerminate callback failure
- */
-fun Subscriber<*>.afterCompleteWithFailure(callbackFailure: Throwable) {
-    Exceptions.throwIfFatal(callbackFailure)
-    val _e = onOperatorError(callbackFailure)
-    onErrorDropped(_e)
-}
+///**
+// * Method for [DelegatedSubscriber] to deal with a doFinally
+// * callback that fails during onError. It drops the error to the global hook.
+// *
+// *  * The callback failure is thrown immediately if fatal.
+// *  * [onOperatorError] is
+// * called, adding the original error as suppressed
+// *  * [onErrorDropped] is called
+// *
+// * @param callbackFailure the afterTerminate callback failure
+// * @param originalError the onError throwable
+// */
+//fun Subscriber<*>.afterErrorWithFailure(callbackFailure: Throwable, originalError: Throwable) {
+//    Exceptions.throwIfFatal(callbackFailure)
+//    val _e = onOperatorError(null, callbackFailure, originalError)
+//    onErrorDropped(_e)
+//}
+//
+///**
+// * Method for [DelegatedSubscriber] to deal with a doFinally
+// * callback that fails during onComplete. It drops the error to the global hook.
+// *
+// *  * The callback failure is thrown immediately if fatal.
+// *  * [onOperatorError] is called
+// *  * [onErrorDropped] is called
+// *
+// * @param callbackFailure the afterTerminate callback failure
+// */
+//fun Subscriber<*>.afterCompleteOrCancelWithFailure(callbackFailure: Throwable) {
+//    Exceptions.throwIfFatal(callbackFailure)
+//    val _e = onOperatorError(callbackFailure)
+//    onErrorDropped(_e)
+//}

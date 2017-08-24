@@ -2,7 +2,11 @@ package reactivity
 
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.internal.util.*
+import reactivity.internal.util.errorInOnSubscribe
+import reactivity.internal.util.onErrorDropped
+import reactivity.internal.util.onNextDropped
+import reactivity.internal.util.onOperatorError
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
 
 internal class DelegatedSubscriber<T> internal constructor(val parent: DelegatedPublisher<T>,
                                                            val actual: Subscriber<in T>) : Subscription, Subscriber<T> {
@@ -10,6 +14,10 @@ internal class DelegatedSubscriber<T> internal constructor(val parent: Delegated
     lateinit var subscription: Subscription
     @Volatile
     var done: Boolean = false
+    @Volatile
+    var once: Int = 0
+
+    val ONCE: AtomicIntegerFieldUpdater<DelegatedSubscriber<*>> = AtomicIntegerFieldUpdater.newUpdater<DelegatedSubscriber<*>>(DelegatedSubscriber::class.java, "once")
 
     // Subscription functions
     override fun request(n: Long) {
@@ -30,6 +38,8 @@ internal class DelegatedSubscriber<T> internal constructor(val parent: Delegated
             return
         }
         subscription.cancel()
+
+        if (parent.finallyBlock != null) runFinally()
     }
 
     // Subscriber functions
@@ -64,29 +74,25 @@ internal class DelegatedSubscriber<T> internal constructor(val parent: Delegated
             return
         }
         done = true
+        var throwable = t
         if (parent.onErrorBlock != null) {
             Exceptions.throwIfFatal(t)
             try {
                 parent.onErrorBlock?.invoke(t)
             } catch (e: Throwable) {
                 //this performs a throwIfFatal or suppresses t in e
-                onError(onOperatorError(null, e, t))
-                return
+                throwable = onOperatorError(null, e, t)
             }
         }
         try {
-            actual.onError(t)
+            actual.onError(throwable)
         } catch (use: UnsupportedOperationException) {
-            if (parent.onErrorBlock == null || !Exceptions.isErrorCallbackNotImplemented(use) && use.cause !== t) {
+            if (parent.onErrorBlock == null || !Exceptions.isErrorCallbackNotImplemented(use) && use.cause !== throwable) {
                 throw use
             }
         }
 
-        try {
-            parent.finallyBlock?.invoke()
-        } catch (e: Throwable) {
-            afterErrorWithFailure(e, t)
-        }
+        if (parent.finallyBlock != null) runFinally()
     }
 
     override fun onComplete() {
@@ -103,10 +109,17 @@ internal class DelegatedSubscriber<T> internal constructor(val parent: Delegated
 
         actual.onComplete()
 
-        try {
-            parent.finallyBlock?.invoke()
-        } catch (e: Throwable) {
-            afterCompleteWithFailure(e)
+        if (parent.finallyBlock != null) runFinally()
+    }
+
+    private fun runFinally() {
+        if (ONCE.compareAndSet(this, 0, 1)) {
+            try {
+                parent.finallyBlock?.invoke()
+            } catch (e: Throwable) {
+                Exceptions.throwIfFatal(e)
+                onErrorDropped(e)
+            }
         }
     }
 
