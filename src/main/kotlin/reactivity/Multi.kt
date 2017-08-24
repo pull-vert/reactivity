@@ -1,14 +1,24 @@
 package reactivity
 
+import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.reactive.publish
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 
+fun <T> multi(
+        context: CoroutineContext,
+        block: suspend ProducerScope<T>.() -> Unit
+): Multi<T> = publish(context, block).toMulti()
+
 interface Multi<T> : Publisher<T>, SubscriberSubscriptionCallbacks<T> {
     companion object {
-        fun <T> fromPublisher(publisher: Publisher<T>): Multi<T> = object : AbstractMulti<T>(publisher) {}
+        internal fun <T> fromCoroutinesPublisher(publisher: Publisher<T>): Multi<T> = object : AbstractMulti<T>(publisher) {}
+
+        fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
+            for (x in start until start + count) send(x)
+        }
     }
 
     override fun doOnSubscribe(block: (Subscription) -> Unit): Multi<T>
@@ -63,8 +73,4 @@ internal abstract class AbstractMulti<T> internal constructor(override val deleg
     }
 }
 
-fun <T> Publisher<T>.toMulti(): Multi<T> = Multi.fromPublisher(this)
-
-fun multiFromRange(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = publish(context) {
-    for (x in start until start + count) send(x)
-}.toMulti()
+private fun <T> Publisher<T>.toMulti(): Multi<T> = Multi.fromCoroutinesPublisher(this)

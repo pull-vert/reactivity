@@ -1,6 +1,5 @@
 package reactivity
 
-import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.runBlocking
@@ -11,7 +10,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range test`() = runBlocking {
         // create a publisher that produces numbers from 1 to 3
-        val source = multiFromRange(1, 3)
+        val source = Multi.range(1, 3)
         // print elements from the source
         var count = 0
         println("Elements:")
@@ -33,7 +32,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi subscription and cancellation`() = runBlocking {
         // create a publisher that produces numbers from 1 to 5
-        val source = multiFromRange(1, 5)
+        val source = Multi.range(1, 5)
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
         // print elements from the source
