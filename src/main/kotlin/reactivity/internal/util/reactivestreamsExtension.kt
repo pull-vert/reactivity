@@ -1,6 +1,9 @@
 package reactivity.internal.util
 
+import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import reactivity.DelegatedSubscriber
+import reactivity.Exceptions
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 
 // Extensions for Subscription
@@ -10,13 +13,13 @@ fun Subscription.validate(n: Long): Boolean {
     }
     if (n < 0) {
         throw IllegalArgumentException(
-                "Spec. Rule 3.9 - Cannot request a non strictly positive number: " + n);
+                "Spec. Rule 3.9 - Cannot request a non strictly positive number: " + n)
     }
     return true
 }
 
 /**
- * Concurrent addition bound to Long.MAX_VALUE.
+ * Concurrent addition bound to [Long.MAX_VALUE].
  * Any concurrent write will "happen before" this operation.
  *
  * @param <T> the parent instance type
@@ -52,4 +55,141 @@ fun Subscription.addCap(a: Long, b: Long): Long {
     return if (res < 0L) {
         java.lang.Long.MAX_VALUE
     } else res
+}
+
+// Extensions for Subscriber
+
+/**
+ * Calls onSubscribe on the target Subscriber with the empty instance followed by a call to onError with the
+ * supplied error.
+ *
+ * @param s target Subscriber to error
+ * @param e the actual error
+ */
+fun Subscriber<*>.errorInOnSubscribe(s: Subscriber<*>, e: Throwable) {
+    s.onSubscribe(EmptySubscription.INSTANCE)
+    s.onError(e)
+}
+
+private enum class EmptySubscription : Subscription {
+    INSTANCE;
+
+    override fun cancel() {
+        // deliberately no op
+    }
+
+    override fun request(n: Long) {
+        // deliberately no op
+    }
+}
+
+/**
+ * Map an "operator" error. The
+ * result error will be passed via onError to the operator downstream after
+ * checking for fatal error via
+ * [Exceptions.throwIfFatal].
+ *
+ * @param error the callback or operator error
+ * @return mapped [Throwable]
+ */
+fun Subscriber<*>.onOperatorError(error: Throwable): Throwable {
+    return onOperatorError(null, error, null)
+}
+
+/**
+ * Map an "operator" error given an operator parent [Subscription]. The
+ * result error will be passed via onError to the operator downstream.
+ * [Subscription] will be cancelled after checking for fatal error via
+ * [throwIfFatal].
+ *
+ * @param subscription the linked operator parent [Subscription]
+ * @param error the callback or operator error
+ * @return mapped [Throwable]
+ */
+fun Subscriber<*>.onOperatorError(subscription: Subscription, error: Throwable): Throwable {
+    return onOperatorError(subscription, error, null)
+}
+
+/**
+ * Map an "operator" error given an operator parent [Subscription]. The
+ * result error will be passed via onError to the operator downstream.
+ * [Subscription] will be cancelled after checking for fatal error via
+ * [throwIfFatal]. Takes an additional signal, which
+ * can be added as a suppressed exception if it is a [Throwable]
+ *
+ * @param subscription the linked operator parent [Subscription]
+ * @param error the callback or operator error
+ * @param dataSignal the value (onNext or onError) signal processed during failure
+ * @return mapped [Throwable]
+ */
+fun Subscriber<*>.onOperatorError(subscription: Subscription?,
+                                  error: Throwable,
+                                  dataSignal: Any?): Throwable {
+
+    Exceptions.throwIfFatal(error)
+    subscription?.cancel()
+
+    val t = Exceptions.unwrap(error)
+    if (dataSignal != null) {
+        if (dataSignal !== t && dataSignal is Throwable) {
+            (t as java.lang.Throwable).addSuppressed(dataSignal)
+        }
+        //do not wrap original value to avoid strong references
+        /*else {
+            }*/
+    }
+    return t
+}
+
+/**
+ * An unexpected event is about to be dropped.
+ *
+ * @param <T> the dropped value type
+ * @param t the dropped data
+</T> */
+fun <T> Subscriber<*>.onNextDropped(t: T) {
+    throw Exceptions.failWithCancel()
+}
+
+/**
+ * An unexpected exception is about to be dropped.
+ *
+ * @param e the dropped exception
+ */
+fun Subscriber<*>.onErrorDropped(e: Throwable) {
+   throw Exceptions.bubble(e)
+}
+
+/**
+ * Method for [DelegatedSubscriber] to deal with a doFinally
+ * callback that fails during onError. It drops the error to the global hook.
+ *
+ *  * The callback failure is thrown immediately if fatal.
+ *  * [onOperatorError] is
+ * called, adding the original error as suppressed
+ *  * [onErrorDropped] is called
+ *
+ * @param callbackFailure the afterTerminate callback failure
+ * @param originalError the onError throwable
+ */
+fun Subscriber<*>.afterErrorWithFailure(callbackFailure: Throwable, originalError: Throwable) {
+    Exceptions.throwIfFatal(callbackFailure)
+    val _e = onOperatorError(null, callbackFailure, originalError)
+    onErrorDropped(_e)
+}
+
+/**
+ * Method for [DelegatedSubscriber] to deal with a doFinally
+ * callback that fails during onComplete. It drops the error to the global hook.
+ *
+ *  * The callback failure is thrown immediately if fatal.
+ *  * [onOperatorError] is called
+ *  * [onErrorDropped] is called
+ *
+ * @param callbackFailure the afterTerminate callback failure
+ */
+fun Subscriber<*>.afterCompleteWithFailure(callbackFailure: Throwable) {
+    Exceptions.throwIfFatal(callbackFailure)
+    val _e = onOperatorError(callbackFailure)
+    onErrorDropped(_e)
 }
