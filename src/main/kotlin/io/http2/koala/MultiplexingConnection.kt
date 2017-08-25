@@ -1,6 +1,6 @@
 package io.http2.koala
 
-import reactivity.experimental.multiSuspendingSequence
+import reactivity.experimental.multi
 import java.io.Closeable
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -20,8 +20,8 @@ internal class MultiplexingConnection(context: CoroutineContext = EmptyCoroutine
     }
 
     init {
-        multiSuspendingSequence(context) {
-            yield(ByteBuffer.allocate(12))
+        multi(context) {
+            send(ByteBuffer.allocate(12))
         }/*.reduceWith()*/
     }
 

@@ -3,11 +3,9 @@ package reactivity.experimental
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.experimental.internal.util.errorInOnSubscribe
-import reactivity.experimental.internal.util.onErrorDropped
-import reactivity.experimental.internal.util.onNextDropped
-import reactivity.experimental.internal.util.onOperatorError
+import reactivity.experimental.internal.util.*
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * This is the interface declaring the callback functions
@@ -15,22 +13,22 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
  * will be implemented in both [Multi] and [Solo]
  */
 interface WithCallbacks<T> {
-    fun doOnSubscribe(block: (Subscription) -> Unit): WithCallbacks<T>
+    fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): WithCallbacks<T>
 
-    fun doOnNext(block: (T) -> Unit): WithCallbacks<T>
+    fun doOnNext(onNext: (T) -> Unit): WithCallbacks<T>
 
-    fun doOnError(block: (Throwable) -> Unit): WithCallbacks<T>
+    fun doOnError(onError: (Throwable) -> Unit): WithCallbacks<T>
 
-    fun doOnComplete(block: () -> Unit): WithCallbacks<T>
+    fun doOnComplete(onComplete: () -> Unit): WithCallbacks<T>
 
-    fun doOnCancel(block: () -> Unit): WithCallbacks<T>
+    fun doOnCancel(onCancel: () -> Unit): WithCallbacks<T>
 
-    fun doOnRequest(block: (Long) -> Unit): WithCallbacks<T>
+    fun doOnRequest(onRequest: (Long) -> Unit): WithCallbacks<T>
 
-    fun doFinally(block: () -> Unit): WithCallbacks<T>
+    fun doFinally(finally: () -> Unit): WithCallbacks<T>
 }
 
-internal class PublisherCallbacks<T> internal constructor(override val delegate: Publisher<T>) : PublisherDelegated<T> {
+internal class PublisherWithCallbacks<T> internal constructor(override val delegate: Publisher<T>) : PublisherDelegated<T> {
 
     override fun subscribe(s: Subscriber<in T>) {
         delegate.subscribe(SubscriberCallbacks(this, s))
@@ -46,10 +44,10 @@ internal class PublisherCallbacks<T> internal constructor(override val delegate:
     internal var finallyBlock: (() -> Unit)? = null
 }
 
-private class SubscriberCallbacks<T> internal constructor(val parent: PublisherCallbacks<T>,
-                                                          val actual: Subscriber<in T>) : Subscription, Subscriber<T> {
+private class SubscriberCallbacks<T> internal constructor(val parent: PublisherWithCallbacks<T>,
+                                                          val actual: Subscriber<in T>) : AtomicReference<Subscription>(), Subscription, Subscriber<T> {
 
-    lateinit var subscription: Subscription
+    var subscription: Subscription? = null
     @Volatile
     var done: Boolean = false
     @Volatile
@@ -64,7 +62,7 @@ private class SubscriberCallbacks<T> internal constructor(val parent: PublisherC
             onError(onOperatorError(subscription, e))
             return
         }
-        subscription.request(n)
+        subscription?.request(n)
     }
 
     override fun cancel() {
@@ -74,21 +72,23 @@ private class SubscriberCallbacks<T> internal constructor(val parent: PublisherC
             onError(onOperatorError(subscription, e))
             return
         }
-        subscription.cancel()
+        subscription?.cancel()
 
         if (parent.finallyBlock != null) runFinally()
     }
 
     // Subscriber functions
     override fun onSubscribe(s: Subscription) {
-        try {
-            parent.onSubscribeBlock?.invoke(s)
-        } catch (e: Throwable) {
-            errorInOnSubscribe(actual, onOperatorError(s, e))
-            return
+        if (validateSubscription(subscription, s)) {
+            try {
+                parent.onSubscribeBlock?.invoke(s)
+            } catch (e: Throwable) {
+                errorInOnSubscribe(actual, onOperatorError(s, e))
+                return
+            }
+            subscription = s
+            actual.onSubscribe(this)
         }
-        subscription = s
-        actual.onSubscribe(this)
     }
 
     override fun onNext(t: T) {

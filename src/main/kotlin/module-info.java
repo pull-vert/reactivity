@@ -8,7 +8,7 @@ module khttp2 {
     requires kotlinx.coroutines.core;
     requires kotlinx.coroutines.reactive;
     requires jdk.incubator.httpclient;
-    requires reactor.core;
+//    requires reactor.core;
     requires reactive.streams;
     exports io.http2.koala;
     exports reactivity.experimental;

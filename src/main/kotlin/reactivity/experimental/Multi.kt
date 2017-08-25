@@ -4,6 +4,7 @@ import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.reactive.publish
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
+import reactivity.experimental.internal.util.subscribeWith
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 
@@ -12,97 +13,110 @@ fun <T> multi(
         block: suspend ProducerScope<T>.() -> Unit
 ): Multi<T> = MultiImpl(publish(context, block))
 
-interface Multi<T> : Publisher<T>, WithCallbacks<T> {
+interface Multi<T> : Publisher<T>, WithCallbacks<T>, WithLambda<T> {
     companion object {
         fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
             for (x in start until start + count) send(x)
         }
     }
 
-    override fun doOnSubscribe(block: (Subscription) -> Unit): Multi<T>
-
-    override fun doOnNext(block: (T) -> Unit): Multi<T>
-
-    override fun doOnError(block: (Throwable) -> Unit): Multi<T>
-
-    override fun doOnComplete(block: () -> Unit): Multi<T>
-
-    override fun doOnCancel(block: () -> Unit): Multi<T>
-
-    override fun doOnRequest(block: (Long) -> Unit): Multi<T>
-
-    override fun doFinally(block: () -> Unit): Multi<T>
+    // functions from WithCallbacks
+    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
+    override fun doOnNext(onNext: (T) -> Unit): Multi<T>
+    override fun doOnError(onError: (Throwable) -> Unit): Multi<T>
+    override fun doOnComplete(onComplete: () -> Unit): Multi<T>
+    override fun doOnCancel(onCancel: () -> Unit): Multi<T>
+    override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
+    override fun doFinally(finally: () -> Unit): Multi<T>
 }
 
 internal class MultiImpl<T> internal constructor(override val delegate: Publisher<T>) : PublisherDelegated<T>, Multi<T> {
-    override fun doOnSubscribe(block: (Subscription) -> Unit): Multi<T> {
-        if (delegate is PublisherCallbacks) {
-            delegate.onSubscribeBlock = block
+
+
+    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
+        if (delegate is PublisherWithCallbacks) {
+            delegate.onSubscribeBlock = onSubscribe
             return this
         }
-        // otherwise this is not a PublisherCallbacks
-        val publisherCallbacks = PublisherCallbacks(this)
-        publisherCallbacks.onSubscribeBlock = block
+        // otherwise this is not a PublisherWithCallbacks
+        val publisherCallbacks = PublisherWithCallbacks(this)
+        publisherCallbacks.onSubscribeBlock = onSubscribe
         return MultiImpl(publisherCallbacks)
     }
 
-    override fun doOnNext(block: (T) -> Unit): Multi<T> {
-        if (delegate is PublisherCallbacks) {
-            delegate.onNextBlock = block
+    override fun doOnNext(onNext: (T) -> Unit): Multi<T> {
+        if (delegate is PublisherWithCallbacks) {
+            delegate.onNextBlock = onNext
             return this
         }
-        val publisherCallbacks = PublisherCallbacks(this)
-        publisherCallbacks.onNextBlock = block
+        val publisherCallbacks = PublisherWithCallbacks(this)
+        publisherCallbacks.onNextBlock = onNext
         return MultiImpl(publisherCallbacks)
     }
 
-    override fun doOnError(block: (Throwable) -> Unit): Multi<T> {
-        if (delegate is PublisherCallbacks) {
-            delegate.onErrorBlock = block
+    override fun doOnError(onError: (Throwable) -> Unit): Multi<T> {
+        if (delegate is PublisherWithCallbacks) {
+            delegate.onErrorBlock = onError
             return this
         }
-        val publisherCallbacks = PublisherCallbacks(this)
-        publisherCallbacks.onErrorBlock = block
+        val publisherCallbacks = PublisherWithCallbacks(this)
+        publisherCallbacks.onErrorBlock = onError
         return MultiImpl(publisherCallbacks)
     }
 
-    override fun doOnComplete(block: () -> Unit): Multi<T> {
-        if (delegate is PublisherCallbacks) {
-            delegate.onCompleteBlock = block
+    override fun doOnComplete(onComplete: () -> Unit): Multi<T> {
+        if (delegate is PublisherWithCallbacks) {
+            delegate.onCompleteBlock = onComplete
             return this
         }
-        val publisherCallbacks = PublisherCallbacks(this)
-        publisherCallbacks.onCompleteBlock = block
+        val publisherCallbacks = PublisherWithCallbacks(this)
+        publisherCallbacks.onCompleteBlock = onComplete
         return MultiImpl(publisherCallbacks)
     }
 
-    override fun doOnCancel(block: () -> Unit): Multi<T> {
-        if (delegate is PublisherCallbacks) {
-            delegate.onCancelBlock = block
+    override fun doOnCancel(onCancel: () -> Unit): Multi<T> {
+        if (delegate is PublisherWithCallbacks) {
+            delegate.onCancelBlock = onCancel
             return this
         }
-        val publisherCallbacks = PublisherCallbacks(this)
-        publisherCallbacks.onCancelBlock = block
+        val publisherCallbacks = PublisherWithCallbacks(this)
+        publisherCallbacks.onCancelBlock = onCancel
         return MultiImpl(publisherCallbacks)
     }
 
-    override fun doOnRequest(block: (Long) -> Unit): Multi<T> {
-        if (delegate is PublisherCallbacks) {
-            delegate.onRequestBlock = block
+    override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T> {
+        if (delegate is PublisherWithCallbacks) {
+            delegate.onRequestBlock = onRequest
             return this
         }
-        val publisherCallbacks = PublisherCallbacks(this)
-        publisherCallbacks.onRequestBlock = block
+        val publisherCallbacks = PublisherWithCallbacks(this)
+        publisherCallbacks.onRequestBlock = onRequest
         return MultiImpl(publisherCallbacks)
     }
 
-    override fun doFinally(block: () -> Unit): Multi<T> {
-        if (delegate is PublisherCallbacks) {
-            delegate.finallyBlock = block
+    override fun doFinally(finally: () -> Unit): Multi<T> {
+        if (delegate is PublisherWithCallbacks) {
+            delegate.finallyBlock = finally
             return this
         }
-        val publisherCallbacks = PublisherCallbacks(this)
-        publisherCallbacks.finallyBlock = block
+        val publisherCallbacks = PublisherWithCallbacks(this)
+        publisherCallbacks.finallyBlock = finally
         return MultiImpl(publisherCallbacks)
+    }
+
+    override fun subscribe(onNext: (T) -> Unit): Disposable {
+        return subscribeWith(SubscriberLambda(onNext))
+    }
+
+    override fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): Disposable {
+        return subscribeWith(SubscriberLambda(onNext, onError))
+    }
+
+    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): Disposable {
+        return subscribeWith(SubscriberLambda(onNext, onError, onComplete))
+    }
+
+    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): Disposable {
+        return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
     }
 }

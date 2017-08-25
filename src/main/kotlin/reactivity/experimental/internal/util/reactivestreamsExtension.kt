@@ -1,12 +1,29 @@
 package reactivity.experimental.internal.util
 
+import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactivity.experimental.Exceptions
+import reactivity.experimental.SubscriberLambda
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 
+// Extensions for Publisher
+/**
+ * Subscribe the given [Subscriber] to this [Publiser] and return said
+ * [Subscriber] (eg. a [SubscriberLambda]).
+ *
+ * @param subscriber the [Subscriber] to subscribe with
+ * @param E the reified type of the [Subscriber] for chaining
+ *
+ * @return the passed [Subscriber] after subscribing it to this [Publiser]
+</E> */
+fun <E : Subscriber<in T>, T> Publisher<T>.subscribeWith(subscriber: E): E {
+    subscribe(subscriber)
+    return subscriber
+}
+
 // Extensions for Subscription
-fun Subscription.validate(n: Long): Boolean {
+fun Subscription.validateRequested(n: Long): Boolean {
     if (n == 0L) {
         return false
     }
@@ -82,18 +99,44 @@ private enum class EmptySubscription : Subscription {
     }
 }
 
-/**
- * Map an "operator" error. The
- * result error will be passed via onError to the operator downstream after
- * checking for fatal error via
- * [Exceptions.throwIfFatal].
- *
- * @param error the callback or operator error
- * @return mapped [Throwable]
- */
-fun Subscriber<*>.onOperatorError(error: Throwable): Throwable {
-    return onOperatorError(null, error, null)
+private enum class CancelledSubscription : Subscription {
+    INSTANCE;
+
+    override fun cancel() {
+        // deliberately no op
+    }
+
+    override fun request(n: Long) {
+        // deliberately no op
+    }
 }
+
+/**
+ * A singleton Subscription that represents a cancelled subscription instance and
+ * should not be leaked to clients as it represents a terminal state. <br></br> If
+ * algorithms need to hand out a subscription, replace this with a singleton
+ * subscription because there is no standard way to tell if a Subscription is cancelled
+ * or not otherwise.
+ *
+ * @return a singleton noop [Subscription] to be used as an inner representation
+ * of the cancelled state
+ */
+fun Subscriber<*>.cancelledSubscription(): Subscription {
+    return CancelledSubscription.INSTANCE
+}
+
+///**
+// * Map an "operator" error. The
+// * result error will be passed via onError to the operator downstream after
+// * checking for fatal error via
+// * [Exceptions.throwIfFatal].
+// *
+// * @param error the callback or operator error
+// * @return mapped [Throwable]
+// */
+//fun Subscriber<*>.onOperatorError(error: Throwable): Throwable {
+//    return onOperatorError(null, error, null)
+//}
 
 /**
  * Map an "operator" error given an operator parent [Subscription]. The
@@ -105,7 +148,7 @@ fun Subscriber<*>.onOperatorError(error: Throwable): Throwable {
  * @param error the callback or operator error
  * @return mapped [Throwable]
  */
-fun Subscriber<*>.onOperatorError(subscription: Subscription, error: Throwable): Throwable {
+fun Subscriber<*>.onOperatorError(subscription: Subscription?, error: Throwable): Throwable {
     return onOperatorError(subscription, error, null)
 }
 
@@ -157,6 +200,24 @@ fun <T> Subscriber<*>.onNextDropped(t: T) {
  */
 fun Subscriber<*>.onErrorDropped(e: Throwable) {
    throw Exceptions.bubble(e)
+}
+
+/**
+ * Check Subscription current state and cancel new Subscription if current is push,
+ * or return true if ready to subscribe.
+ *
+ * @param current current Subscription, expected to be null
+ * @param next new Subscription
+ * @return true if Subscription can be used
+ */
+fun Subscriber<*>.validateSubscription(current: Subscription?, next: Subscription): Boolean {
+    if (current != null) {
+        next.cancel()
+        //reportSubscriptionSet();
+        return false
+    }
+
+    return true
 }
 
 ///**

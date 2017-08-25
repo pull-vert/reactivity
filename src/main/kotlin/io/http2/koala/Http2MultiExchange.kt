@@ -1,6 +1,6 @@
 package io.http2.koala
 
-import reactor.core.publisher.Mono
+import reactivity.experimental.Solo
 
 /**
  * Encapsulates multiple Exchanges belonging to one HttpRequest
@@ -11,5 +11,5 @@ import reactor.core.publisher.Mono
  * Creates a new Exchange for each request/response interaction
  */
 internal class Http2MultiExchange<U>(
-        handler: (Http2Request<U>, Http2Response) -> Mono<Void>, http2ServerImpl: KHttp2ServerImpl) {
+        handler: (Http2Request<U>, Http2Response) -> Solo<Void>, http2ServerImpl: KHttp2ServerImpl) {
 }

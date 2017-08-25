@@ -94,6 +94,19 @@ interface Exceptions {
         fun isErrorCallbackNotImplemented(t: Throwable): Boolean {
             return t is ErrorCallbackNotImplemented
         }
+
+        /**
+         * Return an [UnsupportedOperationException] indicating that the error callback
+         * on a subscriber was not implemented, yet an error was propagated.
+         *
+         * @param cause original error not processed by a receiver.
+         * @return an [UnsupportedOperationException] indicating the error callback was
+         * not implemented and holding the original propagated error.
+         * @see isErrorCallbackNotImplemented
+         */
+        fun errorCallbackNotImplemented(cause: Throwable): UnsupportedOperationException {
+            return ErrorCallbackNotImplemented(cause)
+        }
     }
 }
 
@@ -102,9 +115,9 @@ interface Exceptions {
  */
 internal open class ReactiveException : RuntimeException {
 
-    constructor(cause: Throwable) : super(cause) {}
+    constructor(cause: Throwable) : super(cause)
 
-    constructor(message: String) : super(message) {}
+    constructor(message: String) : super(message)
 
     @Synchronized override fun fillInStackTrace(): Throwable {
         return if (cause != null)
@@ -121,9 +134,9 @@ internal open class ReactiveException : RuntimeException {
 
 internal open class BubblingException : ReactiveException {
 
-    constructor(message: String) : super(message) {}
+    constructor(message: String) : super(message)
 
-    constructor(cause: Throwable) : super(cause) {}
+    constructor(cause: Throwable) : super(cause)
 
     companion object {
 
@@ -147,12 +160,10 @@ internal class ErrorCallbackNotImplemented(cause: Throwable) : UnsupportedOperat
  * An error signal from downstream subscribers consuming data when their state is
  * denying any additional event.
  *
- * @author Stephane Maldini
  */
 internal class CancelException : BubblingException("The subscriber has denied dispatching") {
     companion object {
 
         private const val serialVersionUID = 2491425227432776144L
     }
-
 }

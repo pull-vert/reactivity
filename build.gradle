@@ -31,10 +31,11 @@ dependencies {
     compile "org.reactivestreams:reactive-streams:1.0.1"
     testCompile "org.reactivestreams:reactive-streams-tck:1.0.1"
 
-    compile "io.projectreactor:reactor-core:3.1.0.M3"
+    testCompile "io.projectreactor:reactor-core:3.1.0.M3"
 
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testCompile "org.amshove.kluent:kluent:1.27"
+    testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:0.18"
 }
 
 compileKotlin {
