@@ -20,7 +20,7 @@ interface WithLambda<T> {
     fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): Disposable
 
     fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?,
-                      onComplete: (() -> Unit)?,  onSubscribe: ((Subscription) -> Unit)?): Disposable
+                  onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): Disposable
 }
 
 internal class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null, private val onError: ((Throwable) -> Unit)? = null,
@@ -38,8 +38,8 @@ internal class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null, pr
         if (validateSubscription(subscription, s)) {
             this.subscription = s
             try {
-            this.onSubscribe?.invoke(s) ?: s.request(java.lang.Long.MAX_VALUE)
-            } catch (t : Throwable) {
+                this.onSubscribe?.invoke(s) ?: s.request(java.lang.Long.MAX_VALUE)
+            } catch (t: Throwable) {
                 Exceptions.throwIfFatal(t)
                 s.cancel()
                 onError(t)
@@ -54,7 +54,7 @@ internal class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null, pr
         }
         try {
             this.onComplete?.invoke()
-        } catch (t : Throwable) {
+        } catch (t: Throwable) {
             Exceptions.throwIfFatal(t)
             onError(t)
         }
@@ -72,7 +72,7 @@ internal class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null, pr
     override fun onNext(item: T) {
         try {
             this.onNext?.invoke(item)
-        } catch (t : Throwable) {
+        } catch (t: Throwable) {
             Exceptions.throwIfFatal(t)
             this.subscription?.cancel()
             onError(t)
