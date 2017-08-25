@@ -12,7 +12,7 @@ fun <T> multi(
         block: suspend ProducerScope<T>.() -> Unit
 ): Multi<T> = MultiImpl(publish(context, block))
 
-abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithLambda<T> {
+abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithLambda<T>, WithPublishOn {
     companion object {
         @JvmStatic fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
             for (x in start until start + count) send(x)
@@ -27,10 +27,12 @@ abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, W
     override abstract fun doOnCancel(onCancel: () -> Unit): Multi<T>
     override abstract fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
     override abstract fun doFinally(finally: () -> Unit): Multi<T>
+
+    // functions from WithPublishOn
+    override abstract fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
 }
 
 internal class MultiImpl<T> internal constructor(override val delegate: Publisher<T>) : Multi<T>(), PublisherDelegated<T> {
-
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
@@ -117,5 +119,9 @@ internal class MultiImpl<T> internal constructor(override val delegate: Publishe
 
     override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
+    }
+
+    override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T> {
+        return MultiImpl(PublisherWithPublishOn(this, scheduler, delayError, prefetch))
     }
 }

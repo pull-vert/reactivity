@@ -5,7 +5,6 @@ import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactivity.experimental.internal.util.*
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * This is the interface declaring the callback functions
@@ -45,7 +44,7 @@ internal class PublisherWithCallbacks<T> internal constructor(override val deleg
 }
 
 private class SubscriberCallbacks<T> internal constructor(val parent: PublisherWithCallbacks<T>,
-                                                          val actual: Subscriber<in T>) : AtomicReference<Subscription>(), Subscription, Subscriber<T> {
+                                                          val actual: Subscriber<in T>) : Subscription, Subscriber<T> {
 
     var subscription: Subscription? = null
     @Volatile
