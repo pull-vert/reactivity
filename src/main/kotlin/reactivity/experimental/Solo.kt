@@ -2,6 +2,6 @@ package reactivity.experimental
 
 import org.reactivestreams.Publisher
 
-interface Solo<T> : Publisher<T> {
+abstract class Solo<T> : Publisher<T> {
 
 }

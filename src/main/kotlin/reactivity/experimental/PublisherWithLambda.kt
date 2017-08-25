@@ -28,6 +28,7 @@ internal class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null, pr
     : Subscriber<T>, Disposable {
 
     @Volatile
+    @JvmField
     var subscription: Subscription? = null
     val S: AtomicReferenceFieldUpdater<SubscriberLambda<*>, Subscription> = AtomicReferenceFieldUpdater.newUpdater(SubscriberLambda::class.java,
             Subscription::class.java,

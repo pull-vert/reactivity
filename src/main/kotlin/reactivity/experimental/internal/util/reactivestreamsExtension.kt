@@ -7,21 +7,6 @@ import reactivity.experimental.Exceptions
 import reactivity.experimental.SubscriberLambda
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 
-// Extensions for Publisher
-/**
- * Subscribe the given [Subscriber] to this [Publiser] and return said
- * [Subscriber] (eg. a [SubscriberLambda]).
- *
- * @param subscriber the [Subscriber] to subscribe with
- * @param E the reified type of the [Subscriber] for chaining
- *
- * @return the passed [Subscriber] after subscribing it to this [Publiser]
-</E> */
-fun <E : Subscriber<in T>, T> Publisher<T>.subscribeWith(subscriber: E): E {
-    subscribe(subscriber)
-    return subscriber
-}
-
 // Extensions for Subscription
 fun Subscription.validateRequested(n: Long): Boolean {
     if (n == 0L) {

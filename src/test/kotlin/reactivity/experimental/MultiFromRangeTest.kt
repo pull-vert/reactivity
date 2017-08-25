@@ -59,8 +59,17 @@ class MultiFromRangeTest {
         we start with runBlocking coroutine builder. Our main coroutine receives on
         the channel using source.consumeEach { ... } expression.
         The main coroutine is suspended while it waits for the source to emit an item.
-        When the last item is emitted by Flowable.range(1, 5) it resumes the main coroutine,
+        When the last item is emitted by Multi.range(1, 5) it resumes the main coroutine,
         which gets dispatched onto the main thread to print this last element at
         a later point in time, while the source completes and prints "Finally". */
+    }
+
+    @Test
+    fun `multi from range subscription with subscribe onNext function`() = runBlocking<Unit> {
+        val source = Multi.range(1, 5) // a range of five numbers
+                .doOnSubscribe { println("OnSubscribe") } // provide some insight
+                .doFinally { println("Finally") }         // ... into what's going on
+        // iterate over the source fully
+        source.subscribe { println(it) }
     }
 }

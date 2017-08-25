@@ -4,7 +4,6 @@ import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.reactive.publish
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
-import reactivity.experimental.internal.util.subscribeWith
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 
@@ -13,24 +12,24 @@ fun <T> multi(
         block: suspend ProducerScope<T>.() -> Unit
 ): Multi<T> = MultiImpl(publish(context, block))
 
-interface Multi<T> : Publisher<T>, WithCallbacks<T>, WithLambda<T> {
+abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithLambda<T> {
     companion object {
-        fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
+        @JvmStatic fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
             for (x in start until start + count) send(x)
         }
     }
 
     // functions from WithCallbacks
-    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
-    override fun doOnNext(onNext: (T) -> Unit): Multi<T>
-    override fun doOnError(onError: (Throwable) -> Unit): Multi<T>
-    override fun doOnComplete(onComplete: () -> Unit): Multi<T>
-    override fun doOnCancel(onCancel: () -> Unit): Multi<T>
-    override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
-    override fun doFinally(finally: () -> Unit): Multi<T>
+    override abstract fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
+    override abstract fun doOnNext(onNext: (T) -> Unit): Multi<T>
+    override abstract fun doOnError(onError: (Throwable) -> Unit): Multi<T>
+    override abstract fun doOnComplete(onComplete: () -> Unit): Multi<T>
+    override abstract fun doOnCancel(onCancel: () -> Unit): Multi<T>
+    override abstract fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
+    override abstract fun doFinally(finally: () -> Unit): Multi<T>
 }
 
-internal class MultiImpl<T> internal constructor(override val delegate: Publisher<T>) : PublisherDelegated<T>, Multi<T> {
+internal class MultiImpl<T> internal constructor(override val delegate: Publisher<T>) : Multi<T>(), PublisherDelegated<T> {
 
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
