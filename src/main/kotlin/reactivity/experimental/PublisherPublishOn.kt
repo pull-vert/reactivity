@@ -1,9 +1,7 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.launch
-import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import reactivity.experimental.internal.util.validateSubscription
 
 /**
  * This is the interface declaring the publishOn functions
@@ -14,32 +12,54 @@ interface WithPublishOn {
     fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): WithPublishOn
 }
 
-internal class PublisherWithPublishOn<T> internal constructor(override val delegate: Publisher<T>, val scheduler: Scheduler, val delayError: Boolean, val prefetch: Int) : PublisherDelegated<T> {
+internal class SubscriberPublishOn<T>
+internal constructor(val delayError: Boolean, val prefetch: Int) :
+        AbstractSubscriptionChannel<T>() {
 
-    override fun subscribe(s: Subscriber<in T>) {
-        delegate.subscribe(SubscriberPublishOn(s, scheduler, delayError, prefetch))
+    @Volatile
+    @JvmField
+    var subscription: Subscription? = null
+
+    override fun onCancelledReceive() {
+        println("SubscriberPublishOn nCancelledReceive")
     }
-}
 
-private class SubscriberPublishOn<T> internal constructor(val actual: Subscriber<in T>, val scheduler: Scheduler, val delayError: Boolean, val prefetch: Int) : Subscriber<T> {
+    override fun afterClose(cause: Throwable?) {
+        println("SubscriberPublishOn afterClose")
+        subscription?.cancel()
+    }
 
     // Subscriber functions
     override fun onSubscribe(s: Subscription) {
-        launch(scheduler.context) {
-            actual.onSubscribe(s)
-            s.request(prefetch.toLong())
+        println("SubscriberPublishOn onSubscribe")
+        if (validateSubscription(subscription, s)) {
+            subscription = s
+            initialRequest()
+        }
+    }
+
+    private fun initialRequest() {
+        println("SubscriberPublishOn initialRequest " + prefetch)
+        // In this function we need that the subscription is not null, so use of !!
+        if (prefetch == Integer.MAX_VALUE) {
+            subscription!!.request(java.lang.Long.MAX_VALUE)
+        } else {
+            subscription!!.request(prefetch.toLong())
         }
     }
 
     override fun onNext(t: T) {
-        actual.onNext(t)
+        println("SubscriberPublishOn onNext " + t)
+        offer(t)
     }
 
     override fun onError(t: Throwable) {
-        actual.onError(t)
+        println("SubscriberPublishOn onError" + t)
+        close(cause = t)
     }
 
     override fun onComplete() {
-        actual.onComplete()
+        println("SubscriberPublishOn onComplete")
+        close(cause = null)
     }
 }

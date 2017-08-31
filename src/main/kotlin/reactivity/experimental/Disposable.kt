@@ -1,9 +1,11 @@
 package reactivity.experimental
 
+import java.io.Closeable
+
 /**
  * Represents a disposable resource.
  */
-interface Disposable {
+interface Disposable /*: Closeable*/ {
 
     /**
      * Optionally return true when the resource or task is disposed.
@@ -21,6 +23,8 @@ interface Disposable {
 
     /**
      * Dispose the resource, the operation should be idempotent.
+     *
+     * Only call close from [Closeable]
      */
-    fun dispose()
+    fun dispose()// = close()
 }

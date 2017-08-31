@@ -14,13 +14,15 @@ fun <T> multi(
 
 abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithLambda<T>, WithPublishOn {
     companion object {
-        @JvmStatic fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
+        @JvmStatic
+        fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
             for (x in start until start + count) send(x)
         }
     }
 
     // functions from WithCallbacks
     override abstract fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
+
     override abstract fun doOnNext(onNext: (T) -> Unit): Multi<T>
     override abstract fun doOnError(onError: (Throwable) -> Unit): Multi<T>
     override abstract fun doOnComplete(onComplete: () -> Unit): Multi<T>
@@ -122,6 +124,20 @@ internal class MultiImpl<T> internal constructor(override val delegate: Publishe
     }
 
     override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T> {
-        return MultiImpl(PublisherWithPublishOn(this, scheduler, delayError, prefetch))
+        return multi(scheduler.context) {
+            val channel = SubscriberPublishOn<T>(delayError, prefetch)
+            this@MultiImpl.subscribe(channel)
+            channel.use { chan ->
+                var count = 0
+                for (x in chan) {
+                    count++
+                    send(x)
+                    if (count == prefetch) {
+                        count = 0
+                        channel.subscription?.request(prefetch.toLong())
+                    }
+                }
+            }
+        }
     }
 }

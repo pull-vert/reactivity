@@ -110,18 +110,18 @@ fun Subscriber<*>.cancelledSubscription(): Subscription {
     return CancelledSubscription.INSTANCE
 }
 
-///**
-// * Map an "operator" error. The
-// * result error will be passed via onError to the operator downstream after
-// * checking for fatal error via
-// * [Exceptions.throwIfFatal].
-// *
-// * @param error the callback or operator error
-// * @return mapped [Throwable]
-// */
-//fun Subscriber<*>.onOperatorError(error: Throwable): Throwable {
-//    return onOperatorError(null, error, null)
-//}
+/**
+ * Map an "operator" error. The
+ * result error will be passed via onError to the operator downstream after
+ * checking for fatal error via
+ * [Exceptions.throwIfFatal].
+ *
+ * @param error the callback or operator error
+ * @return mapped [Throwable]
+ */
+fun Subscriber<*>.onOperatorError(error: Throwable): Throwable {
+    return onOperatorError(null, error, null)
+}
 
 /**
  * Map an "operator" error given an operator parent [Subscription]. The
@@ -198,7 +198,7 @@ fun Subscriber<*>.onErrorDropped(e: Throwable) {
 fun Subscriber<*>.validateSubscription(current: Subscription?, next: Subscription): Boolean {
     if (current != null) {
         next.cancel()
-        //reportSubscriptionSet();
+        //reportSubscriptionSet()
         return false
     }
 

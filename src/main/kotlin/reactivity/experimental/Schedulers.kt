@@ -6,15 +6,16 @@ import kotlin.coroutines.experimental.EmptyCoroutineContext
 abstract class Schedulers private constructor() {
 
     companion object {
-        @JvmStatic fun emptyCoroutineContext():Scheduler {
-            return object: Scheduler {
-                override val context: CoroutineContext
-                    get() = EmptyCoroutineContext
-            }
+        @JvmStatic fun emptyCoroutineContext(): Scheduler {
+            return SchedulerImpl(EmptyCoroutineContext)
         }
+
+        private class SchedulerImpl (override val context: CoroutineContext) : Scheduler
     }
+
+
 }
 
-interface Scheduler {
-    val context: CoroutineContext
+interface Scheduler /*: Disposable*/ {
+   val context: CoroutineContext
 }
