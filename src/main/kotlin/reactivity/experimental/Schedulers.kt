@@ -1,9 +1,6 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.asCoroutineDispatcher
-import kotlinx.coroutines.experimental.newFixedThreadPoolContext
-import kotlinx.coroutines.experimental.newSingleThreadContext
+import kotlinx.coroutines.experimental.*
 import java.util.concurrent.Executor
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
@@ -25,6 +22,10 @@ abstract class Schedulers private constructor() {
 
         @JvmStatic fun fixedThreadPoolContext(nThreads: Int): Scheduler {
             return SchedulerImpl(newFixedThreadPoolContext(nThreads, "fixedThread"))
+        }
+
+        @JvmStatic fun unconfinedThreadContext(): Scheduler {
+            return SchedulerImpl(Unconfined)
         }
 
         @JvmStatic fun fromExecutor(exectutor: Executor): Scheduler {
