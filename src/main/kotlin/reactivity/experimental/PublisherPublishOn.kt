@@ -1,5 +1,8 @@
 package reactivity.experimental
 
+import kotlinx.coroutines.experimental.channels.LinkedListChannel
+import kotlinx.coroutines.experimental.channels.SubscriptionReceiveChannel
+import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactivity.experimental.internal.util.validateSubscription
 
@@ -12,9 +15,8 @@ interface WithPublishOn {
     fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): WithPublishOn
 }
 
-internal class SubscriberPublishOn<T>
-internal constructor(val delayError: Boolean, val prefetch: Int) :
-        AbstractSubscriptionChannel<T>() {
+internal class SubscriberPublishOn<T> internal constructor(val delayError: Boolean, val prefetch: Int) :
+        LinkedListChannel<T>(), SubscriptionReceiveChannel<T>, Subscriber<T> {
 
     @Volatile
     @JvmField
@@ -60,6 +62,11 @@ internal constructor(val delayError: Boolean, val prefetch: Int) :
 
     override fun onComplete() {
         println("SubscriberPublishOn onComplete")
+        close(cause = null)
+    }
+
+    // Subscription overrides
+    override fun close() {
         close(cause = null)
     }
 }
