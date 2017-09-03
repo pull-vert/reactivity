@@ -1,4 +1,4 @@
-package io.http2.koala
+package reactivity.http2.experimental
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch

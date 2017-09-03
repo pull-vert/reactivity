@@ -1,0 +1,85 @@
+//group 'io.reactivity'
+//version '1.0-SNAPSHOT'
+
+buildscript {
+    ext.kotlin_version = '1.1.4-3'
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+//apply plugin: 'kotlin'
+//
+//repositories {
+//    mavenCentral()
+//}
+//
+//dependencies {
+//    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+//}
+//
+//compileKotlin {
+//    kotlinOptions.jvmTarget = "1.8"
+//}
+//compileTestKotlin {
+//    kotlinOptions.jvmTarget = "1.8"
+//}
+
+allprojects {
+    group 'io.reactivity'
+    version '1.0-SNAPSHOT'
+}
+
+subprojects {
+    description = 'Suspending Reactive projects in Kotlin for the JVM'
+
+    apply plugin: 'kotlin'
+
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+
+    dependencies {
+        compile "org.jetbrains.kotlin:kotlin-stdlib"
+
+        testCompile "org.jetbrains.kotlin:kotlin-test-junit"
+        testCompile "org.amshove.kluent:kluent:1.27"
+    }
+
+    kotlin.experimental.coroutines 'enable'
+}
+
+project('reactivity-core') {
+    repositories {
+        // uncomment if need for atomicfu dependency
+//        maven { setUrl("https://dl.bintray.com/kotlin/kotlinx/") }
+        // TODO remove when dev is done, used only for accessing code
+        maven { setUrl("http://repo.spring.io/milestone") }
+    }
+
+    dependencies {
+        compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactive:0.18"
+        /*compile("org.jetbrains.kotlinx:atomicfu:0.6") {
+            exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
+        }*/
+        // Reactive Streams
+        compile "org.reactivestreams:reactive-streams:1.0.1"
+        testCompile "org.reactivestreams:reactive-streams-tck:1.0.1"
+
+        // TODO remove when dev is done, used only for accessing code
+        testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:0.18"
+        testCompile "io.projectreactor:reactor-core:3.1.0.M3"
+    }
+}
+
+project('reactivity-http2') {
+    dependencies {
+        compile(project(":reactivity-core"))
+    }
+}
+
