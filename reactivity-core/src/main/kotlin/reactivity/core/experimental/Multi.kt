@@ -1,12 +1,12 @@
 package reactivity.core.experimental
 
 import kotlinx.coroutines.experimental.channels.ProducerScope
+import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.publish
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
-import kotlinx.coroutines.experimental.reactive.consumeEach
 
 fun <T> multi(
         context: CoroutineContext,
