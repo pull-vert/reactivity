@@ -6,6 +6,7 @@ import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
+import kotlinx.coroutines.experimental.reactive.consumeEach
 
 fun <T> multi(
         context: CoroutineContext,
@@ -15,7 +16,9 @@ fun <T> multi(
 abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithLambda<T>, WithPublishOn {
     companion object {
         @JvmStatic
-        fun range(start: Int, count: Int, context: CoroutineContext = EmptyCoroutineContext): Multi<Int> = multi(context) {
+        fun range(start: Int, count: Int,
+                  context: CoroutineContext = EmptyCoroutineContext
+        ) = multi(context) {
             for (x in start until start + count) send(x)
         }
     }
@@ -138,6 +141,17 @@ internal class MultiImpl<T> internal constructor(override val delegate: Publishe
                     }
                 }
             }
+        }
+    }
+
+    fun <R> fusedFilterMap(
+            context: CoroutineContext,   // the context to execute this coroutine in
+            predicate: (T) -> Boolean,   // the filter predicate
+            mapper: (T) -> R             // the mapper function
+    ) = multi(context) {
+        consumeEach {                // consume the source stream
+            if (predicate(it))       // filter part
+                send(mapper(it))     // map part
         }
     }
 }

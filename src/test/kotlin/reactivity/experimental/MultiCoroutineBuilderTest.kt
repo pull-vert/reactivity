@@ -1,7 +1,6 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.runBlocking
 import kotlinx.coroutines.experimental.rx2.rxFlowable
 import org.amshove.kluent.`should be greater than`
