@@ -1,4 +1,4 @@
-package coroutines
+package kotlinx
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking

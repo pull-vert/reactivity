@@ -3,6 +3,7 @@ package reactivity.core.experimental
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import reactivity.core.experimental.internal.util.*
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
 
 /**
@@ -91,7 +92,7 @@ private class SubscriberCallbacks<T> internal constructor(val parent: PublisherW
 
     override fun onNext(t: T) {
         if (done) {
-            onNextDropped(t)
+            onNextDropped()
             return
         }
         try {

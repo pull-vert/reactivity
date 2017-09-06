@@ -142,7 +142,7 @@ internal open class ReactiveException : RuntimeException {
 
     @Synchronized override fun fillInStackTrace(): Throwable {
         return if (cause != null)
-            (cause as java.lang.Throwable).fillInStackTrace()
+            cause!!.fillInStackTrace()
         else
             super.fillInStackTrace()
     }

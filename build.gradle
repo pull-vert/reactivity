@@ -12,23 +12,6 @@ buildscript {
     }
 }
 
-//apply plugin: 'kotlin'
-//
-//repositories {
-//    mavenCentral()
-//}
-//
-//dependencies {
-//    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
-//}
-//
-//compileKotlin {
-//    kotlinOptions.jvmTarget = "1.8"
-//}
-//compileTestKotlin {
-//    kotlinOptions.jvmTarget = "1.8"
-//}
-
 allprojects {
     group 'io.reactivity'
     version '1.0-SNAPSHOT'
@@ -74,6 +57,13 @@ project('reactivity-core') {
         // TODO remove when dev is done, used only for accessing code
         testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:0.18"
         testCompile "io.projectreactor:reactor-core:3.1.0.M3"
+    }
+
+    compileKotlin {
+        kotlinOptions.jvmTarget = "1.6"
+    }
+    compileTestKotlin {
+        kotlinOptions.jvmTarget = "1.6"
     }
 }
 

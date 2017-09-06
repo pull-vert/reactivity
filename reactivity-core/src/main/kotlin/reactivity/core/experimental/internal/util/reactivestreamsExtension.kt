@@ -1,6 +1,5 @@
 package reactivity.core.experimental.internal.util
 
-import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactivity.core.experimental.Exceptions
@@ -33,8 +32,8 @@ fun <T> Subscription.getAndAddCap(updater: AtomicLongFieldUpdater<T>, instance: 
     var u: Long
     do {
         r = updater.get(instance)
-        if (r == java.lang.Long.MAX_VALUE) {
-            return java.lang.Long.MAX_VALUE
+        if (r == Long.MAX_VALUE) {
+            return Long.MAX_VALUE
         }
         u = addCap(r, toAdd)
     } while (!updater.compareAndSet(instance, r, u))
@@ -53,7 +52,7 @@ fun <T> Subscription.getAndAddCap(updater: AtomicLongFieldUpdater<T>, instance: 
 fun Subscription.addCap(a: Long, b: Long): Long {
     val res = a + b
     return if (res < 0L) {
-        java.lang.Long.MAX_VALUE
+        Long.MAX_VALUE
     } else res
 }
 
@@ -158,7 +157,7 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?,
     val t = Exceptions.unwrap(error)
     if (dataSignal != null) {
         if (dataSignal !== t && dataSignal is Throwable) {
-            (t as java.lang.Throwable).addSuppressed(dataSignal)
+            t.addSuppressed(dataSignal)
         }
         //do not wrap original value to avoid strong references
         /*else {
@@ -170,10 +169,8 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?,
 /**
  * An unexpected event is about to be dropped.
  *
- * @param <T> the dropped value type
- * @param t the dropped data
-</T> */
-fun <T> Subscriber<*>.onNextDropped(t: T) {
+ */
+fun Subscriber<*>.onNextDropped() {
     throw Exceptions.failWithCancel()
 }
 

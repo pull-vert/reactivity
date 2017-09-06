@@ -1,7 +1,5 @@
 package reactivity.core.experimental
 
-import java.io.Closeable
-
 /**
  * Represents a disposable resource.
  */

@@ -8,8 +8,6 @@ import org.amshove.kluent.`should be less than`
 import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 class MultiCoroutineBuilderTest {
 
@@ -23,17 +21,17 @@ class MultiCoroutineBuilderTest {
             }
         }
         // subscribe on another thread with a slow subscriber using Multi
-        var start: Instant? = null
+        var start: Long? = null
         var time: Long? = null
         source = source
                 .publishOn(Schedulers.emptyThreadContext(), false, 2) // specify buffer size of 2 items
                 .doOnSubscribe {
-                    start = Instant.now()
+                    start = System.currentTimeMillis()
                     println("starting timer")
                 }
                 .doOnComplete {
-                    val end = Instant.now()
-                    time = ChronoUnit.MILLIS.between(start, end)
+                    val end = System.currentTimeMillis()
+                    time = end - start!!
                     println("Completed in $time ms")
                 }
 
@@ -57,17 +55,17 @@ class MultiCoroutineBuilderTest {
             }
         }
         // subscribe on another thread with a slow subscriber using Multi
-        var start: Instant? = null
+        var start: Long? = null
         var time: Long? = null
         source = source
                 .publishOn(Schedulers.commonPoolThreadContext(), false, 2) // specify buffer size of 2 items
                 .doOnSubscribe {
-                    start = Instant.now()
+                    start = System.currentTimeMillis()
                     println("starting timer")
                 }
                 .doOnComplete {
-                    val end = Instant.now()
-                    time = ChronoUnit.MILLIS.between(start, end)
+                    val end = System.currentTimeMillis()
+                    time = end - start!!
                     println("Completed in $time ms")
                 }
 
@@ -84,7 +82,7 @@ class MultiCoroutineBuilderTest {
     @Test
     fun `multi builder publishOn emptyThreadContext 2 consumers`() = runBlocking {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var start: Instant? = null
+        var start: Long? = null
         var time: Long?
         val source = multi(coroutineContext) {
             for (x in 1..3) {
@@ -93,11 +91,11 @@ class MultiCoroutineBuilderTest {
             }
         }
                 .doOnSubscribe {
-                    start = Instant.now()
+                    start = System.currentTimeMillis()
                 }
                 .doOnComplete {
-                    val end = Instant.now()
-                    time = ChronoUnit.MILLIS.between(start, end)
+                    val end = System.currentTimeMillis()
+                    time = end - start!!
                     println("Completed in $time ms")
                 }
 
