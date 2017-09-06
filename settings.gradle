@@ -1,2 +1,2 @@
-include 'reactivity-core', 'reactivity-http2'
+include 'reactivity-core', 'reactivity-http2', 'reactivity-core-jre8'
 
