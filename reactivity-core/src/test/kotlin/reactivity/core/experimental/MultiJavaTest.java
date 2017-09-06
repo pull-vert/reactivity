@@ -6,7 +6,7 @@ import org.junit.Test;
 
 public class MultiJavaTest {
     @Test
-    public void fromJavaTest() {
+    public void rangeJavaTest() {
         Multi.range(1, 3, CoroutineContexts.emptyCoroutineContext())
                 .subscribe(new Function1<Integer, Unit>() {
                     @Override
@@ -15,5 +15,10 @@ public class MultiJavaTest {
                         return null;
                     }
                 });
+//        // for coming java 8 module test
+//        .subscribe((value) -> {
+//            System.out.println(value);
+//            return null;
+//        });
     }
 }
