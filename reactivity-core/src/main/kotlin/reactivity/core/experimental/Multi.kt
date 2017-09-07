@@ -175,7 +175,7 @@ internal class MultiImpl<T> internal constructor(override val delegate: Publishe
      * Returns a [Solo] containing the first value that satisfies the given [predicate]
      * or empty, if it doesn't
      */
-    fun find(
+    fun findFirst(
             context: CoroutineContext, // the context to execute this coroutine in
             predicate: (T) -> Boolean   // the filter predicate
     ) = solo(context) {
