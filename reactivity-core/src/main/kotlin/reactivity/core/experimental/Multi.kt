@@ -1,8 +1,12 @@
 package reactivity.core.experimental
 
 import kotlinx.coroutines.experimental.channels.ProducerScope
+import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.reactive.awaitFirst
 import kotlinx.coroutines.experimental.reactive.consumeEach
+import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.reactive.publish
+import kotlinx.coroutines.experimental.selects.whileSelect
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
 import kotlin.coroutines.experimental.CoroutineContext
@@ -144,10 +148,98 @@ internal class MultiImpl<T> internal constructor(override val delegate: Publishe
         }
     }
 
-    fun <R> fusedFilterMap(
-            context: CoroutineContext,   // the context to execute this coroutine in
-            predicate: (T) -> Boolean,   // the filter predicate
+    // Operators
+
+    fun <R> map(
+            context: CoroutineContext, // the context to execute this coroutine in
             mapper: (T) -> R             // the mapper function
+    ) = multi(context) {
+        consumeEach {
+            // consume the source stream
+            send(mapper(it))     // map
+        }
+    }
+
+    fun filter(
+            context: CoroutineContext, // the context to execute this coroutine in
+            predicate: (T) -> Boolean   // the filter predicate
+    ) = multi(context) {
+        consumeEach {
+            // consume the source stream
+            if (predicate(it))       // filter
+                send(it)
+        }
+    }
+
+    /**
+     * Returns a [Solo] containing the first value that satisfies the given [predicate]
+     * or empty, if it doesn't
+     */
+    fun find(
+            context: CoroutineContext, // the context to execute this coroutine in
+            predicate: (T) -> Boolean   // the filter predicate
+    ) = solo(context) {
+        consumeEach {
+            openSubscription().use { channel ->
+                // open channel to the source
+                for (x in channel) { // iterate over the channel to receive elements from it
+                    if (predicate(x)) {       // filter 1 item
+                        send(x)
+                        break
+                    }
+                    // `use` will close the channel when this block of code is complete
+                }
+            }
+        }
+        // TODO make a unit test to verify what happends when no item satisfies the predicate
+    }
+
+    fun <R> flatMap(
+            context: CoroutineContext, // the context to execute this coroutine in
+            mapper: (T) -> Publisher<R>             // the mapper function
+    ) = multi(context) {
+        consumeEach {
+            // consume the source stream
+            val pub = mapper(it)
+            launch(coroutineContext) {
+                // launch a child coroutine
+                pub.consumeEach { send(it) }    // resend all element from this publisher
+            }
+        }
+    }
+
+    fun <U> takeUntil(context: CoroutineContext, other: Publisher<U>) = multi(context) {
+        openSubscription().use { thisChannel ->
+            // explicitly open channel to Publisher<T>
+            other.openSubscription().use { otherChannel ->
+                // explicitly open channel to Publisher<U>
+                whileSelect {
+                    otherChannel.onReceive { false }          // bail out on any received element from `other`
+                    thisChannel.onReceive { send(it); true }  // resend element from this channel and continue
+                }
+            }
+        }
+    }
+
+    fun mergeWith(context: CoroutineContext, other: Publisher<T>) = multi(context) {
+        launch(coroutineContext) {
+            /** launch a first child coroutine for this [Multi] */
+            consumeEach {
+                send(it)
+            }
+        }
+        launch(coroutineContext) {
+            /** launch a second child coroutine for the [other] [Publisher] */
+            other.consumeEach {
+                send(it)
+            }
+        }
+    }
+
+    fun <R> fusedFilterMap(
+            context: CoroutineContext, // the context to execute this coroutine in
+            predicate: (T) -> Boolean, // the filter predicate
+            mapper: (T) -> R           // the mapper function
     ) = multi(context) {
         consumeEach {
             // consume the source stream
