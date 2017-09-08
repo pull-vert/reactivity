@@ -8,6 +8,7 @@ import org.amshove.kluent.`should be less than`
 import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
+import reactor.core.publisher.Flux
 
 class MultiCoroutineBuilderTest {
 
@@ -132,6 +133,9 @@ class MultiCoroutineBuilderTest {
                     Thread.sleep(500) // 500ms to process each item
                     println("Processed $x")
                 }
+
+//        Flux.fromArray(intArrayOf(1, 2, 3).toTypedArray())
+//                .groupBy
         delay(2000) // suspend the main thread for a few seconds
     }
 }
