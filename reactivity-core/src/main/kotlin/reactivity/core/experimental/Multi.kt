@@ -1,11 +1,9 @@
 package reactivity.core.experimental
 
 import kotlinx.coroutines.experimental.channels.ProducerScope
+import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.reactive.awaitFirst
-import kotlinx.coroutines.experimental.reactive.consumeEach
-import kotlinx.coroutines.experimental.reactive.openSubscription
-import kotlinx.coroutines.experimental.reactive.publish
+import kotlinx.coroutines.experimental.reactive.*
 import kotlinx.coroutines.experimental.selects.whileSelect
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
@@ -29,7 +27,6 @@ abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, W
 
     // functions from WithCallbacks
     override abstract fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
-
     override abstract fun doOnNext(onNext: (T) -> Unit): Multi<T>
     override abstract fun doOnError(onError: (Throwable) -> Unit): Multi<T>
     override abstract fun doOnComplete(onComplete: () -> Unit): Multi<T>
@@ -41,7 +38,7 @@ abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, W
     override abstract fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
 }
 
-internal class MultiImpl<T> internal constructor(override val delegate: Publisher<T>) : Multi<T>(), PublisherDelegated<T> {
+open internal class MultiImpl<T> internal constructor(override final val delegate: Publisher<T>) : Multi<T>(), PublisherDelegated<T> {
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
@@ -234,6 +231,33 @@ internal class MultiImpl<T> internal constructor(override val delegate: Publishe
                 send(it)
             }
         }
+    }
+
+    fun <R> groupBy(
+            context: CoroutineContext, // the context to execute this coroutine in
+            keyMapper: (T) -> R             // the key mapper function
+    ): Multi<GroupedMulti<T, R>> = multi(context) {
+        var key: R
+        var groupedMulti: GroupedMulti<T, R>
+        var groupedMultiMap = mutableMapOf<R, GroupedMulti<T, R>>()
+        consumeEach {
+            key = keyMapper(it)
+            if (groupedMultiMap.containsKey(key)) { // this GroupedMulti exists already
+                groupedMulti = groupedMultiMap[key]!!
+            } else { // have to create a new GroupedMulti
+                val jobProduce = produce<T>(coroutineContext, 0) {
+                    // TODO test without the line under this (but will certainly not work)
+                    while (isActive) { } // cancellable computation loop
+                }
+                groupedMulti = GroupedMulti(jobProduce, coroutineContext, key) // creates the new GroupedMulti
+                groupedMultiMap[key] = groupedMulti
+                send(groupedMulti)      // sends the newly created GroupedMulti
+            }
+
+            (groupedMulti.producerJob as ProducerScope<T>).send(it)
+        }
+        // when all the items from current channel are consumed, cancel every GroupedMulti (to stop the computation loop)
+        groupedMultiMap.forEach { _, u -> u.producerJob.cancel()  }
     }
 
     fun <R> fusedFilterMap(
