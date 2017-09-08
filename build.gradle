@@ -1,6 +1,3 @@
-//group 'io.reactivity'
-//version '1.0-SNAPSHOT'
-
 buildscript {
     ext.kotlin_version = '1.1.4-3'
 
@@ -36,11 +33,3 @@ subprojects {
 
     kotlin.experimental.coroutines 'enable'
 }
-
-//    compileKotlin {
-//        kotlinOptions.jvmTarget = "1.6"
-//    }
-//    compileTestKotlin {
-//        kotlinOptions.jvmTarget = "1.6"
-//    }
-
