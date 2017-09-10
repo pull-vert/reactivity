@@ -242,8 +242,8 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         var key: R
 //        var groupedMulti: GroupedMulti<T>
         var groupedMulti: ChannelMulti<T>
-//        var groupedMultiMap = mutableMapOf<R, GroupedMulti<T>>()
-        var groupedMultiMap = mutableMapOf<R, ChannelMulti<T>>()
+//        val groupedMultiMap = mutableMapOf<R, GroupedMulti<T>>()
+        val groupedMultiMap = mutableMapOf<R, ChannelMulti<T>>()
         consumeEach {
             key = keyMapper(it)
             if (groupedMultiMap.containsKey(key)) { // this GroupedMulti exists already
@@ -265,8 +265,10 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         }
         // when all the items from current channel are consumed, cancel every GroupedMulti (to stop the computation loop)
 //        groupedMultiMap.forEach { _, u -> u.producerJob.cancel()  }
-        groupedMultiMap.forEach { _, u -> u.channel.close() }
+        groupedMultiMap.forEach { entry -> entry.value.channel.close() }
         }
+
+    // Combined Operators
 
     fun <R> fusedFilterMap(
             context: CoroutineContext, // the context to execute this coroutine in
