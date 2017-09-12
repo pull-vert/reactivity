@@ -12,10 +12,13 @@ import kotlin.coroutines.experimental.EmptyCoroutineContext
  * @see https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/-completable-deferred/index.html
  */
 fun <T> solo(
-        context: CoroutineContext,
+        scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): Solo<T> = SoloImpl(publish(context, block))
+): Solo<T> = SoloImpl(publish(scheduler.context, block))
 
+/**
+ * @author Frédéric Montariol
+ */
 abstract class Solo<T> : Publisher<T> {
  fun asyncFun() {
      async(EmptyCoroutineContext) {
