@@ -17,7 +17,7 @@ fun <T> multi(
         block: suspend ProducerScope<T>.() -> Unit
 ): Multi<T> = MultiImpl(publish(context, block))
 
-abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithPublishOn {
+abstract class Multi<T> protected constructor() : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithPublishOn {
     companion object {
         @JvmStatic
         fun range(start: Int, count: Int,
