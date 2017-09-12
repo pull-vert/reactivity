@@ -9,26 +9,36 @@ import kotlinx.coroutines.experimental.reactive.publish
 import kotlinx.coroutines.experimental.selects.whileSelect
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
-import kotlin.coroutines.experimental.CoroutineContext
-import kotlin.coroutines.experimental.EmptyCoroutineContext
 
 fun <T> multi(
-        context: CoroutineContext,
+        scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): Multi<T> = MultiImpl(publish(context, block))
+): Multi<T> = MultiImpl(publish(scheduler.context, block))
 
+/**
+ * @author Frédéric Montariol
+ */
 abstract class Multi<T> protected constructor() : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithPublishOn {
     companion object {
+        // Static factory methods to create a Multi
         @JvmStatic
-        fun range(start: Int, count: Int,
-                  context: CoroutineContext = EmptyCoroutineContext
-        ) = multi(context) {
+        fun fromRange(start: Int, count: Int,
+                      scheduler: Scheduler = Schedulers.emptyThreadContext()
+        ) = multi(scheduler) {
             for (x in start until start + count) send(x)
+        }
+
+        @JvmStatic
+        fun <T> fromIterable(iterable: Iterable<T>,
+                             scheduler: Scheduler = Schedulers.emptyThreadContext()
+        ) = multi(scheduler) {
+            for (x in iterable) send(x)
         }
     }
 
     // functions from WithCallbacks
     override abstract fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
+
     override abstract fun doOnNext(onNext: (T) -> Unit): Multi<T>
     override abstract fun doOnError(onError: (Throwable) -> Unit): Multi<T>
     override abstract fun doOnComplete(onComplete: () -> Unit): Multi<T>
@@ -36,11 +46,96 @@ abstract class Multi<T> protected constructor() : Publisher<T>, PublisherCommons
     override abstract fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
     override abstract fun doFinally(finally: () -> Unit): Multi<T>
 
-    // functions from WithPublishOn
+    // function from WithPublishOn
     override abstract fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
+
+    // Operators specific to Multi
+
+    /**
+     * Returns a [Multi] that use the [mapper] to transform each received element from [T]
+     * to [R] and then send it when transformation is done
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param mapper the mapper function
+     */
+    abstract fun <R> map(scheduler: Scheduler, mapper: (T) -> R): Multi<R>
+
+    /**
+     * Returns a [Multi] that filters each received element, sending it
+     * only if [predicate] is satisfied
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param predicate the filter predicate
+     */
+    abstract fun filter(scheduler: Scheduler, predicate: (T) -> Boolean): Multi<T>
+
+    /**
+     * Returns a [Solo] containing the first received element that satisfies the given [predicate],
+     * or empty if no received element satisfies it
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param predicate the filter predicate
+     */
+    abstract fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): Solo<T>
+
+    /**
+     * Returns a [Multi]<R> that use the [mapper] to transform each received element from [T]
+     * to [Publisher]<R> and then send each received element of this [Publisher]
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param mapper the mapper function
+     */
+    abstract fun <R> flatMap(scheduler: Scheduler, mapper: (T) -> Publisher<R>): Multi<R>
+
+    /**
+     * Returns a [Multi] that relay all the received elements from the source stream until the
+     * other stream either completes or emits anything
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param other the other publisher
+     */
+    abstract fun <U> takeUntil(scheduler: Scheduler, other: Publisher<U>): Multi<T>
+
+    /**
+     * Returns a [Multi] that flattens the source streams with the parameter [Publisher] into
+     * a single Publisher, without any transformation
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param other the other publisher
+     */
+    abstract fun mergeWith(scheduler: Scheduler, other: Publisher<T>): Multi<T>
+
+    /**
+     * Returns a [Multi] that can contain several [MultiChannel], each is a group of received elements from
+     * the source stream that are related with the same key
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param keyMapper a function that extracts the key for each item
+     */
+    abstract fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R): Multi<MultiChannel<T>>
+
+    /**
+     * Returns a [Multi] that will send the [n] first received elements from the source stream
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param n number of items to send
+     */
+    abstract fun take(scheduler: Scheduler, n: Long): Multi<T>
+
+    // Combined Operators
+
+    /**
+     * Returns a [Multi] that filters each received element, sending it only if [predicate] is satisfied,
+     * if so it uses the [mapper] to transform each element from [T] to [R] type
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param predicate the filter predicate
+     * @param mapper the mapper function
+     */
+    abstract fun <R> fusedFilterMap(scheduler: Scheduler, predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
 }
 
-open internal class MultiImpl<T> internal constructor(override final val delegate: Publisher<T>) : Multi<T>(), PublisherDelegated<T> {
+open class MultiImpl<T> internal constructor(override final val delegate: Publisher<T>) : Multi<T>(), PublisherDelegated<T> {
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
@@ -58,6 +153,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
             delegate.onNextBlock = onNext
             return this
         }
+        // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onNextBlock = onNext
         return MultiImpl(publisherCallbacks)
@@ -68,6 +164,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
             delegate.onErrorBlock = onError
             return this
         }
+        // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onErrorBlock = onError
         return MultiImpl(publisherCallbacks)
@@ -78,6 +175,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
             delegate.onCompleteBlock = onComplete
             return this
         }
+        // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onCompleteBlock = onComplete
         return MultiImpl(publisherCallbacks)
@@ -88,6 +186,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
             delegate.onCancelBlock = onCancel
             return this
         }
+        // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onCancelBlock = onCancel
         return MultiImpl(publisherCallbacks)
@@ -98,6 +197,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
             delegate.onRequestBlock = onRequest
             return this
         }
+        // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onRequestBlock = onRequest
         return MultiImpl(publisherCallbacks)
@@ -108,13 +208,14 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
             delegate.finallyBlock = finally
             return this
         }
+        // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.finallyBlock = finally
         return MultiImpl(publisherCallbacks)
     }
 
     override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T> {
-        return multi(scheduler.context) {
+        return multi(scheduler) {
             val channel = SubscriberPublishOn<T>(delayError, prefetch)
             this@MultiImpl.subscribe(channel)
             channel.use { chan ->
@@ -133,20 +234,14 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
 
     // Operators
 
-    fun <R> map(
-            context: CoroutineContext, // the context to execute this coroutine in
-            mapper: (T) -> R             // the mapper function
-    ) = multi(context) {
+    override fun <R> map(scheduler: Scheduler, mapper: (T) -> R) = multi(scheduler) {
         consumeEach {
             // consume the source stream
             send(mapper(it))     // map
         }
     }
 
-    fun filter(
-            context: CoroutineContext, // the context to execute this coroutine in
-            predicate: (T) -> Boolean   // the filter predicate
-    ) = multi(context) {
+    override fun filter(scheduler: Scheduler, predicate: (T) -> Boolean) = multi(scheduler) {
         consumeEach {
             // consume the source stream
             if (predicate(it))       // filter
@@ -154,14 +249,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         }
     }
 
-    /**
-     * Returns a [Solo] containing the first value that satisfies the given [predicate]
-     * or empty, if it doesn't
-     */
-    fun findFirst(
-            context: CoroutineContext, // the context to execute this coroutine in
-            predicate: (T) -> Boolean   // the filter predicate
-    ) = solo(context) {
+    override fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean) = solo(scheduler) {
         consumeEach {
             openSubscription().use { channel ->
                 // open channel to the source
@@ -177,21 +265,18 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         // TODO make a unit test to verify what happends when no item satisfies the predicate
     }
 
-    fun <R> flatMap(
-            context: CoroutineContext, // the context to execute this coroutine in
-            mapper: (T) -> Publisher<R>             // the mapper function
-    ) = multi(context) {
+    override fun <R> flatMap(scheduler: Scheduler, mapper: (T) -> Publisher<R>) = multi(scheduler) {
         consumeEach {
             // consume the source stream
             val pub = mapper(it)
             launch(coroutineContext) {
                 // launch a child coroutine
-                pub.consumeEach { send(it) }    // resend all element from this publisher
+                pub.consumeEach { send(it) }    // send every element from this publisher
             }
         }
     }
 
-    fun <U> takeUntil(context: CoroutineContext, other: Publisher<U>) = multi(context) {
+    override fun <U> takeUntil(scheduler: Scheduler, other: Publisher<U>) = multi(scheduler) {
         openSubscription().use { thisChannel ->
             // explicitly open channel to Publisher<T>
             other.openSubscription().use { otherChannel ->
@@ -204,7 +289,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         }
     }
 
-    fun mergeWith(context: CoroutineContext, other: Publisher<T>) = multi(context) {
+    override fun mergeWith(scheduler: Scheduler, other: Publisher<T>) = multi(scheduler) {
         launch(coroutineContext) {
             /** launch a first child coroutine for this [Multi] */
             consumeEach {
@@ -219,10 +304,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         }
     }
 
-    fun <R> groupBy(
-            context: CoroutineContext, // the context to execute this coroutine in
-            keyMapper: (T) -> R             // the key mapper function
-    ): Multi<MultiChannel<T>> = multi(context) {
+    override fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R) = multi(scheduler) {
         var key: R
 //        var multiChannel: GroupedMulti<T>
         var multiChannel: MultiChannel<T>
@@ -253,10 +335,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         groupedMultiMap.forEach { entry -> entry.value.channel.close() }
     }
 
-    fun take(
-            context: CoroutineContext, // the context to execute this coroutine in
-            n: Long) // number of items to send
-            = multi(context) {
+    override fun take(scheduler: Scheduler, n: Long) = multi(scheduler) {
         openSubscription().use { channel ->
             // explicitly open channel to Publisher<T>
             var count = 0L
@@ -265,16 +344,13 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
                 count++
                 if (count == n) break
             }
+            // `use` will close the channel when this block of code is complete
         }
     }
 
     // Combined Operators
 
-    fun <R> fusedFilterMap(
-            context: CoroutineContext, // the context to execute this coroutine in
-            predicate: (T) -> Boolean, // the filter predicate
-            mapper: (T) -> R           // the mapper function
-    ) = multi(context) {
+    override fun <R> fusedFilterMap(scheduler: Scheduler, predicate: (T) -> Boolean, mapper: (T) -> R) = multi(scheduler) {
         consumeEach {
             // consume the source stream
             if (predicate(it))       // filter part
