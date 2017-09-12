@@ -238,30 +238,30 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
     fun <R> groupBy(
             context: CoroutineContext, // the context to execute this coroutine in
             keyMapper: (T) -> R             // the key mapper function
-    ): Multi<ChannelMulti<T>> = multi(context) {
+    ): Multi<MultiChannel<T>> = multi(context) {
         var key: R
-//        var groupedMulti: GroupedMulti<T>
-        var groupedMulti: ChannelMulti<T>
+//        var multiChannel: GroupedMulti<T>
+        var multiChannel: MultiChannel<T>
 //        val groupedMultiMap = mutableMapOf<R, GroupedMulti<T>>()
-        val groupedMultiMap = mutableMapOf<R, ChannelMulti<T>>()
+        val groupedMultiMap = mutableMapOf<R, MultiChannel<T>>()
         consumeEach {
             key = keyMapper(it)
             if (groupedMultiMap.containsKey(key)) { // this GroupedMulti exists already
-                groupedMulti = groupedMultiMap[key]!!
+                multiChannel = groupedMultiMap[key]!!
             } else { // have to create a new GroupedMulti
                 val channel = LinkedListChannel<T>()
 //                val jobProduce = produce<T>(coroutineContext, 0) {
 //                    // TODO test without the line under this (but will certainly not work)
 //                    while (isActive) { } // cancellable computation loop
 //                }
-//                groupedMulti = GroupedMulti(jobProduce, coroutineContext, key) // creates the new GroupedMulti
-                groupedMulti = ChannelMulti(coroutineContext, channel)
-                groupedMultiMap[key] = groupedMulti
-                send(groupedMulti)      // sends the newly created GroupedMulti
+//                multiChannel = GroupedMulti(jobProduce, coroutineContext, key) // creates the new GroupedMulti
+                multiChannel = MultiChannel(coroutineContext, channel)
+                groupedMultiMap[key] = multiChannel
+                send(multiChannel)      // sends the newly created GroupedMulti
             }
 
-//            (groupedMulti.producerJob as ProducerScope<T>).send(it)
-            groupedMulti.channel.send(it)
+//            (multiChannel.producerJob as ProducerScope<T>).send(it)
+            multiChannel.channel.send(it)
         }
         // when all the items from current channel are consumed, cancel every GroupedMulti (to stop the computation loop)
 //        groupedMultiMap.forEach { _, u -> u.producerJob.cancel()  }
