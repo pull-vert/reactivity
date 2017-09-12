@@ -1,6 +1,6 @@
 package reactivity.core.experimental
 
-import kotlinx.coroutines.experimental.channels.LinkedListChannel
+import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.reactive.consumeEach
@@ -234,7 +234,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
             if (groupedMultiMap.containsKey(key)) { // this GroupedMulti exists already
                 multiChannel = groupedMultiMap[key]!!
             } else { // have to create a new GroupedMulti
-                val channel = LinkedListChannel<T>()
+                val channel = Channel<T>(Channel.UNLIMITED)
 //                val jobProduce = produce<T>(coroutineContext, 0) {
 //                    // TODO test without the line under this (but will certainly not work)
 //                    while (isActive) { } // cancellable computation loop
