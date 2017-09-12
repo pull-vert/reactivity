@@ -59,7 +59,7 @@ internal class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null, pr
         if (validateSubscription(subscription, s)) {
             this.subscription = s
             try {
-                this.onSubscribe?.invoke(s) ?: s.request(java.lang.Long.MAX_VALUE)
+                this.onSubscribe?.invoke(s) ?: s.request(Long.MAX_VALUE)
             } catch (t: Throwable) {
                 Exceptions.throwIfFatal(t)
                 s.cancel()

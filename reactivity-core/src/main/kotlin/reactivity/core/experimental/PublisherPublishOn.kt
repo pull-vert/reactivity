@@ -44,7 +44,7 @@ internal class SubscriberPublishOn<T> internal constructor(val delayError: Boole
         println("SubscriberPublishOn initialRequest " + prefetch)
         // In this function we need that the subscription is not null, so use of !!
         if (prefetch == Integer.MAX_VALUE) {
-            subscription!!.request(java.lang.Long.MAX_VALUE)
+            subscription!!.request(Long.MAX_VALUE)
         } else {
             subscription!!.request(prefetch.toLong())
         }
