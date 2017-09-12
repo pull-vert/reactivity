@@ -7,7 +7,7 @@ import org.junit.Test;
 public class MultiJavaTest {
     @Test
     public void rangeJavaTest() {
-        Multi.range(1, 3, CoroutineContexts.emptyCoroutineContext())
+        Multi.fromRange(1, 3, Schedulers.emptyThreadContext())
                 .subscribe(new Function1<Integer, Unit>() {
                     @Override
                     public Unit invoke(Integer value) {

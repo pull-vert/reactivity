@@ -10,7 +10,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range 2 consumers`() = runBlocking {
         // create a publisher that produces numbers from 1 to 3
-        val source = Multi.range(1, 3)
+        val source = Multi.fromRange(1, 3)
         // print elements from the source
         var count = 0
         println("first consumer:")
@@ -32,7 +32,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range subscription with cancellation`() = runBlocking {
         // create a publisher that produces numbers from 1 to 5
-        val source = Multi.range(1, 5)
+        val source = Multi.fromRange(1, 5)
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
         // print elements from the source
@@ -49,7 +49,7 @@ class MultiFromRangeTest {
 
     @Test
     fun `multi from range subscription without cancellation`() = runBlocking<Unit> {
-        val source = Multi.range(1, 5) // a range of five numbers
+        val source = Multi.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
         // iterate over the source fully
@@ -59,14 +59,14 @@ class MultiFromRangeTest {
         we start with runBlocking coroutine builder. Our main coroutine receives on
         the channel using source.consumeEach { ... } expression.
         The main coroutine is suspended while it waits for the source to emit an item.
-        When the last item is emitted by Multi.range(1, 5) it resumes the main coroutine,
+        When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,
         which gets dispatched onto the main thread to print this last element at
         a later point in time, while the source completes and prints "Finally". */
     }
 
     @Test
     fun `multi from range subscription with subscribe onNext function`() = runBlocking<Unit> {
-        val source = Multi.range(1, 5) // a range of five numbers
+        val source = Multi.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
         // iterate over the source fully

@@ -8,14 +8,13 @@ import org.amshove.kluent.`should be less than`
 import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
-import reactor.core.publisher.Flux
 
 class MultiCoroutineBuilderTest {
 
     @Test
     fun `multi builder publishOn emptyThreadContext`() = runBlocking {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(coroutineContext) {
+        var source = multi(Schedulers.fromCoroutineContext(coroutineContext)) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item
@@ -49,7 +48,7 @@ class MultiCoroutineBuilderTest {
     @Test
     fun `multi builder publishOn CommonPool`() = runBlocking {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(coroutineContext) {
+        var source = multi(Schedulers.fromCoroutineContext(coroutineContext)) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item
@@ -85,7 +84,7 @@ class MultiCoroutineBuilderTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?
-        val source = multi(coroutineContext) {
+        val source = multi(Schedulers.fromCoroutineContext(coroutineContext)) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item
