@@ -17,7 +17,7 @@ fun <T> multi(
         block: suspend ProducerScope<T>.() -> Unit
 ): Multi<T> = MultiImpl(publish(context, block))
 
-abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithLambda<T>, WithPublishOn {
+abstract class Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithPublishOn {
     companion object {
         @JvmStatic
         fun range(start: Int, count: Int,
@@ -111,22 +111,6 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.finallyBlock = finally
         return MultiImpl(publisherCallbacks)
-    }
-
-    override fun subscribe(onNext: (T) -> Unit): Disposable {
-        return subscribeWith(SubscriberLambda(onNext))
-    }
-
-    override fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): Disposable {
-        return subscribeWith(SubscriberLambda(onNext, onError))
-    }
-
-    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): Disposable {
-        return subscribeWith(SubscriberLambda(onNext, onError, onComplete))
-    }
-
-    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): Disposable {
-        return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
     }
 
     override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T> {
@@ -245,6 +229,7 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
 //        val groupedMultiMap = mutableMapOf<R, GroupedMulti<T>>()
         val groupedMultiMap = mutableMapOf<R, MultiChannel<T>>()
         consumeEach {
+            // consume the source stream
             key = keyMapper(it)
             if (groupedMultiMap.containsKey(key)) { // this GroupedMulti exists already
                 multiChannel = groupedMultiMap[key]!!
@@ -266,7 +251,22 @@ open internal class MultiImpl<T> internal constructor(override final val delegat
         // when all the items from current channel are consumed, cancel every GroupedMulti (to stop the computation loop)
 //        groupedMultiMap.forEach { _, u -> u.producerJob.cancel()  }
         groupedMultiMap.forEach { entry -> entry.value.channel.close() }
+    }
+
+    fun take(
+            context: CoroutineContext, // the context to execute this coroutine in
+            n: Long) // number of items to send
+            = multi(context) {
+        openSubscription().use { channel ->
+            // explicitly open channel to Publisher<T>
+            var count = 0L
+            for (c in channel) {
+                send(c)
+                count++
+                if (count == n) break
+            }
         }
+    }
 
     // Combined Operators
 
