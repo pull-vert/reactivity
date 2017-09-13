@@ -1,8 +1,6 @@
 package reactivity.core.experimental
 
-import kotlinx.coroutines.experimental.Deferred
 import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
 
 /** TODO implement the Solo Publisher
  * @see https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/async.html
