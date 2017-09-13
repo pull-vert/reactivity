@@ -16,10 +16,8 @@ abstract class Solo<T> : Publisher<T> {
 
 }
 
-internal class SoloImpl<T> internal constructor(val block: (Subscriber<T>) -> Deferred<T?>) : Solo<T>() {
-    lateinit var value: Deferred<T?>
-
+internal class SoloImpl<T> internal constructor(val block: (Subscriber<in T>) -> Unit) : Solo<T>() {
     override fun subscribe(s: Subscriber<in T>) {
-        value = block(s as Subscriber<T>)
+        block(s)
     }
 }
