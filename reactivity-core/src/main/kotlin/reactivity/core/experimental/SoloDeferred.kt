@@ -95,7 +95,7 @@ interface ConsumeOrClosed<in E> {
     fun completeResumeConsume(token: Any)
 }
 
-private abstract class Receive<in E> : LockFreeLinkedListNode(), ConsumeOrClosed<E> {
+private abstract class Consume<in E> : LockFreeLinkedListNode(), ConsumeOrClosed<E> {
     override val produceResult get() = PRODUCE_SUCCESS
     abstract fun resumeReceiveClosed(closed: Closed<*>)
 }
@@ -116,6 +116,8 @@ class ProduceElement(
 
 }
 
+/** @suppress **This is unstable API and it is subject to change.** */
+@JvmField val COMPLETE_SUCCESS: Any = Symbol("COMPLETE_SUCCESS")
 /** @suppress **This is unstable API and it is subject to change.** */
 @JvmField val COMPLETE_FAILED: Any = Symbol("COMPLETE_FAILED")
 /** @suppress **This is unstable API and it is subject to change.** */
@@ -144,7 +146,25 @@ class Closed<in E>(
 
 private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
 
-    val _element: AtomicRef<ProduceElement?> = atomic(null)
+    val _produceElement: AtomicRef<Produce?> = atomic(null)
+    val _consumeElement: AtomicRef<Consume<T>?> = atomic(null)
+
+    /**
+     * Returns non-null closed token if it is last in one of the Atomic.
+     * @suppress **This is unstable API and it is subject to change.**
+     */
+    protected val completedExceptionally: Closed<*>? get() = _consumeElement.value as? Closed<*>
+
+    /**
+     * Invoked when [Closed] element was just added.
+     * @suppress **This is unstable API and it is subject to change.**
+     */
+    protected open fun onClosed(closed: Closed<T>) {}
+
+    /**
+     * Invoked after successful [close].
+     */
+    protected open fun afterClose(cause: Throwable?) {}
 
     // Producer functions
     override val isClosedForProduce: Boolean get() = false
@@ -156,11 +176,11 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
      */
     protected open fun completeInternal(element: T): Any {
         while (true) {
-            val receive = _element.value ?: return COMPLETE_FAILED
-            val token = receive.tryResumeProduce(element, idempotent = null)
+            val consume = _consumeElement.value ?: return COMPLETE_FAILED
+            val token = consume.tryResumeConsume(element, idempotent = null)
             if (token != null) {
-                receive.completeResumeReceive(token)
-                return receive.offerResult
+                consume.completeResumeConsume(token)
+                return consume.produceResult
             }
         }
     }
@@ -175,9 +195,9 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
     override fun complete(element: T): Boolean {
         val result = completeInternal(element)
         return when {
-            result === OFFER_SUCCESS -> true
-            result === OFFER_FAILED -> false
-            result is Closed<*> -> throw result.sendException
+            result === COMPLETE_SUCCESS -> true
+            result === COMPLETE_FAILED -> false
+            result is Closed<*> -> throw result.produceException
             else -> error("offerInternal returned $result")
         }
     }
@@ -185,7 +205,7 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
     private suspend fun produceSuspend(element: T): Unit = suspendAtomicCancellableCoroutine(holdCancellability = true) sc@ { cont ->
         val produce = ProduceElement(element, cont)
         loop@ while (true) { // lock-free loop on element
-            val enqueueResult = _element.compareAndSet(null, produce)
+            val enqueueResult = _produceElement.compareAndSet(null, produce)
             if (enqueueResult) {// enqueued successfully
                 cont.initCancellability() // make it properly cancellable
                 cont.removeOnCancel(produce)
@@ -194,29 +214,32 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
                 cont.resumeWithException(ClosedConsumerException(DEFAULT_CLOSE_MESSAGE))
                 return@sc
             }
-//            // hm... receiver is waiting or buffer is not full. try to offer
-//            val offerResult = offerInternal(element)
-//            when {
-//                offerResult === OFFER_SUCCESS -> {
-//                    cont.resume(Unit)
-//                    return@sc
-//                }
-//                offerResult === OFFER_FAILED -> continue@loop
-//                offerResult is Closed<*> -> {
-//                    cont.resumeWithException(offerResult.sendException)
-//                    return@sc
-//                }
-//                else -> error("offerInternal returned $offerResult")
-//            }
         }
     }
 
     override fun close(cause: Throwable?): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val closed = Closed<T>(cause)
+        while (true) {
+            val consume = _consumeElement.value
+            if (consume == null) {
+                // queue empty or has only senders -- try add last "Closed" item to the queue
+                val produce = _produceElement.value
+                if (produce == null) {
+                    _produceElement.compareAndSet(null, closed)
+                    onClosed(closed)
+                    afterClose(cause)
+                    return true
+                } else if (produce is Closed<*>) return false // already closed
+                continue // retry on failure
+            }
+            if (consume is Closed<*>) return false // already marked as closed -- nothing to do
+//            consume as Consume<T> // type assertion
+            consume.resumeReceiveClosed(closed)
+        }
     }
 
     // Consumer functions
-    override val isCompletedExceptionally: Boolean get() = false
+    override val isCompletedExceptionally: Boolean get() = completedExceptionally != null
 
     suspend override fun await(): T {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -233,20 +256,20 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
     private class ConsumeElement<in E>(
             @JvmField val cont: CancellableContinuation<E?>,
             @JvmField val nullOnClose: Boolean
-    ) : ConsumeOrClosed<E>() {
-        override fun tryResumeReceive(value: E, idempotent: Any?): Any? = cont.tryResume(value, idempotent)
-        override fun completeResumeReceive(token: Any) = cont.completeResume(token)
+    ) : Consume<E>() {
+        override fun tryResumeConsume(value: E, idempotent: Any?): Any? = cont.tryResume(value, idempotent)
+        override fun completeResumeConsume(token: Any) = cont.completeResume(token)
         override fun resumeReceiveClosed(closed: Closed<*>) {
             if (closed.closeCause == null && nullOnClose)
                 cont.resume(null)
             else
-                cont.resumeWithException(closed.receiveException)
+                cont.resumeWithException(closed.consumeException)
         }
         override fun toString(): String = "ReceiveElement[$cont,nullOnClose=$nullOnClose]"
     }
 }
 
-private class ProducerConsumerCloseable<T> : ProducerDeferred<T>(), ConsumerCloseable<T>, Subscriber<T> {
+private class ProducerConsumerCloseable<T> : ProducerConsumer<T>(), ConsumerCloseable<T>, Subscriber<T> {
     @Volatile
     @JvmField
     var subscription: Subscription? = null
