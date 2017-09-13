@@ -124,6 +124,8 @@ class ProduceElement(
 @JvmField val PRODUCE_SUCCESS: Any = Symbol("PRODUCE_SUCCESS")
 /** @suppress **This is unstable API and it is subject to change.** */
 @JvmField val CLOSE_RESUMED: Any = Symbol("CLOSE_RESUMED")
+/** @suppress **This is unstable API and it is subject to change.** */
+@JvmField val GET_COMPLETED_FAILED: Any = Symbol("GET_COMPLETED_FAILED")
 
 /**
  * Represents closed consumer.
@@ -242,11 +244,31 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
     override val isCompletedExceptionally: Boolean get() = completedExceptionally != null
 
     suspend override fun await(): T {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // fast path -- try poll non-blocking
+        val result = getCompletedInternal()
+        if (result !== GET_COMPLETED_FAILED) return receiveResult(result)
+        // slow-path does suspend
+        return receiveSuspend()
     }
 
     override fun getCompleted(): T {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    /**
+     * Tries to remove element from buffer or from queued sender.
+     * Return type is `E | POLL_FAILED | Closed`
+     * @suppress **This is unstable API and it is subject to change.**
+     */
+    protected open fun getCompletedInternal(): Any? {
+        while (true) {
+            val send = _produceElement.value ?: return GET_COMPLETED_FAILED
+            val token = send.tryResumeProduce(idempotent = null)
+            if (token != null) {
+                send.completeResumeProduce(token)
+                return send.consumeResult
+            }
+        }
     }
 
     override fun <R> registerSelectAwait(select: SelectInstance<R>, block: suspend (T) -> R) {
