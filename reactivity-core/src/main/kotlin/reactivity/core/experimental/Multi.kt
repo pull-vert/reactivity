@@ -250,18 +250,19 @@ open class MultiImpl<T> internal constructor(override final val delegate: Publis
     }
 
     override fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean) = solo(scheduler) {
-        var value: T? = null
+        var produced = false
         openSubscription().use { channel ->
             // open channel to the source
             for (x in channel) { // iterate over the channel to receive elements from it
                 if (predicate(x)) {       // filter 1 item
-                    value = x
+                    produce(x)
+                    produced = true
                     break
                 }
                 // `use` will close the channel when this block of code is complete
             }
+            if (!produced) produce(null)
         }
-        value
         // TODO make a unit test to verify what happends when no item satisfies the predicate
     }
 
@@ -327,7 +328,7 @@ open class MultiImpl<T> internal constructor(override final val delegate: Publis
                 send(multiChannel)      // sends the newly created GroupedMulti
             }
 
-//            (multiChannel.producerJob as ProducerScope<T>).send(it)
+//            (multiChannel.producerJob as ProducerCoroutineScope<T>).send(it)
             multiChannel.channel.send(it)
         }
         // when all the items from current channel are consumed, cancel every GroupedMulti (to stop the computation loop)

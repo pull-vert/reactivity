@@ -12,12 +12,10 @@ import org.reactivestreams.Subscriber
 /**
  * @author Frédéric Montariol
  */
-abstract class Solo<T> : Publisher<T> {
+abstract class Solo<T> protected constructor(): Publisher<T> {
 
 }
 
-internal class SoloImpl<T> internal constructor(val block: (Subscriber<in T>) -> Unit) : Solo<T>() {
-    override fun subscribe(s: Subscriber<in T>) {
-        block(s)
-    }
+internal class SoloImpl<T> internal constructor(override final val delegate: Publisher<T>) : Solo<T>(), PublisherDelegated<T> {
+
 }
