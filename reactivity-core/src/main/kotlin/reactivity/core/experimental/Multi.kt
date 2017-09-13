@@ -76,7 +76,7 @@ abstract class Multi<T> protected constructor() : Publisher<T>, PublisherCommons
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param predicate the filter predicate
      */
-    abstract fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): Solo<T>
+    abstract fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): Solo<T?>
 
     /**
      * Returns a [Multi]<R> that use the [mapper] to transform each received element from [T]
@@ -250,18 +250,18 @@ open class MultiImpl<T> internal constructor(override final val delegate: Publis
     }
 
     override fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean) = solo(scheduler) {
-        consumeEach {
-            openSubscription().use { channel ->
-                // open channel to the source
-                for (x in channel) { // iterate over the channel to receive elements from it
-                    if (predicate(x)) {       // filter 1 item
-                        send(x)
-                        break
-                    }
-                    // `use` will close the channel when this block of code is complete
+        var value: T? = null
+        openSubscription().use { channel ->
+            // open channel to the source
+            for (x in channel) { // iterate over the channel to receive elements from it
+                if (predicate(x)) {       // filter 1 item
+                    value = x
+                    break
                 }
+                // `use` will close the channel when this block of code is complete
             }
         }
+        value
         // TODO make a unit test to verify what happends when no item satisfies the predicate
     }
 

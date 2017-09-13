@@ -20,6 +20,8 @@ subprojects {
     apply plugin: 'kotlin'
 
     repositories {
+        // uncomment if need for atomicfu dependency
+        maven { setUrl("https://dl.bintray.com/kotlin/kotlinx/") }
         jcenter()
         mavenCentral()
     }

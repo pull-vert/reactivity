@@ -1,32 +1,25 @@
 package reactivity.core.experimental
 
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.channels.ProducerScope
-import kotlinx.coroutines.experimental.reactive.publish
+import kotlinx.coroutines.experimental.Deferred
 import org.reactivestreams.Publisher
-import kotlin.coroutines.experimental.CoroutineContext
-import kotlin.coroutines.experimental.EmptyCoroutineContext
+import org.reactivestreams.Subscriber
 
 /** TODO implement the Solo Publisher
  * @see https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/async.html
  * @see https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental/-completable-deferred/index.html
  */
-fun <T> solo(
-        scheduler: Scheduler,
-        block: suspend ProducerScope<T>.() -> Unit
-): Solo<T> = SoloImpl(publish(scheduler.context, block))
 
 /**
  * @author Frédéric Montariol
  */
 abstract class Solo<T> : Publisher<T> {
- fun asyncFun() {
-     async(EmptyCoroutineContext) {
 
-     }
- }
 }
 
-internal class SoloImpl<T> internal constructor(override val delegate: Publisher<T>) : Solo<T>(), PublisherDelegated<T> {
+internal class SoloImpl<T> internal constructor(val block: (Subscriber<T>) -> Deferred<T?>) : Solo<T>() {
+    lateinit var value: Deferred<T?>
 
+    override fun subscribe(s: Subscriber<in T>) {
+        value = block(s as Subscriber<T>)
+    }
 }
