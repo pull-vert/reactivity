@@ -135,7 +135,7 @@ class Closed<in E>(
         @JvmField val closeCause: Throwable?
 ) : LockFreeLinkedListNode(), Produce, ConsumeOrClosed<E> {
     val produceException: Throwable get() = closeCause ?: ClosedProducerException(DEFAULT_CLOSE_MESSAGE)
-    val consumeException: Throwable get() = closeCause ?: ClosedConsumerException(DEFAULT_CLOSE_MESSAGE)
+    val awaitException: Throwable get() = closeCause ?: ClosedConsumerException(DEFAULT_CLOSE_MESSAGE)
 
     override val produceResult get() = this
     override val consumeResult get() = this
@@ -155,7 +155,7 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
      * Returns non-null closed token if it is last in one of the Atomic.
      * @suppress **This is unstable API and it is subject to change.**
      */
-    protected val completedExceptionally: Closed<*>? get() = _consumeElement.value as? Closed<*>
+    protected val completedExceptionally: Closed<*>? get() = _consumeElement.value as Closed<*>
 
     /**
      * Invoked when [Closed] element was just added.
@@ -167,6 +167,11 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
      * Invoked after successful [close].
      */
     protected open fun afterClose(cause: Throwable?) {}
+
+    /**
+     * Invoked when enqueued receiver was successfully cancelled.
+     */
+    protected open fun onCancelledReceive() {}
 
     // Producer functions
     override val isClosedForProduce: Boolean get() = false
@@ -206,7 +211,7 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
 
     private suspend fun produceSuspend(element: T): Unit = suspendAtomicCancellableCoroutine(holdCancellability = true) sc@ { cont ->
         val produce = ProduceElement(element, cont)
-        loop@ while (true) { // lock-free loop on element
+        while (true) { // lock-free loop on Atomic
             val enqueueResult = _produceElement.compareAndSet(null, produce)
             if (enqueueResult) {// enqueued successfully
                 cont.initCancellability() // make it properly cancellable
@@ -235,7 +240,6 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
                 continue // retry on failure
             }
             if (consume is Closed<*>) return false // already marked as closed -- nothing to do
-//            consume as Consume<T> // type assertion
             consume.resumeReceiveClosed(closed)
         }
     }
@@ -244,20 +248,69 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
     override val isCompletedExceptionally: Boolean get() = completedExceptionally != null
 
     suspend override fun await(): T {
-        // fast path -- try poll non-blocking
+        // fast path -- try completed non-blocking
         val result = getCompletedInternal()
-        if (result !== GET_COMPLETED_FAILED) return receiveResult(result)
+        if (result !== GET_COMPLETED_FAILED) return awaitResult(result)
         // slow-path does suspend
-        return receiveSuspend()
+        return awaitSuspend()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun awaitResult(result: Any?): T {
+        if (result is Closed<*>) throw result.awaitException
+        return result as T
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private suspend fun awaitSuspend(): T = suspendAtomicCancellableCoroutine(holdCancellability = true) sc@ { cont ->
+        val consume = ConsumeElement(cont as CancellableContinuation<T?>, nullOnClose = false)
+        while (true) { // lock-free loop on Atomic
+
+            if (_consumeElement.compareAndSet(null, consume)) {
+                cont.initCancellability() // make it properly cancellable
+                removeReceiveOnCancel(cont, consume)
+                return@sc
+            }
+            // hm... something is not right. try to getCompleted
+            val result = getCompletedInternal()
+            if (result is Closed<*>) {
+                cont.resumeWithException(result.awaitException)
+                return@sc
+            }
+            if (result !== GET_COMPLETED_FAILED) {
+                cont.resume(result as T)
+                return@sc
+            }
+        }
+    }
+
+    private fun removeReceiveOnCancel(cont: CancellableContinuation<*>, consume: Consume<*>) {
+        cont.invokeOnCompletion {
+            if (cont.isCancelled && consume.remove())
+                onCancelledReceive()
+        }
     }
 
     override fun getCompleted(): T {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val result = getCompletedInternal()
+        if (result === GET_COMPLETED_FAILED)
+            throw IllegalStateException("result = GET_COMPLETED_FAILED")
+        else
+            return awaitResultOrThrowIllegalStateException(result)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun awaitResultOrThrowIllegalStateException(result: Any?): T {
+        if (result is Closed<*>) {
+            if (result.closeCause != null) throw result.closeCause
+            throw IllegalStateException("result is Closed without closeCause")
+        }
+        return result as T
     }
 
     /**
-     * Tries to remove element from buffer or from queued sender.
-     * Return type is `E | POLL_FAILED | Closed`
+     * Tries to get the unique element from the AtomicRef
+     * Return type is `E | GET_COMPLETED_FAILED | Closed`
      * @suppress **This is unstable API and it is subject to change.**
      */
     protected open fun getCompletedInternal(): Any? {
@@ -285,7 +338,7 @@ private open class ProducerConsumer<T> : Producer<T>, Consumer<T> {
             if (closed.closeCause == null && nullOnClose)
                 cont.resume(null)
             else
-                cont.resumeWithException(closed.consumeException)
+                cont.resumeWithException(closed.awaitException)
         }
         override fun toString(): String = "ReceiveElement[$cont,nullOnClose=$nullOnClose]"
     }
