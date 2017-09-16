@@ -19,12 +19,12 @@ internal const val DEFAULT_CLOSE_MESSAGE = "Consumer was closed"
  * The resulting channel shall be [closed][SubscriptionReceiveChannel.close] to unsubscribe from this publisher.
  */
 fun <T> Solo<T>.deferred(): DeferredCloseable<T> {
-    val producerDeferred = ProducerConsumerCloseable<T>()
+    val producerDeferred = CompletableConsumerImplCloseable<T>()
     subscribe(producerDeferred)
     return producerDeferred
 }
 
-interface Consumer<T> : CompletableDeferred<T> {
+interface CompletableConsumer<T> : CompletableDeferred<T> {
     // override all the Job functions
     override val key: CoroutineContext.Key<*>
         get() = throw UnsupportedOperationException("Operators should not use this method!")
@@ -120,7 +120,7 @@ class Closed<in E>(
     override fun toString(): String = "Closed[$closeCause]"
 }
 
-private open class ProducerConsumer<T> : Consumer<T> {
+private open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
 
     val _consumeElement: AtomicRef<ConsumeOrClosed<T>?> = atomic(null)
     // Can be null | Closed | or T
@@ -153,6 +153,11 @@ private open class ProducerConsumer<T> : Consumer<T> {
      * Invoked when enqueued receiver was successfully cancelled.
      */
     protected open fun onCancelledReceive() {}
+
+    /**
+     * Invoked when enqueued receiver was successfully cancelled.
+     */
+    protected open fun onAwait() {}
 
     /**
      * Tries to add element to buffer
@@ -224,8 +229,8 @@ private open class ProducerConsumer<T> : Consumer<T> {
     private suspend fun awaitSuspend(): T = suspendAtomicCancellableCoroutine(holdCancellability = true) sc@ { cont ->
         val consume = ConsumeElement(cont as CancellableContinuation<T?>, nullOnClose = false)
         while (true) { // lock-free loop on Atomic
-
             if (_consumeElement.compareAndSet(null, consume)) {
+                onAwait()
                 cont.initCancellability() // make it properly cancellable
                 removeReceiveOnCancel(cont, consume)
                 return@sc
@@ -298,7 +303,7 @@ private open class ProducerConsumer<T> : Consumer<T> {
     }
 }
 
-private class ProducerConsumerCloseable<T> : ProducerConsumer<T>(), DeferredCloseable<T>, Subscriber<T> {
+private class CompletableConsumerImplCloseable<T> : CompletableConsumerImpl<T>(), DeferredCloseable<T>, Subscriber<T> {
     @Volatile
     @JvmField
     var subscription: Subscription? = null
@@ -307,7 +312,7 @@ private class ProducerConsumerCloseable<T> : ProducerConsumer<T>(), DeferredClos
     val _balance = atomic(0)
 
     // AbstractChannel overrides
-    override fun onEnqueuedReceive() {
+    override fun onAwait() {
         _balance.loop { balance ->
             val subscription = this.subscription
             if (subscription != null) {
