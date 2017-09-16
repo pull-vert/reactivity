@@ -10,6 +10,20 @@ import kotlinx.coroutines.experimental.selects.whileSelect
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
 
+/**
+ * Creates cold reactive [Multi] that runs a given [block] in a coroutine.
+ * Every time the returned publisher is subscribed, it starts a new coroutine in the specified [scheduler].
+ * Coroutine emits items with `send`. Unsubscribing cancels running coroutine.
+ *
+ * Invocations of `send` are suspended appropriately when subscribers apply back-pressure and to ensure that
+ * `onNext` is not invoked concurrently.
+ *
+ * | **Coroutine action**                         | **Signal to subscriber**
+ * | -------------------------------------------- | ------------------------
+ * | `value in end of coroutine is not null`      | `onNext`
+ * | Normal completion or `close` without cause   | `onComplete`
+ * | Failure with exception or `close` with cause | `onError`
+ */
 fun <T> multi(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
