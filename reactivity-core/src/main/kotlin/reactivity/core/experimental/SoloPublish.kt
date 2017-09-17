@@ -14,7 +14,7 @@ import kotlin.coroutines.experimental.CoroutineContext
 /**
  * Scope for [solo] coroutine builder.
  */
-interface ProducerCoroutineScope<in E> : CoroutineScope, Producer<E> {
+interface SoloProducerScope<in E> : CoroutineScope, Producer<E> {
     /**
      * A reference to the producer that this coroutine [produce][produce] elements to.
      * It is provided for convenience, so that the code in the coroutine can refer
@@ -39,7 +39,7 @@ private const val SIGNALLED = -2L  // already signalled subscriber onCompleted/o
 internal class SoloCoroutine<T>(
         parentContext: CoroutineContext,
         private val subscriber: Subscriber<T>
-) : AbstractCoroutine<Unit>(parentContext, true), ProducerCoroutineScope<T>, Subscription {
+) : AbstractCoroutine<Unit>(parentContext, true), SoloProducerScope<T>, Subscription {
 
     override val producer: Producer<T> get() = this
 

@@ -21,7 +21,7 @@ import kotlin.coroutines.experimental.startCoroutine
  */
 fun <T> solo(
         scheduler: Scheduler,
-        block: suspend ProducerCoroutineScope<T>.() -> Unit
+        block: suspend SoloProducerScope<T>.() -> Unit
 ): Solo<T> = SoloImpl(Publisher<T> { subscriber ->
     val newContext = newCoroutineContext(scheduler.context)
     val coroutine = SoloCoroutine(newContext, subscriber)

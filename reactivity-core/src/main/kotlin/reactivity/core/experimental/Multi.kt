@@ -1,7 +1,7 @@
 package reactivity.core.experimental
 
-import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ProducerScope
+import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.openSubscription
@@ -126,7 +126,7 @@ abstract class Multi<T> protected constructor() : Publisher<T>, PublisherCommons
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param keyMapper a function that extracts the key for each item
      */
-    abstract fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R): Multi<MultiChannel<T>>
+    abstract fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R): Multi<MultiGrouped<T, R>>
 
     /**
      * Returns a [Multi] that will send the [n] first received elements from the source stream
@@ -321,34 +321,30 @@ open class MultiImpl<T> internal constructor(override final val delegate: Publis
 
     override fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R) = multi(scheduler) {
         var key: R
-//        var multiChannel: GroupedMulti<T>
-        var multiChannel: MultiChannel<T>
-//        val groupedMultiMap = mutableMapOf<R, GroupedMulti<T>>()
-        val groupedMultiMap = mutableMapOf<R, MultiChannel<T>>()
+        var multiGrouped: MultiGrouped<T, R>
+        val multiGroupedMap = mutableMapOf<R, MultiGrouped<T, R>>()
         consumeEach {
             // consume the source stream
             key = keyMapper(it)
-            if (groupedMultiMap.containsKey(key)) { // this GroupedMulti exists already
-                multiChannel = groupedMultiMap[key]!!
-            } else { // have to create a new GroupedMulti
-                val channel = Channel<T>(Channel.UNLIMITED)
-//                val jobProduce = produce<T>(coroutineContext, 0) {
-//                    // TODO test without the line under this (but will certainly not work)
-//                    while (isActive) { } // cancellable computation loop
-//                }
-//                multiChannel = GroupedMulti(jobProduce, coroutineContext, key) // creates the new GroupedMulti
-                multiChannel = MultiChannel(coroutineContext, channel)
-                groupedMultiMap[key] = multiChannel
-                send(multiChannel)      // sends the newly created GroupedMulti
+            if (multiGroupedMap.containsKey(key)) { // this MultiGrouped exists already
+                multiGrouped = multiGroupedMap[key]!!
+            } else { // have to create a new MultiGrouped
+                val jobProduce = produce<T>(coroutineContext, 2) {
+                // TODO test without the line under this (but will certainly not work)
+                    while (isActive) { } // cancellable computation loop
+                }
+                multiGrouped = MultiGrouped(jobProduce, coroutineContext, key) // creates the new MultiGrouped
+                multiGroupedMap[key] = multiGrouped
+                send(multiGrouped)      // sends the newly created MultiGrouped
             }
 
-//            (multiChannel.producerJob as ProducerCoroutineScope<T>).send(it)
-            multiChannel.channel.send(it)
+            (multiGrouped.producerJob as ProducerScope<T>).send(it)
         }
-        // when all the items from current channel are consumed, cancel every GroupedMulti (to stop the computation loop)
-//        groupedMultiMap.forEach { _, u -> u.producerJob.cancel()  }
-        groupedMultiMap.forEach { entry -> entry.value.channel.close() }
+        // when all the items from current channel are consumed, cancel every MultiGrouped (to stop the computation loop)
+        multiGroupedMap.forEach { u -> u.value.producerJob.cancel()  }
     }
+
+    private class ProducerScopeBlockSupplier<T>(val block : suspend ProducerScope<T>.() -> Unit)
 
     override fun take(scheduler: Scheduler, n: Long) = multi(scheduler) {
         openSubscription().use { channel ->
