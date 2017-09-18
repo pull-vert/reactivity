@@ -6,8 +6,8 @@ import kotlinx.coroutines.experimental.selects.select
 import kotlinx.coroutines.experimental.yield
 
 /**
- * Indicates attempt to [receive][Consumer.await] on [isCompletedExceptionally][Consumer.isCompletedExceptionally]
- * channel that was closed _normally_. A _failed_ producer rethrows the original [close][Producer.close] cause
+ * Indicates attempt to [receive][kotlinx.coroutines.experimental.Deferred.await] on [isCompletedExceptionally][kotlinx.coroutines.experimental.Deferred.isCompletedExceptionally]
+ * deferred that was closed _normally_. A _failed_ producer rethrows the original [close][Producer.close] cause
  * exception on receive attempts.
  */
 internal class ClosedConsumerException(message: String?) : NoSuchElementException(message)
