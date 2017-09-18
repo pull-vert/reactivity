@@ -30,13 +30,17 @@ fun <T> solo(
     block.startCoroutine(coroutine, coroutine)
 })
 
+object SoloBuilder {
+    // Static factory methods to create a Solo
+}
+
 /**
  * @author Frédéric Montariol
  */
-abstract class Solo<T> protected constructor(): Publisher<T> {
+interface Solo<T> : Publisher<T> {
 
 }
 
-internal class SoloImpl<T> internal constructor(override final val delegate: Publisher<T>) : Solo<T>(), PublisherDelegated<T> {
+internal class SoloImpl<T> internal constructor(override val delegate: Publisher<T>) : Solo<T>, PublisherDelegated<T> {
 
 }

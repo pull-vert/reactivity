@@ -10,7 +10,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range 2 consumers`() = runBlocking {
         // create a publisher that produces numbers from 1 to 3
-        val source = Multi.fromRange(1, 3)
+        val source = MultiBuilder.fromRange(1, 3)
         // print elements from the source
         var count = 0
         println("first consumer:")
@@ -32,7 +32,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range subscription with cancellation`() = runBlocking {
         // create a publisher that produces numbers from 1 to 5
-        val source = Multi.fromRange(1, 5)
+        val source = MultiBuilder.fromRange(1, 5)
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
         // print elements from the source
@@ -49,7 +49,7 @@ class MultiFromRangeTest {
 
     @Test
     fun `multi from range subscription without cancellation`() = runBlocking<Unit> {
-        val source = Multi.fromRange(1, 5) // a fromRange of five numbers
+        val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
         // iterate over the source fully
@@ -66,7 +66,7 @@ class MultiFromRangeTest {
 
     @Test
     fun `multi from range subscription with subscribe onNext function`() = runBlocking<Unit> {
-        val source = Multi.fromRange(1, 5) // a fromRange of five numbers
+        val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
         // iterate over the source fully
