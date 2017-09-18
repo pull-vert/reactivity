@@ -2,8 +2,8 @@ package reactivity.core.experimental
 
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ProducerScope
-import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.reactive.asPublisher
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.reactive.publish
@@ -152,7 +152,7 @@ interface Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithPu
     fun <R> fusedFilterMap(scheduler: Scheduler, predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
 }
 
-internal open class MultiImpl<T> internal constructor(override final val delegate: Publisher<T>) : Multi<T>, PublisherDelegated<T> {
+internal open class MultiImpl<T> internal constructor(val delegate: Publisher<T>) : Multi<T>, Publisher<T> by delegate {
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
@@ -322,7 +322,6 @@ internal open class MultiImpl<T> internal constructor(override final val delegat
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
     override fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R) = multi(scheduler) {
         var key: R
         var channel: Channel<T>
@@ -333,26 +332,10 @@ internal open class MultiImpl<T> internal constructor(override final val delegat
             if (channelMap.containsKey(key)) { // this channel exists already
                 channel = channelMap[key]!!
             } else { // have to create a new MultiGrouped
-                channel = (produce<T>(coroutineContext, Channel.UNLIMITED) {
-                    // TODO test without the line under this (but will certainly not work)
-                    while (isActive) { // cancellable computation loop
-                    }
-                } as Channel<T>)
-                send(multiGrouped(coroutineContext, key) {
-                    // creates and sends the new MultiGrouped
-                    whileSelect {
-                        // loop while not cancelled/closed
-                        channel.onReceiveOrNull {
-                            if (null != it) {
-                                send(it!!) // Received a Channel value
-                                true
-                            } else {
-                                false // Channel was closed -> out of the loop
-                            }
-                        }
-                    }
-                })
-                channelMap[key] = channel // add to Map
+                channel = Channel(Channel.UNLIMITED) /** Creates a [kotlinx.coroutines.experimental.channels.LinkedListChannel] */
+                // Converts a stream of elements received from the channel to the hot reactive publisher
+                send(MultiGroupedImpl(channel.asPublisher(coroutineContext), key) as MultiGrouped<T, R>)
+                channelMap[key] = channel // adds to Map
             }
 
             channel.send(it)

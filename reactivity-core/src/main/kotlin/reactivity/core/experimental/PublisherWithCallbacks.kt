@@ -27,7 +27,7 @@ interface WithCallbacks<T> {
     fun doFinally(finally: () -> Unit): WithCallbacks<T>
 }
 
-internal class PublisherWithCallbacks<T> internal constructor(override val delegate: Publisher<T>) : PublisherDelegated<T> {
+internal class PublisherWithCallbacks<T> internal constructor(val delegate: Publisher<T>) : Publisher<T> {
 
     override fun subscribe(s: Subscriber<in T>) {
         delegate.subscribe(SubscriberCallbacks(this, s))

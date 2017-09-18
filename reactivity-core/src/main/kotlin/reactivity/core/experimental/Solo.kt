@@ -41,6 +41,6 @@ interface Solo<T> : Publisher<T> {
 
 }
 
-internal class SoloImpl<T> internal constructor(override val delegate: Publisher<T>) : Solo<T>, PublisherDelegated<T> {
+internal class SoloImpl<T> internal constructor(val delegate: Publisher<T>) : Solo<T>, Publisher<T> by delegate {
 
 }
