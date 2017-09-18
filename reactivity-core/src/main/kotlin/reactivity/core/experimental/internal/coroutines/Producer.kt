@@ -1,4 +1,4 @@
-package reactivity.core.experimental.coroutines
+package reactivity.core.experimental.internal.coroutines
 
 import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.Job

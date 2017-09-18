@@ -5,7 +5,7 @@ import kotlinx.atomicfu.loop
 import kotlinx.coroutines.experimental.Deferred
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.core.experimental.coroutines.CompletableConsumerImpl
+import reactivity.core.experimental.internal.coroutines.CompletableConsumerImpl
 import java.io.Closeable
 
 /**

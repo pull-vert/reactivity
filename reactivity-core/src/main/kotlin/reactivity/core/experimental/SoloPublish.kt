@@ -8,7 +8,7 @@ import kotlinx.coroutines.experimental.handleCoroutineException
 import kotlinx.coroutines.experimental.sync.Mutex
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.core.experimental.coroutines.Producer
+import reactivity.core.experimental.internal.coroutines.Producer
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
