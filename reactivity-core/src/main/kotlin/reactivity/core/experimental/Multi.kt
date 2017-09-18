@@ -335,8 +335,8 @@ internal open class MultiImpl<T> internal constructor(override final val delegat
             } else { // have to create a new MultiGrouped
                 channel = (produce<T>(coroutineContext, Channel.UNLIMITED) {
                     // TODO test without the line under this (but will certainly not work)
-                    while (isActive) {
-                    } // cancellable computation loop
+                    while (isActive) { // cancellable computation loop
+                    }
                 } as Channel<T>)
                 send(multiGrouped(coroutineContext, key) {
                     // creates and sends the new MultiGrouped
