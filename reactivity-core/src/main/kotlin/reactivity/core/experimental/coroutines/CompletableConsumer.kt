@@ -273,6 +273,6 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
             else
                 cont.resumeWithException(closed.awaitException)
         }
-        override fun toString(): String = "ReceiveElement[$cont,nullOnClose=$nullOnClose]"
+        override fun toString(): String = "ConsumeElement[$cont,nullOnClose=$nullOnClose]"
     }
 }
