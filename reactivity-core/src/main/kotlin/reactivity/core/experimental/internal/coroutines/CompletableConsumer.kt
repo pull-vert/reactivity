@@ -66,11 +66,8 @@ interface ConsumeOrClosed<in E> {
 
 private abstract class Consume<in E> : LockFreeLinkedListNode(), ConsumeOrClosed<E> {
     override val produceResult get() = PRODUCE_SUCCESS
-    abstract fun resumeReceiveClosed(closed: Closed<*>)
 }
 
-/** @suppress **This is unstable API and it is subject to change.** */
-@JvmField val COMPLETE_SUCCESS: Any = Symbol("COMPLETE_SUCCESS")
 /** @suppress **This is unstable API and it is subject to change.** */
 @JvmField val PRODUCE_SUCCESS: Any = Symbol("PRODUCE_SUCCESS")
 /** @suppress **This is unstable API and it is subject to change.** */
@@ -104,7 +101,7 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
      * Returns non-null closed token if it exists on the Atomic.
      * @suppress **This is unstable API and it is subject to change.**
      */
-    protected val completedExceptionally: Closed<*>? get() = _consumeElement.value as Closed<*>
+    protected val completedExceptionally: Closed<*>? get() = _consumeElement.value as? Closed<*>
 
     /**
      * Returns non-null closed token if it is last in one of the Atomic.
@@ -129,7 +126,7 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
     protected open fun onCancelledAwait() {}
 
     /**
-     * Invoked when enqueued receiver was successfully cancelled.
+     * Invoked when value consumer awaits
      */
     protected open fun onAwait() {}
 
@@ -154,10 +151,10 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
         }
     }
 
-    override fun complete(element: T): Boolean {
-        val result = completeInternal(element)
+    override fun complete(value: T): Boolean {
+        val result = completeInternal(value)
         return when {
-            result === COMPLETE_SUCCESS -> true
+            result === PRODUCE_SUCCESS -> true
             result is Closed<*> -> throw result.produceException
             else -> error("offerInternal returned $result")
         }
@@ -178,7 +175,10 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
                     continue // retry on failure
             }
             if (consume is Closed<*>) return false // already marked as closed -- nothing to do
-            (consume as Consume).resumeReceiveClosed(closed)
+            /** element was already normally consumed in [completeInternal] */
+            onClosed(closed)
+            afterClose(cause)
+            return true
         }
     }
 
@@ -201,7 +201,7 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
 
     @Suppress("UNCHECKED_CAST")
     private suspend fun awaitSuspend(): T = suspendAtomicCancellableCoroutine(holdCancellability = true) sc@ { cont ->
-        val consume = ConsumeElement(cont as CancellableContinuation<T?>, nullOnClose = false)
+        val consume = ConsumeElement(cont as CancellableContinuation<T?>/*, nullOnClose = false*/)
         while (true) { // lock-free loop on Atomic
             if (_consumeElement.compareAndSet(null, consume)) {
                 onAwait()
@@ -262,17 +262,10 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
     }
 
     private class ConsumeElement<in E>(
-            @JvmField val cont: CancellableContinuation<E?>,
-            @JvmField val nullOnClose: Boolean
+            @JvmField val cont: CancellableContinuation<E?>
     ) : Consume<E>() {
         override fun tryResumeConsume(value: E, idempotent: Any?): Any? = cont.tryResume(value, idempotent)
         override fun completeResumeConsume(token: Any) = cont.completeResume(token)
-        override fun resumeReceiveClosed(closed: Closed<*>) {
-            if (closed.closeCause == null && nullOnClose)
-                cont.resume(null)
-            else
-                cont.resumeWithException(closed.awaitException)
-        }
-        override fun toString(): String = "ConsumeElement[$cont,nullOnClose=$nullOnClose]"
+        override fun toString(): String = "ConsumeElement[$cont"
     }
 }
