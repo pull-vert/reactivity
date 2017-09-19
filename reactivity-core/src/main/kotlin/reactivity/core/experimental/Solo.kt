@@ -32,6 +32,12 @@ fun <T> solo(
 
 object SoloBuilder {
     // Static factory methods to create a Solo
+    @JvmStatic
+    fun <T> fromValue(value: T,
+                  scheduler: Scheduler = Schedulers.emptyThreadContext()
+    ) = solo(scheduler) {
+        produce(value)
+    }
 }
 
 /**
