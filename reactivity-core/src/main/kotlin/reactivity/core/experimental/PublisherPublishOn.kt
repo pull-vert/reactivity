@@ -4,6 +4,7 @@ import kotlinx.coroutines.experimental.channels.LinkedListChannel
 import kotlinx.coroutines.experimental.channels.SubscriptionReceiveChannel
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
+import reactivity.core.experimental.internal.coroutines.CompletableConsumerImpl
 import reactivity.core.experimental.internal.util.validateSubscription
 
 /**
@@ -12,28 +13,24 @@ import reactivity.core.experimental.internal.util.validateSubscription
  * will be implemented in both [Multi] and [Solo]
  */
 interface WithPublishOn {
-    fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): WithPublishOn
+    fun publishOn(scheduler: Scheduler, delayError: Boolean): WithPublishOn
 }
 
-internal class SubscriberPublishOn<T> internal constructor(val delayError: Boolean, val prefetch: Int) :
+internal class MultiPublishOn<T> internal constructor(val delayError: Boolean, val prefetch: Int) :
         LinkedListChannel<T>(), SubscriptionReceiveChannel<T>, Subscriber<T> {
 
     @Volatile
     @JvmField
     var subscription: Subscription? = null
 
-    override fun onCancelledReceive() {
-        println("SubscriberPublishOn nCancelledReceive")
-    }
-
     override fun afterClose(cause: Throwable?) {
-        println("SubscriberPublishOn afterClose")
+        println("MultiPublishOn afterClose")
         subscription?.cancel()
     }
 
     // Subscriber functions
     override fun onSubscribe(s: Subscription) {
-        println("SubscriberPublishOn onSubscribe")
+        println("MultiPublishOn onSubscribe")
         if (validateSubscription(subscription, s)) {
             subscription = s
             initialRequest()
@@ -41,7 +38,7 @@ internal class SubscriberPublishOn<T> internal constructor(val delayError: Boole
     }
 
     private fun initialRequest() {
-        println("SubscriberPublishOn initialRequest " + prefetch)
+        println("MultiPublishOn initialRequest " + prefetch)
         // In this function we need that the subscription is not null, so use of !!
         if (prefetch == Integer.MAX_VALUE) {
             subscription!!.request(Long.MAX_VALUE)
@@ -51,17 +48,64 @@ internal class SubscriberPublishOn<T> internal constructor(val delayError: Boole
     }
 
     override fun onNext(t: T) {
-        println("SubscriberPublishOn onNext " + t)
+        println("MultiPublishOn onNext " + t)
         offer(t)
     }
 
     override fun onError(t: Throwable) {
-        println("SubscriberPublishOn onError" + t)
+        println("MultiPublishOn onError" + t)
         close(cause = t)
     }
 
     override fun onComplete() {
-        println("SubscriberPublishOn onComplete")
+        println("MultiPublishOn onComplete")
+        close(cause = null)
+    }
+
+    // Subscription overrides
+    override fun close() {
+        close(cause = null)
+    }
+}
+
+internal class SoloPublishOn<T> internal constructor(val delayError: Boolean) :
+    CompletableConsumerImpl<T>(), DeferredCloseable<T>, Subscriber<T> {
+
+    @Volatile
+    @JvmField
+    var subscription: Subscription? = null
+
+    override fun afterClose(cause: Throwable?) {
+        println("SoloPublishOn afterClose")
+        subscription?.cancel()
+    }
+
+    // Subscriber functions
+    override fun onSubscribe(s: Subscription) {
+        println("SoloPublishOn onSubscribe")
+        if (validateSubscription(subscription, s)) {
+            subscription = s
+            initialRequest()
+        }
+    }
+
+    private fun initialRequest() {
+        println("SoloPublishOn initialRequest ")
+        subscription!!.request(Long.MAX_VALUE)
+    }
+
+    override fun onNext(t: T) {
+        println("SoloPublishOn onNext " + t)
+        complete(t)
+    }
+
+    override fun onError(t: Throwable) {
+        println("SoloPublishOn onError" + t)
+        close(cause = t)
+    }
+
+    override fun onComplete() {
+        println("SoloPublishOn onComplete")
         close(cause = null)
     }
 

@@ -2,6 +2,7 @@ package reactivity.core.experimental
 
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ProducerScope
+import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.reactive.asPublisher
 import kotlinx.coroutines.experimental.reactive.consumeEach
@@ -51,7 +52,7 @@ object MultiBuilder {
 /**
  * @author Frédéric Montariol
  */
-interface Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithPublishOn {
+interface Multi<T> : PublisherCommons<T> {
 
     // functions from WithCallbacks
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
@@ -64,9 +65,11 @@ interface Multi<T> : Publisher<T>, PublisherCommons<T>, WithCallbacks<T>, WithPu
     override fun doFinally(finally: () -> Unit): Multi<T>
 
     // function from WithPublishOn
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
+    override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T>
 
     // Operators specific to Multi
+
+    fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
 
     /**
      * Returns a [Multi] that use the [mapper] to transform each received element from [T]
@@ -231,9 +234,19 @@ internal open class MultiImpl<T> internal constructor(val delegate: Publisher<T>
         return MultiImpl(publisherCallbacks)
     }
 
+    override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T> {
+        return multi(scheduler) {
+            val channel = MultiPublishOn<T>(delayError, Int.MAX_VALUE)
+            this@MultiImpl.subscribe(channel)
+            channel.consumeEach {
+                send(it)
+            }
+        }
+    }
+
     override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T> {
         return multi(scheduler) {
-            val channel = SubscriberPublishOn<T>(delayError, prefetch)
+            val channel = MultiPublishOn<T>(delayError, prefetch)
             this@MultiImpl.subscribe(channel)
             channel.use { chan ->
                 var count = 0

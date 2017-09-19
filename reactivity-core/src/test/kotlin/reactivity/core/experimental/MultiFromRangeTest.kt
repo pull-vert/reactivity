@@ -3,6 +3,7 @@ package reactivity.core.experimental
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.runBlocking
+import org.amshove.kluent.`should equal to`
 import org.amshove.kluent.`should equal`
 import org.junit.Test
 
@@ -66,10 +67,12 @@ class MultiFromRangeTest {
 
     @Test
     fun `multi from range subscription with subscribe onNext function`() = runBlocking<Unit> {
+        var finally = false
         val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
-                .doFinally { println("Finally") }         // ... into what's going on
-        // iterate over the source fully
+                .doFinally { finally = true; println("Finally") }         // ... into what's going on
+        // iterate over the source fully : no backpressure = request(Long.maxValue)
         source.subscribe { println(it) }
+        finally `should equal to` true
     }
 }

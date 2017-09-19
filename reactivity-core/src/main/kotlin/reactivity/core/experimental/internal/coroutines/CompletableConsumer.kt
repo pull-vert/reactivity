@@ -11,6 +11,14 @@ import kotlin.coroutines.experimental.CoroutineContext
 
 internal const val DEFAULT_CLOSE_MESSAGE = "Consumer was closed"
 
+/**
+ * Performs the given [action] for each received element.
+ */
+inline suspend fun <E> CompletableConsumer<E>.consumeUnique(action: (E) -> Unit) {
+    action.invoke(await())
+//    close(cause = null)
+}
+
 interface CompletableConsumer<T> : CompletableDeferred<T> {
     // overrides all the Job functions
     override val key: CoroutineContext.Key<*>

@@ -106,22 +106,18 @@ internal class SoloCoroutine<T>(
             }
         }
 
-        // Call doLockedSignalCompleted because there is only one Unique item in Publisher
-        println("Call doLockedSignalCompleted in doLockedUnique because there is only one Unique item in Publisher")
-        doLockedSignalCompleted()
-
-//        /*
-//           There is no sense to check for `isActive` before doing `unlock`, because cancellation/completion might
-//           happen after this check and before `unlock` (see `onCancellation` that does not do anything
-//           if it fails to acquire the lock that we are still holding).
-//           We have to recheck `isActive` after `unlock` anyway.
-//         */
-//        mutex.unlock()
-//        // recheck isActive
-//        if (!isActive && mutex.tryLock()) {
-//            println("call doLockedSignalCompleted from doLockedUnique : coroutine is inactive")
-//            doLockedSignalCompleted()
-//        }
+        /*
+           There is no sense to check for `isActive` before doing `unlock`, because cancellation/completion might
+           happen after this check and before `unlock` (see `onCancellation` that does not do anything
+           if it fails to acquire the lock that we are still holding).
+           We have to recheck `isActive` after `unlock` anyway.
+         */
+        mutex.unlock()
+        // recheck isActive
+        if (!isActive && mutex.tryLock()) {
+            println("call doLockedSignalCompleted from doLockedUnique : coroutine is inactive")
+            doLockedSignalCompleted()
+        }
     }
 
     // assert: mutex.isLocked()
