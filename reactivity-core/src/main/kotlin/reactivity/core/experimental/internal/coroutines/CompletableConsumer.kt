@@ -12,6 +12,13 @@ import kotlin.coroutines.experimental.CoroutineContext
 internal const val DEFAULT_CLOSE_MESSAGE = "Consumer was closed"
 
 /**
+ * Indicates attempt to [receive][kotlinx.coroutines.experimental.Deferred.await] on [isCompletedExceptionally][kotlinx.coroutines.experimental.Deferred.isCompletedExceptionally]
+ * deferred that was closed _normally_. A _failed_ producer rethrows the original [close][Producer.close] cause
+ * exception on receive attempts.
+ */
+internal class ClosedConsumerException(message: String?) : NoSuchElementException(message)
+
+/**
  * Performs the given [action] for each received element.
  */
 inline suspend fun <E> CompletableConsumer<E>.consumeUnique(action: (E) -> Unit) {

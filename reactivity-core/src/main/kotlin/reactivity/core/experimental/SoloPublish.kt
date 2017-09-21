@@ -3,27 +3,28 @@ package reactivity.core.experimental
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.experimental.AbstractCoroutine
 import kotlinx.coroutines.experimental.CancellationException
-import kotlinx.coroutines.experimental.CoroutineScope
+import kotlinx.coroutines.experimental.channels.ProducerScope
+import kotlinx.coroutines.experimental.channels.SendChannel
 import kotlinx.coroutines.experimental.handleCoroutineException
+import kotlinx.coroutines.experimental.selects.SelectInstance
 import kotlinx.coroutines.experimental.sync.Mutex
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.core.experimental.internal.coroutines.Producer
 import kotlin.coroutines.experimental.CoroutineContext
 
 /**
  * Scope for [solo] coroutine builder.
  */
-interface SoloProducerScope<in E> : CoroutineScope, Producer<E> {
-    /**
-     * A reference to the producer that this coroutine [produce][produce] elements to.
-     * It is provided for convenience, so that the code in the coroutine can refer
-     * to the producer as `producer` as apposed to `this`.
-     * All the [Producer] functions on this interface delegate to
-     * the producer instance returned by this function.
-     */
-    val producer: Producer<E>
-}
+//interface SoloProducerScope<in E> : CoroutineScope, Producer<E> {
+//    /**
+//     * A reference to the producer that this coroutine [produce][produce] elements to.
+//     * It is provided for convenience, so that the code in the coroutine can refer
+//     * to the producer as `producer` as apposed to `this`.
+//     * All the [Producer] functions on this interface delegate to
+//     * the producer instance returned by this function.
+//     */
+//    val producer: Producer<E>
+//}
 
 /**
  * Indicates attempt to [produce][Producer.produce] on [isClosedForProduce][Producer.isClosedForProduce] consumer
@@ -39,35 +40,37 @@ private const val SIGNALLED = -2L  // already signalled subscriber onCompleted/o
 internal class SoloCoroutine<T>(
         parentContext: CoroutineContext,
         private val subscriber: Subscriber<T>
-) : AbstractCoroutine<Unit>(parentContext, true), SoloProducerScope<T>, Subscription {
+) : AbstractCoroutine<Unit>(parentContext, true), ProducerScope<T>, Subscription {
 
-    override val producer: Producer<T> get() = this
+    override val channel: SendChannel<T> get() = this
 
     // Mutex is locked when either nRequested == 0 or while subscriber.onXXX is being invoked
     private val mutex = Mutex(locked = true)
 
     private val _nRequested = atomic(0L) // < 0 when closed (CLOSED or SIGNALLED)
 
-    override val isClosedForProduce: Boolean get() = isCompleted
+    // Never Full ! Just one item to send
+    override val isFull: Boolean get() = false
+    override val isClosedForSend: Boolean get() = isCompleted
     override fun close(cause: Throwable?): Boolean = cancel(cause)
 
     private fun sendException() =
             (state as? CompletedExceptionally)?.cause ?: ClosedProducerException(CLOSED_MESSAGE)
 
-    override fun complete(element: T): Boolean {
+    override fun offer(element: T): Boolean {
         if (!mutex.tryLock()) return false
         doLockedUnique(element)
         return true
     }
 
-    suspend override fun produce(element: T) {
+    suspend override fun send(element: T) {
         // fast-path -- try produce without suspension
-        if (complete(element)) return
+        if (offer(element)) return
         // slow-path does suspend
-        return produceSuspend(element)
+        return sendSuspend(element)
     }
 
-    private suspend fun produceSuspend(element: T) {
+    private suspend fun sendSuspend(element: T) {
         mutex.lock()
         doLockedUnique(element)
     }
@@ -139,6 +142,12 @@ internal class SoloCoroutine<T>(
             mutex.unlock()
         }
     }
+
+    override fun <R> registerSelectSend(select: SelectInstance<R>, element: T, block: suspend () -> R) =
+            mutex.registerSelectLock(select, null) {
+                doLockedUnique(element)
+                block()
+            }
 
     override fun request(n: Long) {
         if (n < 0) {

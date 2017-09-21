@@ -285,13 +285,13 @@ internal open class MultiImpl<T> internal constructor(val delegate: Publisher<T>
             // open channel to the source
             for (x in channel) { // iterate over the channel to receive elements from it
                 if (predicate(x)) {       // filter 1 item
-                    produce(x)
+                    send(x)
                     produced = true
                     break
                 }
                 // `use` will close the channel when this block of code is complete
             }
-            if (!produced) produce(null)
+            if (!produced) send(null)
         }
         // TODO make a unit test to verify what happends when no item satisfies the predicate
     }

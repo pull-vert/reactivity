@@ -1,6 +1,7 @@
 package reactivity.core.experimental
 
 import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.newCoroutineContext
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
@@ -23,7 +24,7 @@ import kotlin.coroutines.experimental.startCoroutine
  */
 fun <T> solo(
         scheduler: Scheduler,
-        block: suspend SoloProducerScope<T>.() -> Unit
+        block: suspend ProducerScope<T>.() -> Unit
 ): Solo<T> = SoloImpl(Publisher<T> { subscriber ->
     val newContext = newCoroutineContext(scheduler.context)
     val coroutine = SoloCoroutine(newContext, subscriber)
@@ -38,7 +39,7 @@ object SoloBuilder {
     fun <T> fromValue(value: T,
                   scheduler: Scheduler = Schedulers.emptyThreadContext()
     ) = solo(scheduler) {
-        produce(value)
+        send(value)
     }
 }
 
@@ -143,7 +144,7 @@ internal class SoloImpl<T> internal constructor(val delegate: Publisher<T>) : So
             val completableConsumer = SoloPublishOn<T>(delayError)
             this@SoloImpl.subscribe(completableConsumer)
             completableConsumer.consumeUnique {
-                produce(it)
+                send(it)
             }
         }
     }
