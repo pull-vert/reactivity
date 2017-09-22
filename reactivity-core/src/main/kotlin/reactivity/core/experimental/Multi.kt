@@ -34,6 +34,12 @@ fun <T> multi(
 
 object MultiBuilder {
     // Static factory methods to create a Multi
+    /**
+     * Creates a [Multi] from a range of Int (starting from [start] and emmitting
+     * [count] items)
+     *
+     * @return the [Multi]<Int> created
+     */
     @JvmStatic
     fun fromRange(start: Int, count: Int,
                   scheduler: Scheduler = Schedulers.emptyThreadContext()
@@ -41,6 +47,13 @@ object MultiBuilder {
         for (x in start until start + count) send(x)
     }
 
+    /**
+     * Creates a [Multi] from a [Iterable]
+     *
+     * @return the [Multi]<T> created
+     *
+     * @param T the type of the input [iterable]
+     */
     @JvmStatic
     fun <T> fromIterable(iterable: Iterable<T>,
                          scheduler: Scheduler = Schedulers.emptyThreadContext()
@@ -72,7 +85,7 @@ interface Multi<T> : PublisherCommons<T> {
     fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
 
     /**
-     * Returns a [Multi] that use the [mapper] to transform each received element from [T]
+     * Returns a [Multi] that uses the [mapper] to transform each received element from [T]
      * to [R] and then send it when transformation is done
      *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
@@ -121,9 +134,9 @@ interface Multi<T> : PublisherCommons<T> {
      * a single Publisher, without any transformation
      *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param other the other publisher
+     * @param others the other publishers
      */
-    fun mergeWith(scheduler: Scheduler, other: Publisher<T>): Multi<T>
+    fun mergeWith(scheduler: Scheduler, vararg others: Publisher<T>): Multi<T>
 
     /**
      * Returns a [Multi] that can contain several [MultiChannel], each is a group of received elements from
@@ -320,17 +333,19 @@ internal open class MultiImpl<T> internal constructor(val delegate: Publisher<T>
         }
     }
 
-    override fun mergeWith(scheduler: Scheduler, other: Publisher<T>) = multi(scheduler) {
+    override fun mergeWith(scheduler: Scheduler, vararg others: Publisher<T>) = multi(scheduler) {
         launch(coroutineContext) {
             /** launch a first child coroutine for this [Multi] */
             consumeEach {
                 send(it)
             }
         }
-        launch(coroutineContext) {
-            /** launch a second child coroutine for the [other] [Publisher] */
-            other.consumeEach {
-                send(it)
+        for (other in others) {
+            launch(coroutineContext) {
+                /** launch a new child coroutine for each of the [others] [Publisher] */
+                other.consumeEach {
+                    send(it) // resend all element from this publisher
+                }
             }
         }
     }
@@ -345,7 +360,8 @@ internal open class MultiImpl<T> internal constructor(val delegate: Publisher<T>
             if (channelMap.containsKey(key)) { // this channel exists already
                 channel = channelMap[key]!!
             } else { // have to create a new MultiGrouped
-                channel = Channel(Channel.UNLIMITED) /** Creates a [kotlinx.coroutines.experimental.channels.LinkedListChannel] */
+                channel = Channel(Channel.UNLIMITED)
+                /** Creates a [kotlinx.coroutines.experimental.channels.LinkedListChannel] */
                 // Converts a stream of elements received from the channel to the hot reactive publisher
                 send(MultiGroupedImpl(channel.asPublisher(coroutineContext), key) as MultiGrouped<T, R>)
                 channelMap[key] = channel // adds to Map

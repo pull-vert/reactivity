@@ -35,6 +35,14 @@ fun <T> solo(
 
 object SoloBuilder {
     // Static factory methods to create a Solo
+
+    /**
+     * Creates a [Solo] from a [value]
+     *
+     * @return the [Solo]<T> created
+     *
+     * @param T the type of the input [value]
+     */
     @JvmStatic
     fun <T> fromValue(value: T,
                   scheduler: Scheduler = Schedulers.emptyThreadContext()
