@@ -3,8 +3,6 @@ package reactivity.core.experimental
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import kotlinx.coroutines.experimental.rx2.rxFlowable
-import org.amshove.kluent.`should be greater than`
-import org.amshove.kluent.`should be less than`
 import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
@@ -12,75 +10,7 @@ import org.junit.Test
 class MultiCoroutineBuilderTest {
 
     @Test
-    fun `multi builder publishOn emptyThreadContext`() = runBlocking {
-        // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(Schedulers.fromCoroutineContext(coroutineContext)) {
-            for (x in 1..3) {
-                send(x) // this is a suspending function
-                println("Sent $x") // print after successfully sent item
-            }
-        }
-        // subscribe on another thread with a slow subscriber using Multi
-        var start: Long? = null
-        var time: Long? = null
-        source = source
-                .publishOn(Schedulers.emptyThreadContext(), false, 2) // specify buffer size of 2 items
-                .doOnSubscribe {
-                    start = System.currentTimeMillis()
-                    println("starting timer")
-                }
-                .doOnComplete {
-                    val end = System.currentTimeMillis()
-                    time = end - start!!
-                    println("Completed in $time ms")
-                }
-
-        source.subscribe{x ->
-            Thread.sleep(500) // 500ms to process each item
-            println("Processed $x")
-        }
-
-        delay(2000) // suspend the main thread for a few seconds
-        time!! `should be greater than` 1500
-        time!! `should be less than` 2000
-    }
-
-    @Test
-    fun `multi builder publishOn CommonPool`() = runBlocking {
-        // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(Schedulers.fromCoroutineContext(coroutineContext)) {
-            for (x in 1..3) {
-                send(x) // this is a suspending function
-                println("Sent $x") // print after successfully sent item
-            }
-        }
-        // subscribe on another thread with a slow subscriber using Multi
-        var start: Long? = null
-        var time: Long? = null
-        source = source
-                .publishOn(Schedulers.commonPoolThreadContext(), false, 2) // specify buffer size of 2 items
-                .doOnSubscribe {
-                    start = System.currentTimeMillis()
-                    println("starting timer")
-                }
-                .doOnComplete {
-                    val end = System.currentTimeMillis()
-                    time = end - start!!
-                    println("Completed in $time ms")
-                }
-
-        source.subscribe{x ->
-            Thread.sleep(500) // 500ms to process each item
-            println("Processed $x")
-        }
-
-        delay(2000) // suspend the main thread for a few seconds
-        time!! `should be greater than` 1500
-        time!! `should be less than` 2000
-    }
-
-    @Test
-    fun `multi builder publishOn emptyThreadContext 2 consumers`() = runBlocking {
+    fun `multi builder 2 consumers 1 slow consumer`() = runBlocking {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?

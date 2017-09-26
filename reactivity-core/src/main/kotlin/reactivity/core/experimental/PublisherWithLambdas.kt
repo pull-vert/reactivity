@@ -31,6 +31,10 @@ interface SubscribeWith<T> : Publisher<T> {
  */
 interface WithLambdas<T> : SubscribeWith<T> {
     // Methods for Publisher with lambdas
+    fun subscribe(): Disposable {
+        return subscribeWith(SubscriberLambda())
+    }
+
     fun subscribe(onNext: (T) -> Unit): Disposable {
         return subscribeWith(SubscriberLambda(onNext))
     }
