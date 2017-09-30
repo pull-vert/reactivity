@@ -5,12 +5,6 @@ interface Exceptions {
     companion object {
 
         /**
-         * A common error message used when a reactive streams source doesn't seem to respect
-         * backpressure signals, resulting in an operator's internal queue to be full.
-         */
-        const val BACKPRESSURE_ERROR_QUEUE_FULL = "Queue is full: Reactive Streams source doesn't respect backpressure"
-
-        /**
          * An exception that is propagated upward and considered as "fatal" as per Reactive
          * Stream limited list of exceptions allowed to bubble. It is not meant to be common
          * error resolution but might assist implementors in dealing with boundaries (queues,
@@ -21,19 +15,6 @@ interface Exceptions {
          */
         fun failWithCancel(): RuntimeException {
             return CancelException()
-        }
-
-        /**
-         * Return an [IllegalStateException] indicating the receiver is overrun by
-         * more signals than expected in case of a bounded queue or more generally that data
-         * couldn't be emitted due to a lack of request
-         *
-         * @param message the exception's message
-         * @return an [IllegalStateException]
-         * @see isOverflow
-         */
-        fun failWithOverflow(message: String): IllegalStateException {
-            return OverflowException(message)
         }
 
         /**
@@ -188,5 +169,3 @@ internal class CancelException : BubblingException("The subscriber has denied di
         private const val serialVersionUID = 2491425227432776144L
     }
 }
-
-internal class OverflowException(s: String) : IllegalStateException(s)

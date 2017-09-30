@@ -5,57 +5,6 @@ import org.reactivestreams.Subscription
 import reactivity.core.experimental.Exceptions
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 
-// Extensions for Subscription
-fun Subscription.validateRequested(n: Long): Boolean {
-    if (n == 0L) {
-        return false
-    }
-    if (n < 0) {
-        throw IllegalArgumentException(
-                "Spec. Rule 3.9 - Cannot request a non strictly positive number: " + n)
-    }
-    return true
-}
-
-/**
- * Concurrent addition bound to [Long.MAX_VALUE].
- * Any concurrent write will "happen before" this operation.
- *
- * @param <T> the parent instance type
- * @param updater  current field updater
- * @param instance current instance to update
- * @param toAdd    delta to add
- * @return value before addition or Long.MAX_VALUE
-</T> */
-fun <T> Subscription.getAndAddCap(updater: AtomicLongFieldUpdater<T>, instance: T, toAdd: Long): Long {
-    var r: Long
-    var u: Long
-    do {
-        r = updater.get(instance)
-        if (r == Long.MAX_VALUE) {
-            return Long.MAX_VALUE
-        }
-        u = addCap(r, toAdd)
-    } while (!updater.compareAndSet(instance, r, u))
-
-    return r
-}
-
-/**
- * Cap an addition to Long.MAX_VALUE
- *
- * @param a left operand
- * @param b right operand
- *
- * @return Addition result or Long.MAX_VALUE if overflow
- */
-fun Subscription.addCap(a: Long, b: Long): Long {
-    val res = a + b
-    return if (res < 0L) {
-        Long.MAX_VALUE
-    } else res
-}
-
 // Extensions for Subscriber
 
 /**
@@ -200,37 +149,3 @@ fun Subscriber<*>.validateSubscription(current: Subscription?, next: Subscriptio
 
     return true
 }
-
-///**
-// * Method for [SubscriberCallbacks] to deal with a doFinally
-// * callback that fails during onError. It drops the error to the global hook.
-// *
-// *  * The callback failure is thrown immediately if fatal.
-// *  * [onOperatorError] is
-// * called, adding the original error as suppressed
-// *  * [onErrorDropped] is called
-// *
-// * @param callbackFailure the afterTerminate callback failure
-// * @param originalError the onError throwable
-// */
-//fun Subscriber<*>.afterErrorWithFailure(callbackFailure: Throwable, originalError: Throwable) {
-//    Exceptions.throwIfFatal(callbackFailure)
-//    val _e = onOperatorError(null, callbackFailure, originalError)
-//    onErrorDropped(_e)
-//}
-//
-///**
-// * Method for [SubscriberCallbacks] to deal with a doFinally
-// * callback that fails during onComplete. It drops the error to the global hook.
-// *
-// *  * The callback failure is thrown immediately if fatal.
-// *  * [onOperatorError] is called
-// *  * [onErrorDropped] is called
-// *
-// * @param callbackFailure the afterTerminate callback failure
-// */
-//fun Subscriber<*>.afterCompleteOrCancelWithFailure(callbackFailure: Throwable) {
-//    Exceptions.throwIfFatal(callbackFailure)
-//    val _e = onOperatorError(callbackFailure)
-//    onErrorDropped(_e)
-//}
