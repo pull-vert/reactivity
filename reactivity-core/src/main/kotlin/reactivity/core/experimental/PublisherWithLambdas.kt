@@ -1,12 +1,13 @@
 package reactivity.core.experimental
 
+import kotlinx.atomicfu.AtomicRef
+import kotlinx.atomicfu.atomic
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactivity.core.experimental.internal.util.cancelledSubscription
 import reactivity.core.experimental.internal.util.onErrorDropped
 import reactivity.core.experimental.internal.util.validateSubscription
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
 
 interface SubscribeWith<T> : Publisher<T> {
     /**
@@ -58,16 +59,11 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
                                   private val onSubscribe: ((Subscription) -> Unit)? = null)
     : Subscriber<T>, Disposable {
 
-    @Volatile
-    @JvmField
-    var subscription: Subscription? = null
-    val S: AtomicReferenceFieldUpdater<SubscriberLambda<*>, Subscription> = AtomicReferenceFieldUpdater.newUpdater(SubscriberLambda::class.java,
-            Subscription::class.java,
-            "subscription")
+    val _subscription: AtomicRef<Subscription?> = atomic(null)
 
     override fun onSubscribe(s: Subscription) {
-        if (validateSubscription(subscription, s)) {
-            this.subscription = s
+        if (validateSubscription(_subscription.value, s)) {
+            _subscription.compareAndSet(expect = null, update = s)
             try {
                 this.onSubscribe?.invoke(s) ?: s.request(Long.MAX_VALUE)
             } catch (t: Throwable) {
@@ -79,7 +75,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
     }
 
     override fun onComplete() {
-        val s = S.getAndSet(this, cancelledSubscription())
+        val s = _subscription.getAndSet(cancelledSubscription())
         if (s === cancelledSubscription()) {
             return
         }
@@ -92,7 +88,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
     }
 
     override fun onError(t: Throwable) {
-        val s = S.getAndSet(this, cancelledSubscription())
+        val s = _subscription.getAndSet(cancelledSubscription())
         if (s === cancelledSubscription()) {
             onErrorDropped(t)
             return
@@ -102,20 +98,20 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
 
     override fun onNext(item: T) {
         try {
-            this.onNext?.invoke(item)
+            onNext?.invoke(item)
         } catch (t: Throwable) {
             Exceptions.throwIfFatal(t)
-            this.subscription?.cancel()
+            _subscription.value?.cancel()
             onError(t)
         }
     }
 
     override fun isDisposed(): Boolean {
-        return subscription === cancelledSubscription()
+        return _subscription.value === cancelledSubscription()
     }
 
     override fun dispose() {
-        val s = S.getAndSet(this, cancelledSubscription())
+        val s = _subscription.getAndSet(cancelledSubscription())
         if (s != null && s !== cancelledSubscription()) {
             s.cancel()
         }

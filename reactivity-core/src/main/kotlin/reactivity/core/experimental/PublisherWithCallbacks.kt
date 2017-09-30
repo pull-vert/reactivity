@@ -1,10 +1,10 @@
 package reactivity.core.experimental
 
+import kotlinx.atomicfu.atomic
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactivity.core.experimental.internal.util.*
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
 
 /**
  * This is the interface declaring the callback functions
@@ -49,9 +49,7 @@ private class SubscriberCallbacks<T> internal constructor(val parent: PublisherW
     var subscription: Subscription? = null
     @Volatile
     var done: Boolean = false
-    @Volatile
-    var once: Int = 0
-    val ONCE: AtomicIntegerFieldUpdater<SubscriberCallbacks<*>> = AtomicIntegerFieldUpdater.newUpdater<SubscriberCallbacks<*>>(SubscriberCallbacks::class.java, "once")
+    val _once = atomic(0)
 
     // Subscription functions
     override fun request(n: Long) {
@@ -149,7 +147,7 @@ private class SubscriberCallbacks<T> internal constructor(val parent: PublisherW
     }
 
     private fun runFinally() {
-        if (ONCE.compareAndSet(this, 0, 1)) {
+        if (_once.compareAndSet(expect = 0, update = 1)) {
             try {
                 parent.finallyBlock?.invoke()
             } catch (e: Throwable) {
