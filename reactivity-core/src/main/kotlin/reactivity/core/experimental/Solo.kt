@@ -1,11 +1,14 @@
 package reactivity.core.experimental
 
+import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.newCoroutineContext
+import kotlinx.coroutines.experimental.reactive.awaitSingle
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
 import reactivity.core.experimental.internal.coroutines.consumeUnique
+import java.io.Closeable
 import kotlin.coroutines.experimental.startCoroutine
 
 /**
@@ -49,6 +52,24 @@ object SoloBuilder {
     ) = solo(scheduler) {
         send(value)
     }
+}
+
+/**
+ * Subscribes to this [Solo] and performs the specified action for the unique received element.
+ */
+inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
+    action.invoke(awaitSingle())
+}
+
+/**
+ * 2 in 1 Type that can be used to [await] elements from the
+ * open producer and to [close] it to unsubscribe.
+ */
+interface DeferredCloseable<out T> : Deferred<T>, Closeable {
+    /**
+     * Closes this deferred.
+     */
+    override fun close()
 }
 
 /**
