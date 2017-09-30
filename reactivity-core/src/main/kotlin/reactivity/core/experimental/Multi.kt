@@ -78,10 +78,27 @@ interface Multi<T> : PublisherCommons<T> {
     override fun doFinally(finally: () -> Unit): Multi<T>
 
     // function from WithPublishOn
+    /**
+     * Returns a [Multi] that is published with the provided [scheduler] and the [delayError] option
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param delayError if error should be delayed
+     * @param prefetch number of items to request. When obtained, request this number again and so on
+     * until all items are received
+     */
     override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T>
 
     // Operators specific to Multi
 
+    /**
+     * Returns a [Multi] that is published with the provided [scheduler],
+     * the [delayError] option and the [prefetch] items
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param delayError if error should be delayed
+     * @param prefetch number of items to request. When obtained, request this number again and so on
+     * until all items are received
+     */
     fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
 
     /**
