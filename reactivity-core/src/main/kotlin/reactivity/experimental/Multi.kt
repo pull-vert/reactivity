@@ -183,7 +183,7 @@ interface Multi<T> : PublisherCommons<T> {
     fun <R> fusedFilterMap(scheduler: Scheduler, predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
 }
 
-internal open class MultiImpl<T> internal constructor(val delegate: Publisher<T>) : Multi<T>, Publisher<T> by delegate {
+internal open class MultiImpl<T> internal constructor(private val delegate: Publisher<T>) : Multi<T>, Publisher<T> by delegate {
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {

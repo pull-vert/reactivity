@@ -28,7 +28,7 @@ import kotlin.coroutines.experimental.startCoroutine
 fun <T> solo(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): Solo<T> = SoloImpl(Publisher<T> { subscriber ->
+): Solo<T> = SoloImpl(Publisher { subscriber ->
     val newContext = newCoroutineContext(scheduler.context)
     val coroutine = SoloCoroutine(newContext, subscriber)
     coroutine.initParentJob(scheduler.context[Job])
@@ -90,7 +90,7 @@ interface Solo<T> : PublisherCommons<T> {
     override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
 }
 
-internal class SoloImpl<T> internal constructor(val delegate: Publisher<T>) : Solo<T>, Publisher<T> by delegate {
+internal class SoloImpl<T> internal constructor(private val delegate: Publisher<T>) : Solo<T>, Publisher<T> by delegate {
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.onSubscribeBlock = onSubscribe

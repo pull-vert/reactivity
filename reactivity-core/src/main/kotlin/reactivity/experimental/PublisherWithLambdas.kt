@@ -17,7 +17,7 @@ interface SubscribeWith<T> : Publisher<T> {
      * @param subscriber the [Subscriber] to subscribe with
      * @param E the reified type of the [Subscriber] for chaining
      *
-     * @return the passed [Subscriber] after subscribing it to this [Publiser]
+     * @return the passed [Subscriber] after subscribing it to this [Publisher]
     </E> */
     fun <E : Subscriber<in T>> subscribeWith(subscriber: E): E {
         subscribe(subscriber)
@@ -32,23 +32,23 @@ interface SubscribeWith<T> : Publisher<T> {
  */
 interface WithLambdas<T> : SubscribeWith<T> {
     // Methods for Publisher with lambdas
-    fun subscribe(): reactivity.experimental.Disposable {
+    fun subscribe(): Disposable {
         return subscribeWith(SubscriberLambda())
     }
 
-    fun subscribe(onNext: (T) -> Unit): reactivity.experimental.Disposable {
+    fun subscribe(onNext: (T) -> Unit): Disposable {
         return subscribeWith(SubscriberLambda(onNext))
     }
 
-    fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): reactivity.experimental.Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError))
     }
 
-    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): reactivity.experimental.Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete))
     }
 
-    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): reactivity.experimental.Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
     }
 }
@@ -57,7 +57,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
                                   private val onError: ((Throwable) -> Unit)? = null,
                                   private val onComplete: (() -> Unit)? = null,
                                   private val onSubscribe: ((Subscription) -> Unit)? = null)
-    : Subscriber<T>, reactivity.experimental.Disposable {
+    : Subscriber<T>, Disposable {
 
     val _subscription: AtomicRef<Subscription?> = atomic(null)
 
@@ -67,7 +67,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
             try {
                 this.onSubscribe?.invoke(s) ?: s.request(Long.MAX_VALUE)
             } catch (t: Throwable) {
-                reactivity.experimental.Exceptions.throwIfFatal(t)
+                Exceptions.throwIfFatal(t)
                 s.cancel()
                 onError(t)
             }
@@ -82,7 +82,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
         try {
             this.onComplete?.invoke()
         } catch (t: Throwable) {
-            reactivity.experimental.Exceptions.throwIfFatal(t)
+            Exceptions.throwIfFatal(t)
             onError(t)
         }
     }
@@ -93,14 +93,14 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
             onErrorDropped(t)
             return
         }
-        this.onError?.invoke(t) ?: throw reactivity.experimental.Exceptions.errorCallbackNotImplemented(t)
+        this.onError?.invoke(t) ?: throw Exceptions.errorCallbackNotImplemented(t)
     }
 
     override fun onNext(item: T) {
         try {
             onNext?.invoke(item)
         } catch (t: Throwable) {
-            reactivity.experimental.Exceptions.throwIfFatal(t)
+            Exceptions.throwIfFatal(t)
             _subscription.value?.cancel()
             onError(t)
         }

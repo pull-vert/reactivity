@@ -140,7 +140,7 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
      * Returns non-null closed token if it exists on the Atomic.
      * @suppress **This is unstable API and it is subject to change.**
      */
-    protected val completedExceptionally: Closed<*>? get() = _consumeElement.value as? Closed<*>
+    private val completedExceptionally: Closed<*>? get() = _consumeElement.value as? Closed<*>
 
     /**
      * Returns non-null closed token if it is last in one of the Atomic.
@@ -204,15 +204,12 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
     override fun close(cause: Throwable?): Boolean {
         val closed = Closed<T>(cause)
         while (true) {
-            val consume = _consumeElement.value
-            if (consume == null) {
-                if (_consumeElement.compareAndSet(null, closed)) {
-                    onClosed(closed)
-                    afterClose(cause)
-                    return true
-                } else
-                    continue // retry on failure
-            }
+            val consume = _consumeElement.value ?: if (_consumeElement.compareAndSet(null, closed)) {
+                onClosed(closed)
+                afterClose(cause)
+                return true
+            } else
+                continue // retry on failure
             if (consume is Closed<*>) return false // already marked as closed -- nothing to do
             /** element was already normally consumed in [completeInternal] */
             onClosed(closed)
