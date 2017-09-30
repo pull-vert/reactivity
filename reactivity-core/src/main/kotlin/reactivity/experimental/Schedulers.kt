@@ -41,9 +41,9 @@ object Schedulers {
     fun fromCoroutineContext(context: CoroutineContext): Scheduler {
         return SchedulerImpl(context)
     }
-
-    private class SchedulerImpl(override val context: CoroutineContext) : Scheduler
 }
+
+class SchedulerImpl(override val context: CoroutineContext) : Scheduler
 
 interface Scheduler /*: Disposable*/ {
     val context: CoroutineContext
