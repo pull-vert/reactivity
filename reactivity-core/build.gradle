@@ -1,6 +1,5 @@
 buildscript {
     ext.reactive_streams_version = '1.0.1'
-    ext.atomicfu_version = '0.8'
 
     repositories {
         mavenCentral()
