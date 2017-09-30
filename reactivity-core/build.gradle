@@ -1,5 +1,4 @@
 buildscript {
-    ext.kotlinx_coroutines_version = '0.19'
     ext.reactive_streams_version = '1.0.1'
     ext.atomicfu_version = '0.8'
 

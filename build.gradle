@@ -1,5 +1,8 @@
 buildscript {
     ext.kotlin_version = '1.1.51'
+    ext.kotlinx_coroutines_version = '0.19'
+
+    // for tests
     ext.kluent_version = '1.30'
 
     repositories {

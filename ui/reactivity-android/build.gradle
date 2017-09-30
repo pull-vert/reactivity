@@ -1,0 +1,4 @@
+dependencies {
+    compile(project(":reactivity-core"))
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinx_coroutines_version"
+}
