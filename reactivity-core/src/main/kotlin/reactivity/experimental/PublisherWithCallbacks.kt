@@ -1,10 +1,10 @@
-package reactivity.core.experimental
+package reactivity.experimental
 
 import kotlinx.atomicfu.atomic
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.core.experimental.internal.util.*
+import reactivity.experimental.internal.util.*
 
 /**
  * This is the interface declaring the callback functions
@@ -110,7 +110,7 @@ private class SubscriberCallbacks<T> internal constructor(val parent: PublisherW
         done = true
         var throwable = t
         if (parent.onErrorBlock != null) {
-            Exceptions.throwIfFatal(t)
+            reactivity.experimental.Exceptions.throwIfFatal(t)
             try {
                 parent.onErrorBlock?.invoke(t)
             } catch (e: Throwable) {
@@ -121,7 +121,7 @@ private class SubscriberCallbacks<T> internal constructor(val parent: PublisherW
         try {
             actual.onError(throwable)
         } catch (use: UnsupportedOperationException) {
-            if (parent.onErrorBlock == null || !Exceptions.isErrorCallbackNotImplemented(use) && use.cause !== throwable) {
+            if (parent.onErrorBlock == null || !reactivity.experimental.Exceptions.isErrorCallbackNotImplemented(use) && use.cause !== throwable) {
                 throw use
             }
         }
@@ -151,7 +151,7 @@ private class SubscriberCallbacks<T> internal constructor(val parent: PublisherW
             try {
                 parent.finallyBlock?.invoke()
             } catch (e: Throwable) {
-                Exceptions.throwIfFatal(e)
+                reactivity.experimental.Exceptions.throwIfFatal(e)
                 onErrorDropped(e)
             }
         }

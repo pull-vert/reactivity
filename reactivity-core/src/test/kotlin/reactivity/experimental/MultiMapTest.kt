@@ -1,4 +1,4 @@
-package reactivity.core.experimental
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach

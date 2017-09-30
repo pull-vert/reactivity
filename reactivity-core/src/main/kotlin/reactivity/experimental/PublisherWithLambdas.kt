@@ -1,13 +1,13 @@
-package reactivity.core.experimental
+package reactivity.experimental
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.core.experimental.internal.util.cancelledSubscription
-import reactivity.core.experimental.internal.util.onErrorDropped
-import reactivity.core.experimental.internal.util.validateSubscription
+import reactivity.experimental.internal.util.cancelledSubscription
+import reactivity.experimental.internal.util.onErrorDropped
+import reactivity.experimental.internal.util.validateSubscription
 
 interface SubscribeWith<T> : Publisher<T> {
     /**
@@ -32,23 +32,23 @@ interface SubscribeWith<T> : Publisher<T> {
  */
 interface WithLambdas<T> : SubscribeWith<T> {
     // Methods for Publisher with lambdas
-    fun subscribe(): Disposable {
+    fun subscribe(): reactivity.experimental.Disposable {
         return subscribeWith(SubscriberLambda())
     }
 
-    fun subscribe(onNext: (T) -> Unit): Disposable {
+    fun subscribe(onNext: (T) -> Unit): reactivity.experimental.Disposable {
         return subscribeWith(SubscriberLambda(onNext))
     }
 
-    fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): reactivity.experimental.Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError))
     }
 
-    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): reactivity.experimental.Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete))
     }
 
-    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): reactivity.experimental.Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
     }
 }
@@ -57,7 +57,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
                                   private val onError: ((Throwable) -> Unit)? = null,
                                   private val onComplete: (() -> Unit)? = null,
                                   private val onSubscribe: ((Subscription) -> Unit)? = null)
-    : Subscriber<T>, Disposable {
+    : Subscriber<T>, reactivity.experimental.Disposable {
 
     val _subscription: AtomicRef<Subscription?> = atomic(null)
 
@@ -67,7 +67,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
             try {
                 this.onSubscribe?.invoke(s) ?: s.request(Long.MAX_VALUE)
             } catch (t: Throwable) {
-                Exceptions.throwIfFatal(t)
+                reactivity.experimental.Exceptions.throwIfFatal(t)
                 s.cancel()
                 onError(t)
             }
@@ -82,7 +82,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
         try {
             this.onComplete?.invoke()
         } catch (t: Throwable) {
-            Exceptions.throwIfFatal(t)
+            reactivity.experimental.Exceptions.throwIfFatal(t)
             onError(t)
         }
     }
@@ -93,14 +93,14 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
             onErrorDropped(t)
             return
         }
-        this.onError?.invoke(t) ?: throw Exceptions.errorCallbackNotImplemented(t)
+        this.onError?.invoke(t) ?: throw reactivity.experimental.Exceptions.errorCallbackNotImplemented(t)
     }
 
     override fun onNext(item: T) {
         try {
             onNext?.invoke(item)
         } catch (t: Throwable) {
-            Exceptions.throwIfFatal(t)
+            reactivity.experimental.Exceptions.throwIfFatal(t)
             _subscription.value?.cancel()
             onError(t)
         }

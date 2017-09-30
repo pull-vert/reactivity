@@ -1,4 +1,4 @@
-package reactivity.core.experimental
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.Job
@@ -7,7 +7,7 @@ import kotlinx.coroutines.experimental.newCoroutineContext
 import kotlinx.coroutines.experimental.reactive.awaitSingle
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
-import reactivity.core.experimental.internal.coroutines.consumeUnique
+import reactivity.experimental.internal.coroutines.consumeUnique
 import java.io.Closeable
 import kotlin.coroutines.experimental.startCoroutine
 

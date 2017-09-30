@@ -1,4 +1,4 @@
-package reactivity.core.experimental
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ProducerScope
@@ -83,8 +83,6 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param delayError if error should be delayed
-     * @param prefetch number of items to request. When obtained, request this number again and so on
-     * until all items are received
      */
     override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T>
 
@@ -156,7 +154,7 @@ interface Multi<T> : PublisherCommons<T> {
     fun mergeWith(scheduler: Scheduler, vararg others: Publisher<T>): Multi<T>
 
     /**
-     * Returns a [Multi] that can contain several [MultiChannel], each is a group of received elements from
+     * Returns a [Multi] that can contain several [MultiGrouped], each is a group of received elements from
      * the source stream that are related with the same key
      *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in

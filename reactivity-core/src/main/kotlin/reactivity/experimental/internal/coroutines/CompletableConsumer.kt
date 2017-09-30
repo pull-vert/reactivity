@@ -1,4 +1,4 @@
-package reactivity.core.experimental.internal.coroutines
+package reactivity.experimental.internal.coroutines
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
@@ -7,7 +7,7 @@ import kotlinx.coroutines.experimental.internal.LockFreeLinkedListNode
 import kotlinx.coroutines.experimental.internal.Symbol
 import kotlinx.coroutines.experimental.selects.SelectClause0
 import kotlinx.coroutines.experimental.selects.SelectClause1
-import reactivity.core.experimental.ClosedProducerException
+import reactivity.experimental.ClosedProducerException
 import kotlin.coroutines.experimental.CoroutineContext
 
 internal const val DEFAULT_CLOSE_MESSAGE = "Consumer was closed"

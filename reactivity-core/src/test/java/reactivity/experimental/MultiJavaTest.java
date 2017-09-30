@@ -1,4 +1,4 @@
-package reactivity.core.experimental;
+package reactivity.experimental;
 
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;

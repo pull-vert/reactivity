@@ -1,4 +1,4 @@
-package reactivity.core.experimental
+package reactivity.experimental
 
 /**
  * Common functions for [Multi] and [Solo]

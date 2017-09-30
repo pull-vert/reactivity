@@ -1,8 +1,8 @@
-package reactivity.core.experimental.internal.util
+package reactivity.experimental.internal.util
 
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.core.experimental.Exceptions
+import reactivity.experimental.Exceptions
 
 // Extensions for Subscriber
 
@@ -99,10 +99,10 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?,
                                   error: Throwable,
                                   dataSignal: Any?): Throwable {
 
-    Exceptions.throwIfFatal(error)
+    reactivity.experimental.Exceptions.throwIfFatal(error)
     subscription?.cancel()
 
-    val t = Exceptions.unwrap(error)
+    val t = reactivity.experimental.Exceptions.unwrap(error)
     if (dataSignal != null) {
         if (dataSignal !== t && dataSignal is Throwable) {
             t.addSuppressed(dataSignal)
@@ -119,7 +119,7 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?,
  *
  */
 fun Subscriber<*>.onNextDropped() {
-    throw Exceptions.failWithCancel()
+    throw reactivity.experimental.Exceptions.failWithCancel()
 }
 
 /**
@@ -128,7 +128,7 @@ fun Subscriber<*>.onNextDropped() {
  * @param e the dropped exception
  */
 fun Subscriber<*>.onErrorDropped(e: Throwable) {
-   throw Exceptions.bubble(e)
+   throw reactivity.experimental.Exceptions.bubble(e)
 }
 
 /**

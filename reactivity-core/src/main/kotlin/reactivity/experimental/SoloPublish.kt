@@ -1,4 +1,4 @@
-package reactivity.core.experimental
+package reactivity.experimental
 
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.experimental.AbstractCoroutine

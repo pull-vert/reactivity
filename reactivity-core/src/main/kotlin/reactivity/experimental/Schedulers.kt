@@ -1,7 +1,6 @@
-package reactivity.core.experimental
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.*
-import reactivity.core.experimental.internal.coroutines.Swing
 import java.util.concurrent.Executor
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
@@ -31,11 +30,6 @@ object Schedulers {
     @JvmStatic
     fun unconfinedThreadContext(): Scheduler {
         return SchedulerImpl(Unconfined)
-    }
-
-    @JvmStatic
-    fun swingThreadContext(): Scheduler {
-        return SchedulerImpl(Swing)
     }
 
     @JvmStatic
