@@ -33,9 +33,6 @@ internal class SoloCoroutine<T>(
     override val isFull: Boolean = mutex.isLocked
     override fun close(cause: Throwable?) = cancel(cause)
 
-//    private fun sendException() =
-//            (state as? CompletedExceptionally)?.cause ?: ClosedProducerException(CLOSED_MESSAGE)
-
     override fun offer(element: T): Boolean {
         if (!mutex.tryLock()) return false
         doLockedUnique(element)
