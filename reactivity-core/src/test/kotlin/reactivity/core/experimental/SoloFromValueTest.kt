@@ -1,5 +1,6 @@
 package reactivity.core.experimental
 
+import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal`
 import org.junit.Test
@@ -33,7 +34,7 @@ class SoloFromValueTest {
         val source = SoloBuilder.fromValue(1)
         // print element from the source
         println("empty consumer:")
-        source.openDeferred().use {
+        source.openSubscription().use {
             // do nothing, will close without consuming value
         }
     }

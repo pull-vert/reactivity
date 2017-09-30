@@ -5,7 +5,8 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.experimental.*
 import kotlinx.coroutines.experimental.internal.LockFreeLinkedListNode
 import kotlinx.coroutines.experimental.internal.Symbol
-import kotlinx.coroutines.experimental.selects.SelectInstance
+import kotlinx.coroutines.experimental.selects.SelectClause0
+import kotlinx.coroutines.experimental.selects.SelectClause1
 import reactivity.core.experimental.ClosedProducerException
 import kotlin.coroutines.experimental.CoroutineContext
 
@@ -13,7 +14,7 @@ internal const val DEFAULT_CLOSE_MESSAGE = "Consumer was closed"
 
 /**
  * Indicates attempt to [receive][kotlinx.coroutines.experimental.Deferred.await] on [isCompletedExceptionally][kotlinx.coroutines.experimental.Deferred.isCompletedExceptionally]
- * deferred that was closed _normally_. A _failed_ producer rethrows the original [close][Producer.close] cause
+ * deferred that was closed _normally_. A _failed_ producer rethrows the original [close][reactivity.core.experimental.DeferredCloseable.close] cause
  * exception on receive attempts.
  */
 internal class ClosedConsumerException(message: String?) : NoSuchElementException(message)
@@ -23,7 +24,6 @@ internal class ClosedConsumerException(message: String?) : NoSuchElementExceptio
  */
 inline suspend fun <E> CompletableConsumer<E>.consumeUnique(action: (E) -> Unit) {
     action.invoke(await())
-//    close(cause = null)
 }
 
 interface CompletableConsumer<T> : CompletableDeferred<T> {
@@ -36,28 +36,46 @@ interface CompletableConsumer<T> : CompletableDeferred<T> {
         get() = throw UnsupportedOperationException("Operators should not use this method!")
     override val isCompleted: Boolean
         get() = throw UnsupportedOperationException("Operators should not use this method!")
+    override val onJoin: SelectClause0
+        get() = throw UnsupportedOperationException("Operators should not use this method!")
+    override val onAwait: SelectClause1<T>
+        get() = throw UnsupportedOperationException("Operators should not use this method!")
+
+    override fun attachChild(child: Job): DisposableHandle {
+        throw UnsupportedOperationException("Operators should not use this method!")
+    }
+
+    override fun getCompletionExceptionOrNull(): Throwable? {
+        throw UnsupportedOperationException("Operators should not use this method!")
+    }
+
+    override fun cancelChildren(cause: Throwable?) {
+        throw UnsupportedOperationException("Operators should not use this method!")
+    }
+
+    override fun getCancellationException(): CancellationException {
+        throw UnsupportedOperationException("Operators should not use this method!")
+    }
+
+    override fun invokeOnCompletion(onCancelling: Boolean, handler: CompletionHandler): DisposableHandle {
+        throw UnsupportedOperationException("Operators should not use this method!")
+    }
+
+    @Deprecated(message = "For binary compatibility", level = DeprecationLevel.HIDDEN)
+    override fun invokeOnCompletion(handler: CompletionHandler): DisposableHandle {
+        throw UnsupportedOperationException("Operators should not use this method!")
+    }
+
+    @Deprecated(message = "For binary compatibility", level = DeprecationLevel.HIDDEN)
+    override fun invokeOnCompletion(handler: CompletionHandler, onCancelling: Boolean): DisposableHandle {
+        throw UnsupportedOperationException("Operators should not use this method!")
+    }
 
     override fun cancel(cause: Throwable?): Boolean {
         throw UnsupportedOperationException("Operators should not use this method!")
     }
 
-    override fun getCompletionException(): Throwable {
-        throw UnsupportedOperationException("Operators should not use this method!")
-    }
-
-    override fun invokeOnCompletion(handler: CompletionHandler): DisposableHandle {
-        throw UnsupportedOperationException("Operators should not use this method!")
-    }
-
-    override fun invokeOnCompletion(handler: CompletionHandler, onCancelling: Boolean): DisposableHandle {
-        throw UnsupportedOperationException("Operators should not use this method!")
-    }
-
     suspend override fun join() {
-        throw UnsupportedOperationException("Operators should not use this method!")
-    }
-
-     override fun <R> registerSelectJoin(select: SelectInstance<R>, block: suspend () -> R) {
         throw UnsupportedOperationException("Operators should not use this method!")
     }
 
@@ -84,11 +102,14 @@ private abstract class Consume<in E> : LockFreeLinkedListNode(), ConsumeOrClosed
 }
 
 /** @suppress **This is unstable API and it is subject to change.** */
-@JvmField val PRODUCE_SUCCESS: Any = Symbol("PRODUCE_SUCCESS")
+@JvmField
+val PRODUCE_SUCCESS: Any = Symbol("PRODUCE_SUCCESS")
 /** @suppress **This is unstable API and it is subject to change.** */
-@JvmField val CLOSE_RESUMED: Any = Symbol("CLOSE_RESUMED")
+@JvmField
+val CLOSE_RESUMED: Any = Symbol("CLOSE_RESUMED")
 /** @suppress **This is unstable API and it is subject to change.** */
-@JvmField val GET_COMPLETED_FAILED: Any = Symbol("GET_COMPLETED_FAILED")
+@JvmField
+val GET_COMPLETED_FAILED: Any = Symbol("GET_COMPLETED_FAILED")
 
 /**
  * Represents closed consumer.
@@ -102,7 +123,10 @@ class Closed<in E>(
 
     override val produceResult get() = this
     override fun tryResumeConsume(value: E, idempotent: Any?): Any? = CLOSE_RESUMED
-    override fun completeResumeConsume(token: Any) { check(token === CLOSE_RESUMED) }
+    override fun completeResumeConsume(token: Any) {
+        check(token === CLOSE_RESUMED)
+    }
+
     override fun toString(): String = "Closed[$closeCause]"
 }
 
@@ -270,10 +294,6 @@ internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
         while (true) {
             return _bufferedElement.value ?: return GET_COMPLETED_FAILED
         }
-    }
-
-    override fun <R> registerSelectAwait(select: SelectInstance<R>, block: suspend (T) -> R) {
-        // TODO : implement when needed
     }
 
     private class ConsumeElement<in E>(

@@ -6,42 +6,22 @@ import kotlinx.coroutines.experimental.CancellationException
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.SendChannel
 import kotlinx.coroutines.experimental.handleCoroutineException
+import kotlinx.coroutines.experimental.selects.SelectClause2
 import kotlinx.coroutines.experimental.selects.SelectInstance
 import kotlinx.coroutines.experimental.sync.Mutex
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import kotlin.coroutines.experimental.CoroutineContext
 
-/**
- * Scope for [solo] coroutine builder.
- */
-//interface SoloProducerScope<in E> : CoroutineScope, Producer<E> {
-//    /**
-//     * A reference to the producer that this coroutine [produce][produce] elements to.
-//     * It is provided for convenience, so that the code in the coroutine can refer
-//     * to the producer as `producer` as apposed to `this`.
-//     * All the [Producer] functions on this interface delegate to
-//     * the producer instance returned by this function.
-//     */
-//    val producer: Producer<E>
-//}
-
-/**
- * Indicates attempt to [produce][Producer.produce] on [isClosedForProduce][Producer.isClosedForProduce] consumer
- * that was closed _normally_. A _failed_ consumer rethrows the original [close][Producer.close] cause
- * exception on send attempts.
- */
 class ClosedProducerException(message: String?) : CancellationException(message)
 
-private const val CLOSED_MESSAGE = "This subscription had already closed (completed or failed)"
 private const val CLOSED = -1L    // closed, but have not signalled onCompleted/onError yet
 private const val SIGNALLED = -2L  // already signalled subscriber onCompleted/onError
 
 internal class SoloCoroutine<T>(
         parentContext: CoroutineContext,
         private val subscriber: Subscriber<T>
-) : AbstractCoroutine<Unit>(parentContext, true), ProducerScope<T>, Subscription {
-
+) : AbstractCoroutine<Unit>(parentContext, true), ProducerScope<T>, Subscription, SelectClause2<T, SendChannel<T>> {
     override val channel: SendChannel<T> get() = this
 
     // Mutex is locked when either nRequested == 0 or while subscriber.onXXX is being invoked
@@ -49,13 +29,12 @@ internal class SoloCoroutine<T>(
 
     private val _nRequested = atomic(0L) // < 0 when closed (CLOSED or SIGNALLED)
 
-    // Never Full ! Just one item to send
-    override val isFull: Boolean get() = false
     override val isClosedForSend: Boolean get() = isCompleted
-    override fun close(cause: Throwable?): Boolean = cancel(cause)
+    override val isFull: Boolean = mutex.isLocked
+    override fun close(cause: Throwable?) = cancel(cause)
 
-    private fun sendException() =
-            (state as? CompletedExceptionally)?.cause ?: ClosedProducerException(CLOSED_MESSAGE)
+//    private fun sendException() =
+//            (state as? CompletedExceptionally)?.cause ?: ClosedProducerException(CLOSED_MESSAGE)
 
     override fun offer(element: T): Boolean {
         if (!mutex.tryLock()) return false
@@ -64,7 +43,7 @@ internal class SoloCoroutine<T>(
     }
 
     suspend override fun send(element: T) {
-        // fast-path -- try produce without suspension
+        // fast-path -- try send without suspension
         if (offer(element)) return
         // slow-path does suspend
         return sendSuspend(element)
@@ -75,12 +54,24 @@ internal class SoloCoroutine<T>(
         doLockedUnique(element)
     }
 
+    override val onSend: SelectClause2<T, SendChannel<T>>
+        get() = this
+
+    // registerSelectSend
+    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
+    override fun <R> registerSelectClause2(select: SelectInstance<R>, element: T, block: suspend (SendChannel<T>) -> R) {
+        mutex.onLock.registerSelectClause2(select, null) {
+            doLockedUnique(element)
+            block(this)
+        }
+    }
+
     // assert: mutex.isLocked()
     private fun doLockedUnique(elem: T) {
         // check if already closed for send
         if (!isActive) {
             doLockedSignalCompleted()
-            throw sendException()
+            throw getCancellationException()
         }
         // notify subscriber
         try {
@@ -92,7 +83,7 @@ internal class SoloCoroutine<T>(
             } finally {
                 doLockedSignalCompleted()
             }
-            throw sendException()
+            throw getCancellationException()
         }
         // now update nRequested
         while (true) { // lock-free loop on nRequested
@@ -143,13 +134,7 @@ internal class SoloCoroutine<T>(
         }
     }
 
-    override fun <R> registerSelectSend(select: SelectInstance<R>, element: T, block: suspend () -> R) =
-            mutex.registerSelectLock(select, null) {
-                doLockedUnique(element)
-                block()
-            }
-
-    override fun request(n: Long) {
+   override fun request(n: Long) {
         if (n < 0) {
             cancel(IllegalArgumentException("Must request non-negative number, but $n requested"))
             return
@@ -176,7 +161,7 @@ internal class SoloCoroutine<T>(
         }
     }
 
-    override fun onCancellation() {
+    override fun onCancellation(exceptionally: CompletedExceptionally?) {
         while (true) { // lock-free loop for nRequested
             val cur = _nRequested.value
             if (cur == SIGNALLED) return // some other thread holding lock already signalled cancellation/completion

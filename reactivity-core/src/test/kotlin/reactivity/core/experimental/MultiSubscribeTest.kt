@@ -1,5 +1,6 @@
 package reactivity.core.experimental
 
+import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal to`
 import org.junit.Test
@@ -23,6 +24,7 @@ class MultiSubscribeTest {
         } , onComplete = {
             onComplete = true
         })
+        delay(100)
         finally `should equal to` true
         onError `should equal to` true
         onComplete `should equal to` false
@@ -41,6 +43,7 @@ class MultiSubscribeTest {
                 }
         // iterate over the source fully : no backpressure = request(Long.maxValue)
         source.subscribe()
+        delay(100)
         finally `should equal to` true
         onNext `should equal to` true
     }
