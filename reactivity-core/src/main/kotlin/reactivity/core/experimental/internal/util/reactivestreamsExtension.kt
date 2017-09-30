@@ -3,7 +3,6 @@ package reactivity.core.experimental.internal.util
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import reactivity.core.experimental.Exceptions
-import java.util.concurrent.atomic.AtomicLongFieldUpdater
 
 // Extensions for Subscriber
 
