@@ -57,7 +57,7 @@ interface CompletableConsumer<T> : CompletableDeferred<T> {
         throw UnsupportedOperationException("Operators should not use this method!")
     }
 
-    override fun <R> registerSelectJoin(select: SelectInstance<R>, block: suspend () -> R) {
+     override fun <R> registerSelectJoin(select: SelectInstance<R>, block: suspend () -> R) {
         throw UnsupportedOperationException("Operators should not use this method!")
     }
 
@@ -108,9 +108,9 @@ class Closed<in E>(
 
 internal open class CompletableConsumerImpl<T> : CompletableConsumer<T> {
 
-    val _consumeElement: AtomicRef<ConsumeOrClosed<T>?> = atomic(null)
+    private val _consumeElement: AtomicRef<ConsumeOrClosed<T>?> = atomic(null)
     // Can be null | Closed | or T
-    val _bufferedElement: AtomicRef<Any?> = atomic(null)
+    private val _bufferedElement: AtomicRef<Any?> = atomic(null)
 
     /**
      * Returns non-null closed token if it exists on the Atomic.

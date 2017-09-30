@@ -1,7 +1,14 @@
 buildscript {
     ext.kotlinx_coroutines_version = '0.18'
     ext.reactive_streams_version = '1.0.1'
-    ext.kotlinx_atomicfu_version = '0.7'
+    ext.atomicfu_version = '0.8'
+
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version"
+    }
 }
 
 repositories {
@@ -9,10 +16,15 @@ repositories {
     maven { setUrl("http://repo.spring.io/milestone") }
 }
 
+apply plugin: 'kotlinx-atomicfu'
+
 dependencies {
+    // https://github.com/Kotlin/kotlinx.coroutines/tree/master/reactive/kotlinx-coroutines-reactive
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinx_coroutines_version"
-    // uncomment if need for atomicfu dependency
-    compile("org.jetbrains.kotlinx:atomicfu:$kotlinx_atomicfu_version") {
+    compileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
+        exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
+    }
+    testCompile("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
         exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
     }
     // Reactive Streams
@@ -23,6 +35,25 @@ dependencies {
     testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:$kotlinx_coroutines_version"
     testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinx_coroutines_version"
     testCompile "io.projectreactor:reactor-core:3.1.0.RC1"
+}
+
+//Install bytecode transformation pipeline so that compiled classes from classes directory
+// get transformed to a different classes-post-atomicfu directory to be used later by tests and delivery.
+
+def CLASSES_POST_ATOMICFU = file("$buildDir/classes-post-atomicfu/main")
+
+atomicFU {
+    inputFiles = sourceSets.main.output.classesDirs
+    outputDir = CLASSES_POST_ATOMICFU
+    classPath = sourceSets.main.runtimeClasspath
+}
+
+atomicFU.dependsOn compileKotlin
+testClasses.dependsOn atomicFU
+jar.dependsOn atomicFU
+
+jar {
+    from files(CLASSES_POST_ATOMICFU, sourceSets.main.output.resourcesDir)
 }
 
 // Compile & Test with Java 6
