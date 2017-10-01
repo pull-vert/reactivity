@@ -1,3 +1,4 @@
 dependencies {
-
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-nio:$kotlinx_coroutines_version"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-io:$kotlinx_coroutines_version"
 }
