@@ -34,7 +34,7 @@ fun <T> solo(
     coroutine.initParentJob(scheduler.context[Job])
     subscriber.onSubscribe(coroutine) // do it first (before starting coroutine), to avoid unnecessary suspensions
     block.startCoroutine(coroutine, coroutine)
-})
+}, scheduler)
 
 /**
  * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
@@ -54,7 +54,7 @@ object SoloBuilder {
     @JvmStatic
     fun <T> fromValue(value: T) = fromValue(DEFAULT_SCHEDULER, value)
 
-            /**
+    /**
      * Creates a [Solo] from a [value]
      *
      * @return the [Solo]<T> created
@@ -107,7 +107,7 @@ interface Solo<T> : PublisherCommons<T> {
      *
      * @param delayError if error should be delayed
      */
-    override fun publishOn(delayError: Boolean) = publishOn(DEFAULT_SCHEDULER, delayError)
+    override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
 
     /**
      * Returns a [Solo] that is published with the provided [scheduler] and the [delayError] option
@@ -120,7 +120,10 @@ interface Solo<T> : PublisherCommons<T> {
     // Operators specific to Solo
 }
 
-internal class SoloImpl<T> internal constructor(private val delegate: Publisher<T>) : Solo<T>, Publisher<T> by delegate {
+internal class SoloImpl<T> internal constructor(private val delegate: Publisher<T>,
+                                                override val initialScheduler: Scheduler)
+    : Solo<T>, Publisher<T> by delegate {
+
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.onSubscribeBlock = onSubscribe
@@ -129,7 +132,7 @@ internal class SoloImpl<T> internal constructor(private val delegate: Publisher<
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onSubscribeBlock = onSubscribe
-        return SoloImpl(publisherCallbacks)
+        return SoloImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnNext(onNext: (T) -> Unit): Solo<T> {
@@ -140,7 +143,7 @@ internal class SoloImpl<T> internal constructor(private val delegate: Publisher<
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onNextBlock = onNext
-        return SoloImpl(publisherCallbacks)
+        return SoloImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnError(onError: (Throwable) -> Unit): Solo<T> {
@@ -151,7 +154,7 @@ internal class SoloImpl<T> internal constructor(private val delegate: Publisher<
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onErrorBlock = onError
-        return SoloImpl(publisherCallbacks)
+        return SoloImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnComplete(onComplete: () -> Unit): Solo<T> {
@@ -162,7 +165,7 @@ internal class SoloImpl<T> internal constructor(private val delegate: Publisher<
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onCompleteBlock = onComplete
-        return SoloImpl(publisherCallbacks)
+        return SoloImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnCancel(onCancel: () -> Unit): Solo<T> {
@@ -173,7 +176,7 @@ internal class SoloImpl<T> internal constructor(private val delegate: Publisher<
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onCancelBlock = onCancel
-        return SoloImpl(publisherCallbacks)
+        return SoloImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T> {
@@ -184,7 +187,7 @@ internal class SoloImpl<T> internal constructor(private val delegate: Publisher<
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onRequestBlock = onRequest
-        return SoloImpl(publisherCallbacks)
+        return SoloImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doFinally(finally: () -> Unit): Solo<T> {
@@ -195,7 +198,7 @@ internal class SoloImpl<T> internal constructor(private val delegate: Publisher<
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.finallyBlock = finally
-        return SoloImpl(publisherCallbacks)
+        return SoloImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T> {

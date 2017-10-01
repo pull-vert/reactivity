@@ -29,7 +29,7 @@ import org.reactivestreams.Subscription
 fun <T> multi(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): Multi<T> = MultiImpl(publish(scheduler.context, block))
+): Multi<T> = MultiImpl(publish(scheduler.context, block), scheduler)
 
 /**
  * Singleton builder for [Multi], a multi values Reactive Stream [Publisher]
@@ -103,11 +103,11 @@ interface Multi<T> : PublisherCommons<T> {
 
     // function from WithPublishOn
     /**
-     * Returns a [Multi] that is published with [DEFAULT_SCHEDULER] and the [delayError] option
+     * Returns a [Multi] that is published with [initialScheduler] and the [delayError] option
      *
      * @param delayError if error should be delayed
      */
-    override fun publishOn(delayError: Boolean) = publishOn(DEFAULT_SCHEDULER, delayError)
+    override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
 
     /**
      * Returns a [Multi] that is published with the provided [scheduler] and the [delayError] option
@@ -120,14 +120,14 @@ interface Multi<T> : PublisherCommons<T> {
     // Operators specific to Multi
 
     /**
-     * Returns a [Multi] that is published with [DEFAULT_SCHEDULER],
+     * Returns a [Multi] that is published with [initialScheduler],
      * the [delayError] option and the [prefetch] items
      *
      * @param delayError if error should be delayed
      * @param prefetch number of items to request. When obtained, request this number again and so on
      * until all items are received
      */
-    fun publishOn(delayError: Boolean, prefetch: Int) = publishOn(DEFAULT_SCHEDULER, delayError, prefetch)
+    fun publishOn(delayError: Boolean, prefetch: Int) = publishOn(initialScheduler, delayError, prefetch)
 
     /**
      * Returns a [Multi] that is published with the provided [scheduler],
@@ -146,7 +146,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param mapper the mapper function
      */
-    fun <R> map(mapper: (T) -> R) = map(DEFAULT_SCHEDULER, mapper)
+    fun <R> map(mapper: (T) -> R) = map(initialScheduler, mapper)
 
     /**
      * Returns a [Multi] that uses the [mapper] to transform each received element from [T]
@@ -163,7 +163,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param predicate the filter predicate
      */
-    fun filter(predicate: (T) -> Boolean) = filter(DEFAULT_SCHEDULER, predicate)
+    fun filter(predicate: (T) -> Boolean) = filter(initialScheduler, predicate)
 
     /**
      * Returns a [Multi] that filters each received element, sending it
@@ -180,7 +180,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param predicate the filter predicate
      */
-    fun findFirst(predicate: (T) -> Boolean) = findFirst(DEFAULT_SCHEDULER, predicate)
+    fun findFirst(predicate: (T) -> Boolean) = findFirst(initialScheduler, predicate)
 
     /**
      * Returns a [Solo] containing the first received element that satisfies the given [predicate],
@@ -197,7 +197,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param mapper the mapper function
      */
-    fun <R> flatMap(mapper: (T) -> Publisher<R>) = flatMap(DEFAULT_SCHEDULER, mapper)
+    fun <R> flatMap(mapper: (T) -> Publisher<R>) = flatMap(initialScheduler, mapper)
 
     /**
      * Returns a [Multi]<R> that use the [mapper] to transform each received element from [T]
@@ -214,7 +214,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param other the other publisher
      */
-    fun <U> takeUntil(other: Publisher<U>) = takeUntil(DEFAULT_SCHEDULER, other)
+    fun <U> takeUntil(other: Publisher<U>) = takeUntil(initialScheduler, other)
 
     /**
      * Returns a [Multi] that relay all the received elements from the source stream until the
@@ -231,7 +231,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param others the other publishers
      */
-    fun mergeWith(vararg others: Publisher<T>) = mergeWith(DEFAULT_SCHEDULER, *others)
+    fun mergeWith(vararg others: Publisher<T>) = mergeWith(initialScheduler, *others)
 
     /**
      * Returns a [Multi] that flattens the source streams with the parameter [Publisher] into
@@ -248,7 +248,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param keyMapper a function that extracts the key for each item
      */
-    fun <R> groupBy(keyMapper: (T) -> R) = groupBy(DEFAULT_SCHEDULER, keyMapper)
+    fun <R> groupBy(keyMapper: (T) -> R) = groupBy(initialScheduler, keyMapper)
 
     /**
      * Returns a [Multi] that can contain several [MultiGrouped], each is a group of received elements from
@@ -264,7 +264,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param n number of items to send
      */
-    fun take(n: Long) = take(DEFAULT_SCHEDULER, n)
+    fun take(n: Long) = take(initialScheduler, n)
 
     /**
      * Returns a [Multi] that will send the [n] first received elements from the source stream
@@ -284,7 +284,7 @@ interface Multi<T> : PublisherCommons<T> {
      * @param mapper the mapper function
      */
     fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R)
-            = fusedFilterMap(DEFAULT_SCHEDULER, predicate, mapper)
+            = fusedFilterMap(initialScheduler, predicate, mapper)
 
     /**
      * Returns a [Multi] that filters each received element, sending it only if [predicate] is satisfied,
@@ -297,7 +297,9 @@ interface Multi<T> : PublisherCommons<T> {
     fun <R> fusedFilterMap(scheduler: Scheduler, predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
 }
 
-internal open class MultiImpl<T> internal constructor(private val delegate: Publisher<T>) : Multi<T>, Publisher<T> by delegate {
+internal open class MultiImpl<T> internal constructor(private val delegate: Publisher<T>,
+                                                      override val initialScheduler: Scheduler)
+    : Multi<T>, Publisher<T> by delegate {
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
@@ -307,7 +309,7 @@ internal open class MultiImpl<T> internal constructor(private val delegate: Publ
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onSubscribeBlock = onSubscribe
-        return MultiImpl(publisherCallbacks)
+        return MultiImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnNext(onNext: (T) -> Unit): Multi<T> {
@@ -318,7 +320,7 @@ internal open class MultiImpl<T> internal constructor(private val delegate: Publ
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onNextBlock = onNext
-        return MultiImpl(publisherCallbacks)
+        return MultiImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnError(onError: (Throwable) -> Unit): Multi<T> {
@@ -329,7 +331,7 @@ internal open class MultiImpl<T> internal constructor(private val delegate: Publ
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onErrorBlock = onError
-        return MultiImpl(publisherCallbacks)
+        return MultiImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnComplete(onComplete: () -> Unit): Multi<T> {
@@ -340,7 +342,7 @@ internal open class MultiImpl<T> internal constructor(private val delegate: Publ
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onCompleteBlock = onComplete
-        return MultiImpl(publisherCallbacks)
+        return MultiImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnCancel(onCancel: () -> Unit): Multi<T> {
@@ -351,7 +353,7 @@ internal open class MultiImpl<T> internal constructor(private val delegate: Publ
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onCancelBlock = onCancel
-        return MultiImpl(publisherCallbacks)
+        return MultiImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T> {
@@ -362,7 +364,7 @@ internal open class MultiImpl<T> internal constructor(private val delegate: Publ
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onRequestBlock = onRequest
-        return MultiImpl(publisherCallbacks)
+        return MultiImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun doFinally(finally: () -> Unit): Multi<T> {
@@ -373,7 +375,7 @@ internal open class MultiImpl<T> internal constructor(private val delegate: Publ
         // otherwise this is not a PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.finallyBlock = finally
-        return MultiImpl(publisherCallbacks)
+        return MultiImpl(publisherCallbacks, initialScheduler)
     }
 
     override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T> {
@@ -489,10 +491,10 @@ internal open class MultiImpl<T> internal constructor(private val delegate: Publ
             if (channelMap.containsKey(key)) { // this channel exists already
                 channel = channelMap[key]!!
             } else { // have to create a new MultiGrouped
-                channel = Channel(Channel.UNLIMITED)
                 /** Creates a [kotlinx.coroutines.experimental.channels.LinkedListChannel] */
+                channel = Channel(Channel.UNLIMITED)
                 // Converts a stream of elements received from the channel to the hot reactive publisher
-                send(MultiGroupedImpl(channel.asPublisher(coroutineContext), key) as MultiGrouped<T, R>)
+                send(MultiGroupedImpl(channel.asPublisher(coroutineContext), scheduler, key) as MultiGrouped<T, R>)
                 channelMap[key] = channel // adds to Map
             }
 
