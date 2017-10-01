@@ -87,7 +87,22 @@ interface Solo<T> : PublisherCommons<T> {
     override fun doFinally(finally: () -> Unit): Solo<T>
 
     // function from WithPublishOn
+    /**
+     * Returns a [Solo] that is published with [DEFAULT_SCHEDULER] and the [delayError] option
+     *
+     * @param delayError if error should be delayed
+     */
+    override fun publishOn(delayError: Boolean) = publishOn(DEFAULT_SCHEDULER, delayError)
+
+    /**
+     * Returns a [Solo] that is published with the provided [scheduler] and the [delayError] option
+     *
+     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
+     * @param delayError if error should be delayed
+     */
     override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
+
+    // Operators specific to Solo
 }
 
 internal class SoloImpl<T> internal constructor(private val delegate: Publisher<T>) : Solo<T>, Publisher<T> by delegate {

@@ -31,9 +31,9 @@ fun <T> multi(
         block: suspend ProducerScope<T>.() -> Unit
 ): Multi<T> = MultiImpl(publish(scheduler.context, block))
 
-
 object MultiBuilder {
     // Static factory methods to create a Multi
+
     /**
      * Creates a [Multi] from a range of Int (starting from [start] and emmitting
      * [count] items)
@@ -41,9 +41,16 @@ object MultiBuilder {
      * @return the [Multi]<Int> created
      */
     @JvmStatic
-    fun fromRange(start: Int, count: Int,
-                  scheduler: Scheduler = Schedulers.emptyThreadContext()
-    ) = multi(scheduler) {
+    fun fromRange(start: Int, count: Int) = fromRange(DEFAULT_SCHEDULER, start, count)
+
+    /**
+     * Creates a [Multi] from a range of Int (starting from [start] and emmitting
+     * [count] items)
+     *
+     * @return the [Multi]<Int> created
+     */
+    @JvmStatic
+    fun fromRange(scheduler: Scheduler, start: Int, count: Int) = multi(scheduler) {
         for (x in start until start + count) send(x)
     }
 
@@ -55,9 +62,17 @@ object MultiBuilder {
      * @param T the type of the input [iterable]
      */
     @JvmStatic
-    fun <T> fromIterable(iterable: Iterable<T>,
-                         scheduler: Scheduler = Schedulers.emptyThreadContext()
-    ) = multi(scheduler) {
+    fun <T> fromIterable(iterable: Iterable<T>) = fromIterable(DEFAULT_SCHEDULER, iterable)
+
+    /**
+     * Creates a [Multi] from a [Iterable]
+     *
+     * @return the [Multi]<T> created
+     *
+     * @param T the type of the input [iterable]
+     */
+    @JvmStatic
+    fun <T> fromIterable(scheduler: Scheduler, iterable: Iterable<T>) = multi(scheduler) {
         for (x in iterable) send(x)
     }
 }
@@ -77,7 +92,16 @@ interface Multi<T> : PublisherCommons<T> {
     override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
     override fun doFinally(finally: () -> Unit): Multi<T>
 
+    // Operators
+
     // function from WithPublishOn
+    /**
+     * Returns a [Multi] that is published with [DEFAULT_SCHEDULER] and the [delayError] option
+     *
+     * @param delayError if error should be delayed
+     */
+    override fun publishOn(delayError: Boolean) = publishOn(DEFAULT_SCHEDULER, delayError)
+
     /**
      * Returns a [Multi] that is published with the provided [scheduler] and the [delayError] option
      *
@@ -87,6 +111,16 @@ interface Multi<T> : PublisherCommons<T> {
     override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T>
 
     // Operators specific to Multi
+
+    /**
+     * Returns a [Multi] that is published with [DEFAULT_SCHEDULER],
+     * the [delayError] option and the [prefetch] items
+     *
+     * @param delayError if error should be delayed
+     * @param prefetch number of items to request. When obtained, request this number again and so on
+     * until all items are received
+     */
+    fun publishOn(delayError: Boolean, prefetch: Int) = publishOn(DEFAULT_SCHEDULER, delayError, prefetch)
 
     /**
      * Returns a [Multi] that is published with the provided [scheduler],
@@ -103,10 +137,26 @@ interface Multi<T> : PublisherCommons<T> {
      * Returns a [Multi] that uses the [mapper] to transform each received element from [T]
      * to [R] and then send it when transformation is done
      *
+     * @param mapper the mapper function
+     */
+    fun <R> map(mapper: (T) -> R) = map(DEFAULT_SCHEDULER, mapper)
+
+    /**
+     * Returns a [Multi] that uses the [mapper] to transform each received element from [T]
+     * to [R] and then send it when transformation is done
+     *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param mapper the mapper function
      */
     fun <R> map(scheduler: Scheduler, mapper: (T) -> R): Multi<R>
+
+    /**
+     * Returns a [Multi] that filters each received element, sending it
+     * only if [predicate] is satisfied
+     *
+     * @param predicate the filter predicate
+     */
+    fun filter(predicate: (T) -> Boolean) = filter(DEFAULT_SCHEDULER, predicate)
 
     /**
      * Returns a [Multi] that filters each received element, sending it
@@ -121,10 +171,26 @@ interface Multi<T> : PublisherCommons<T> {
      * Returns a [Solo] containing the first received element that satisfies the given [predicate],
      * or empty if no received element satisfies it
      *
+     * @param predicate the filter predicate
+     */
+    fun findFirst(predicate: (T) -> Boolean) = findFirst(DEFAULT_SCHEDULER, predicate)
+
+    /**
+     * Returns a [Solo] containing the first received element that satisfies the given [predicate],
+     * or empty if no received element satisfies it
+     *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param predicate the filter predicate
      */
     fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): Solo<T?>
+
+    /**
+     * Returns a [Multi]<R> that use the [mapper] to transform each received element from [T]
+     * to [Publisher]<R> and then send each received element of this [Publisher]
+     *
+     * @param mapper the mapper function
+     */
+    fun <R> flatMap(mapper: (T) -> Publisher<R>) = flatMap(DEFAULT_SCHEDULER, mapper)
 
     /**
      * Returns a [Multi]<R> that use the [mapper] to transform each received element from [T]
@@ -139,10 +205,26 @@ interface Multi<T> : PublisherCommons<T> {
      * Returns a [Multi] that relay all the received elements from the source stream until the
      * other stream either completes or emits anything
      *
+     * @param other the other publisher
+     */
+    fun <U> takeUntil(other: Publisher<U>) = takeUntil(DEFAULT_SCHEDULER, other)
+
+    /**
+     * Returns a [Multi] that relay all the received elements from the source stream until the
+     * other stream either completes or emits anything
+     *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param other the other publisher
      */
     fun <U> takeUntil(scheduler: Scheduler, other: Publisher<U>): Multi<T>
+
+    /**
+     * Returns a [Multi] that flattens the source streams with the parameter [Publisher] into
+     * a single Publisher, without any transformation
+     *
+     * @param others the other publishers
+     */
+    fun mergeWith(vararg others: Publisher<T>) = mergeWith(DEFAULT_SCHEDULER, *others)
 
     /**
      * Returns a [Multi] that flattens the source streams with the parameter [Publisher] into
@@ -157,10 +239,25 @@ interface Multi<T> : PublisherCommons<T> {
      * Returns a [Multi] that can contain several [MultiGrouped], each is a group of received elements from
      * the source stream that are related with the same key
      *
+     * @param keyMapper a function that extracts the key for each item
+     */
+    fun <R> groupBy(keyMapper: (T) -> R) = groupBy(DEFAULT_SCHEDULER, keyMapper)
+
+    /**
+     * Returns a [Multi] that can contain several [MultiGrouped], each is a group of received elements from
+     * the source stream that are related with the same key
+     *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param keyMapper a function that extracts the key for each item
      */
     fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R): Multi<MultiGrouped<T, R>>
+
+    /**
+     * Returns a [Multi] that will send the [n] first received elements from the source stream
+     *
+     * @param n number of items to send
+     */
+    fun take(n: Long) = take(DEFAULT_SCHEDULER, n)
 
     /**
      * Returns a [Multi] that will send the [n] first received elements from the source stream
@@ -171,6 +268,16 @@ interface Multi<T> : PublisherCommons<T> {
     fun take(scheduler: Scheduler, n: Long): Multi<T>
 
     // Combined Operators
+
+    /**
+     * Returns a [Multi] that filters each received element, sending it only if [predicate] is satisfied,
+     * if so it uses the [mapper] to transform each element from [T] to [R] type
+     *
+     * @param predicate the filter predicate
+     * @param mapper the mapper function
+     */
+    fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R)
+            = fusedFilterMap(DEFAULT_SCHEDULER, predicate, mapper)
 
     /**
      * Returns a [Multi] that filters each received element, sending it only if [predicate] is satisfied,

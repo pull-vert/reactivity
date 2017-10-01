@@ -13,6 +13,7 @@ import reactivity.experimental.internal.util.validateSubscription
  * will be implemented in both [Multi] and [Solo]
  */
 interface WithPublishOn {
+    fun publishOn(delayError: Boolean): WithPublishOn
     fun publishOn(scheduler: Scheduler, delayError: Boolean): WithPublishOn
 }
 
