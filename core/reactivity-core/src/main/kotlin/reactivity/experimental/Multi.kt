@@ -80,6 +80,28 @@ object MultiBuilder {
     fun <T> fromIterable(scheduler: Scheduler, iterable: Iterable<T>) = multi(scheduler) {
         for (x in iterable) send(x)
     }
+
+    /**
+     * Creates a [Multi] from a [Publisher]
+     *
+     * @return the [Multi]<T> created
+     *
+     * @param T the type of the input [Publisher]
+     */
+    @JvmStatic
+    fun <T> fromPublisher(publisher: Publisher<T>) = fromPublisher(DEFAULT_SCHEDULER, publisher)
+
+    /**
+     * Creates a [Multi] from a [Publisher]
+     *
+     * *To notice : no need for [multi] coroutine here !*
+     *
+     * @return the [Multi]<T> created
+     *
+     * @param T the type of the input [Publisher]
+     */
+    @JvmStatic
+    fun <T> fromPublisher(scheduler: Scheduler, publisher: Publisher<T>): Multi<T> = MultiImpl<T>(publisher, scheduler)
 }
 
 /**
