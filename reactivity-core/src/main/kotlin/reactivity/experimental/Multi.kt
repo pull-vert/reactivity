@@ -32,6 +32,8 @@ fun <T> multi(
 ): Multi<T> = MultiImpl(publish(scheduler.context, block))
 
 /**
+ * Singleton builder for [Multi], a multi values Reactive Stream [Publisher]
+ *
  * @author Frédéric Montariol
  */
 object MultiBuilder {
@@ -81,6 +83,8 @@ object MultiBuilder {
 }
 
 /**
+ * Multi values Reactive Stream [Publisher]
+ *
  * @author Frédéric Montariol
  */
 interface Multi<T> : PublisherCommons<T> {

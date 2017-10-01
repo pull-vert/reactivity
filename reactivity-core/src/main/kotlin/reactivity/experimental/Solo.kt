@@ -37,6 +37,8 @@ fun <T> solo(
 })
 
 /**
+ * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
+ *
  * @author Frédéric Montariol
  */
 object SoloBuilder {
@@ -76,6 +78,8 @@ interface DeferredCloseable<out T> : Deferred<T>, Closeable {
 }
 
 /**
+ * Single (or empty) value Reactive Stream [Publisher]
+ *
  * @author Frédéric Montariol
  */
 interface Solo<T> : PublisherCommons<T> {
