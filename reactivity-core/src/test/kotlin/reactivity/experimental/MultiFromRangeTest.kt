@@ -36,10 +36,7 @@ class MultiFromRangeTest {
         // create a publisher that produces numbers from 1 to 5
         val source = MultiBuilder.fromRange(1, 5)
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
-                .doFinally {
-                    println("Finally")
-                    finally = true
-                }         // ... into what's going on
+                .doFinally { finally = true; println("Finally") } // ... into what's going on
         // print elements from the source
         var cnt = 0
         source.openSubscription().use { channel -> // open channel to the source
@@ -55,9 +52,10 @@ class MultiFromRangeTest {
 
     @Test
     fun `multi from range subscription without cancellation`() = runBlocking<Unit> {
+        var finally = false
         val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
-                .doFinally { println("Finally") }         // ... into what's going on
+                .doFinally { finally = true; println("Finally") } // ... into what's going on
         // iterate over the source fully
         source.consumeEach { println(it) }
         /* Notice, how "Finally" is printed before the last element "5".
@@ -68,5 +66,26 @@ class MultiFromRangeTest {
         When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,
         which gets dispatched onto the main thread to print this last element at
         a later point in time, while the source completes and prints "Finally". */
+        finally `should equal to` true
+    }
+
+    @Test
+    fun `multi from range subscription without cancellation, and Common pool scheduler`() = runBlocking<Unit> {
+        var finally = false
+        val source = MultiBuilder.fromRange(Schedulers.commonPoolThreadContext(),
+                1, 5) // a fromRange of five numbers
+                .doOnSubscribe { println("OnSubscribe") } // provide some insight
+                .doFinally { finally = true; println("Finally") } // ... into what's going on
+        // iterate over the source fully
+        source.consumeEach { println(it) }
+        /* Notice, how "Finally" is printed before the last element "5".
+        It happens because our main function in this example is a coroutine that
+        we start with runBlocking coroutine builder. Our main coroutine receives on
+        the channel using source.consumeEach { ... } expression.
+        The main coroutine is suspended while it waits for the source to emit an item.
+        When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,
+        which gets dispatched onto the main thread to print this last element at
+        a later point in time, while the source completes and prints "Finally". */
+        finally `should equal to` true
     }
 }
