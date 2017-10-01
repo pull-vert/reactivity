@@ -6,7 +6,7 @@ import reactivity.experimental.SchedulerImpl
 
 object SchedulerSwing {
     @JvmStatic
-    fun swingThreadContext(): Scheduler {
+    fun swingDispatcher(): Scheduler {
         return SchedulerImpl(Swing)
     }
 }

@@ -13,7 +13,7 @@ class SchedulerSwingTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?
-        val source = multi(SchedulerSwing.swingThreadContext()) {
+        val source = multi(SchedulerSwing.swingDispatcher()) {
             for (x in 1..3) {
                 check(SwingUtilities.isEventDispatchThread())
                 delay(100)
@@ -36,7 +36,7 @@ class SchedulerSwingTest {
             println("first consumer: Processed $x")
             count++
         }
-        delay(2000) // suspend the main thread for a few seconds
+        delay(500) // suspend the main thread for a few seconds
         count `should equal` 3
     }
 }
