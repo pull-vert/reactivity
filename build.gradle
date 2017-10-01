@@ -55,24 +55,26 @@ subprojects {
 // Between subprojects dependencies
 project(':core:reactivity-jre8') {
     dependencies {
-        compile(project(":core:reactivity-core"))
+        compile project(':core:reactivity-core')
     }
 }
 
-project(':ui:reactivity-android') {
+project(':core:extras:ui:reactivity-extra-android') {
     dependencies {
-        compile(project(":core:reactivity-core"))
+        // provided, reactivity-extra-android is an addon of reactivity
+        compileOnly project(':core:reactivity-core')
     }
 }
 
-project(':ui:reactivity-swing') {
+project(':core:extras:ui:reactivity-extra-swing') {
     dependencies {
-        compile(project(":core:reactivity-core"))
+        // provided, reactivity-extra-android is an addon of reactivity
+        compileOnly project(':core:reactivity-core')
     }
 }
 
 project(':reactivity-http2') {
     dependencies {
-        compile(project(":core:reactivity-core"))
+        compile project(':core:reactivity-core')
     }
 }
