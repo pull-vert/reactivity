@@ -70,3 +70,9 @@ project(':ui:reactivity-swing') {
         compile(project(":core:reactivity-core"))
     }
 }
+
+project(':reactivity-http2') {
+    dependencies {
+        compile(project(":core:reactivity-core"))
+    }
+}
