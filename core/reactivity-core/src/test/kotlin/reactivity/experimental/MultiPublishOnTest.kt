@@ -20,7 +20,7 @@ class MultiPublishOnTest {
         var start: Long? = null
         var time: Long? = null
         source = source
-                .publishOn(Schedulers.emptyThreadContext(), false, 2) // specify buffer size of 2 items
+                .publishOn(Schedulers.emptyContext(), false, 2) // specify buffer size of 2 items
                 .doOnSubscribe {
                     start = System.currentTimeMillis()
                     println("starting timer")
@@ -54,7 +54,7 @@ class MultiPublishOnTest {
         var start: Long? = null
         var time: Long? = null
         source = source
-                .publishOn(Schedulers.commonPoolThreadContext(), false, 2) // specify buffer size of 2 items
+                .publishOn(Schedulers.commonPoolDispatcher(), false, 2) // specify buffer size of 2 items
                 .doOnSubscribe {
                     start = System.currentTimeMillis()
                     println("starting timer")

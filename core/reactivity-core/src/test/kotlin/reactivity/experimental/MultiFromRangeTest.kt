@@ -72,7 +72,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range subscription without cancellation, and Common pool scheduler`() = runBlocking<Unit> {
         var finally = false
-        val source = MultiBuilder.fromRange(Schedulers.commonPoolThreadContext(),
+        val source = MultiBuilder.fromRange(Schedulers.commonPoolDispatcher(),
                 1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") } // ... into what's going on

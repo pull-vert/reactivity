@@ -8,12 +8,17 @@ import kotlin.coroutines.experimental.EmptyCoroutineContext
 object Schedulers {
 
     @JvmStatic
-    fun emptyThreadContext(): Scheduler {
+    fun defaultDispatcher(): Scheduler {
+        return SchedulerImpl(DefaultDispatcher)
+    }
+
+    @JvmStatic
+    fun emptyContext(): Scheduler {
         return SchedulerImpl(EmptyCoroutineContext)
     }
 
     @JvmStatic
-    fun commonPoolThreadContext(): Scheduler {
+    fun commonPoolDispatcher(): Scheduler {
         return SchedulerImpl(CommonPool)
     }
 
@@ -28,12 +33,12 @@ object Schedulers {
     }
 
     @JvmStatic
-    fun unconfinedThreadContext(): Scheduler {
+    fun unconfinedDispatcher(): Scheduler {
         return SchedulerImpl(Unconfined)
     }
 
     @JvmStatic
-    fun fromExecutor(exectutor: Executor): Scheduler {
+    fun fromExecutorDispatcher(exectutor: Executor): Scheduler {
         return SchedulerImpl(exectutor.asCoroutineDispatcher())
     }
 

@@ -4,7 +4,7 @@ package reactivity.experimental
 /**
  * The default scheduler used for Builder and Operators for [Multi] and [Solo]
  */
-internal val DEFAULT_SCHEDULER = Schedulers.emptyThreadContext()
+internal val DEFAULT_SCHEDULER = Schedulers.defaultDispatcher()
 
 /**
  * Common functions for [Multi] and [Solo]
