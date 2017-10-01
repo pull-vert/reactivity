@@ -52,9 +52,17 @@ object SoloBuilder {
      * @param T the type of the input [value]
      */
     @JvmStatic
-    fun <T> fromValue(value: T,
-                  scheduler: Scheduler = Schedulers.emptyThreadContext()
-    ) = solo(scheduler) {
+    fun <T> fromValue(value: T) = fromValue(DEFAULT_SCHEDULER, value)
+
+            /**
+     * Creates a [Solo] from a [value]
+     *
+     * @return the [Solo]<T> created
+     *
+     * @param T the type of the input [value]
+     */
+    @JvmStatic
+    fun <T> fromValue(scheduler: Scheduler, value: T) = solo(scheduler) {
         send(value)
     }
 }
