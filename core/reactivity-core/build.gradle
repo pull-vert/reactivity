@@ -14,6 +14,7 @@ apply plugin: 'kotlinx-atomicfu'
 dependencies {
     // https://github.com/Kotlin/kotlinx.coroutines/tree/master/reactive/kotlinx-coroutines-reactive
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinx_coroutines_version"
+
     // https://github.com/Kotlin/kotlinx.atomicfu
     compileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
         exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
@@ -21,6 +22,7 @@ dependencies {
     testCompile("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
         exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
     }
+
     // Reactive Streams
     compile "org.reactivestreams:reactive-streams:$reactive_streams_version"
     testCompile "org.reactivestreams:reactive-streams-tck:$reactive_streams_version"
@@ -30,7 +32,7 @@ dependencies {
     testCompile "io.projectreactor:reactor-core:3.1.0.RELEASE"
 }
 
-//Install bytecode transformation pipeline so that compiled classes from classes directory
+// Install bytecode transformation pipeline so that compiled classes from classes directory
 // get transformed to a different classes-post-atomicfu directory to be used later by tests and delivery.
 
 def CLASSES_POST_ATOMICFU = file("$buildDir/classes-post-atomicfu/main")
@@ -50,7 +52,6 @@ jar {
 }
 
 // Compile & Test with Java 6
-// https://docs.gradle.org/4.2-rc-1/userguide/java_plugin.html#sec:java_cross_compilation : pas adapaté on dirait !
 compileKotlin {
     sourceCompatibility = JavaVersion.VERSION_1_6
     targetCompatibility = JavaVersion.VERSION_1_6

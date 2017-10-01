@@ -1,1 +1,3 @@
-include 'reactivity-core', 'reactivity-http2', 'reactivity-core-jre8', 'ui/reactivity-android', 'ui/reactivity-swing'
+include 'core:reactivity-core', 'core:reactivity-jre8',
+        'ui:reactivity-android', 'ui:reactivity-swing',
+        'reactivity-http2'

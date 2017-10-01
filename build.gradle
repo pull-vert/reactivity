@@ -51,3 +51,22 @@ subprojects {
 
     kotlin.experimental.coroutines 'enable'
 }
+
+// Between subprojects dependencies
+project(':core:reactivity-jre8') {
+    dependencies {
+        compile(project(":core:reactivity-core"))
+    }
+}
+
+project(':ui:reactivity-android') {
+    dependencies {
+        compile(project(":core:reactivity-core"))
+    }
+}
+
+project(':ui:reactivity-swing') {
+    dependencies {
+        compile(project(":core:reactivity-core"))
+    }
+}

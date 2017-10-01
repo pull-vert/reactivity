@@ -1,6 +1,9 @@
 dependencies {
-    compile(project(":reactivity-core"))
 //    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+
+    testCompile("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
+        exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
+    }
 }
 
 compileKotlin {
