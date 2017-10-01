@@ -53,7 +53,7 @@ subprojects {
 }
 
 // Between subprojects dependencies
-project(':core:reactivity-jre8') {
+project(':core:reactivity-jdk8') {
     dependencies {
         compile project(':core:reactivity-core')
     }
