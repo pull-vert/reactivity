@@ -31,6 +31,9 @@ fun <T> multi(
         block: suspend ProducerScope<T>.() -> Unit
 ): Multi<T> = MultiImpl(publish(scheduler.context, block))
 
+/**
+ * @author Frédéric Montariol
+ */
 object MultiBuilder {
     // Static factory methods to create a Multi
 

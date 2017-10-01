@@ -36,6 +36,9 @@ fun <T> solo(
     block.startCoroutine(coroutine, coroutine)
 })
 
+/**
+ * @author Frédéric Montariol
+ */
 object SoloBuilder {
     // Static factory methods to create a Solo
 
