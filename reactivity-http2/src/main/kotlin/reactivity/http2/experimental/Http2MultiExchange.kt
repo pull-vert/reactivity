@@ -1,6 +1,6 @@
 package reactivity.http2.experimental
 
-import reactivity.experimental.Solo
+import reactivity.experimental.SoloPublisher
 
 /**
  * Encapsulates multiple Exchanges belonging to one HttpRequest
@@ -11,5 +11,5 @@ import reactivity.experimental.Solo
  * Creates a new Exchange for each request/response interaction
  */
 internal class Http2MultiExchange<U>(
-        handler: (Http2Request<U>, Http2Response) -> Solo<Void>, http2ServerImpl: KHttp2ServerImpl) {
+        handler: (Http2Request<U>, Http2Response) -> SoloPublisher<Void>, http2ServerImpl: KHttp2ServerImpl) {
 }

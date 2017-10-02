@@ -1,9 +1,10 @@
-package reactivity.experimental
+package reactivity.experimental.jdk8
 
 import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal`
 import org.junit.Test
+import reactivity.experimental.consumeUnique
 
 class SoloFromValueTest {
     @Test

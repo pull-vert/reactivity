@@ -2,7 +2,6 @@ package reactivity.experimental
 
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.experimental.AbstractCoroutine
-import kotlinx.coroutines.experimental.CancellationException
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.SendChannel
 import kotlinx.coroutines.experimental.handleCoroutineException
@@ -13,15 +12,14 @@ import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import kotlin.coroutines.experimental.CoroutineContext
 
-class ClosedProducerException(message: String?) : CancellationException(message)
 
-private const val CLOSED = -1L    // closed, but have not signalled onCompleted/onError yet
-private const val SIGNALLED = -2L  // already signalled subscriber onCompleted/onError
-
-internal class SoloCoroutine<T>(
+class SoloCoroutine<T>(
         parentContext: CoroutineContext,
         private val subscriber: Subscriber<T>
 ) : AbstractCoroutine<Unit>(parentContext, true), ProducerScope<T>, Subscription, SelectClause2<T, SendChannel<T>> {
+    private val CLOSED = -1L    // closed, but have not signalled onCompleted/onError yet
+    private val SIGNALLED = -2L  // already signalled subscriber onCompleted/onError
+
     override val channel: SendChannel<T> get() = this
 
     // Mutex is locked when either nRequested == 0 or while subscriber.onXXX is being invoked

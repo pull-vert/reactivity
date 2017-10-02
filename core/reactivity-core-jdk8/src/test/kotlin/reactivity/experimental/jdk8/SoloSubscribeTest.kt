@@ -1,23 +1,24 @@
-package reactivity.experimental
+package reactivity.experimental.jdk8
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal to`
 import org.junit.Test
 
-class MultiSubscribeTest {
+class SoloSubscribeTest {
+
     @Test
-    fun `multi from range with Exception cancellation`() = runBlocking {
-        // create a publisher that produces number 1
+    fun `solo from value with Exception cancellation`() = runBlocking {
         var finally = false
         var onError = false
         var onComplete = false
-        val source = MultiBuilder.fromRange(1, 5)
+        val source = SoloBuilder.fromValue(1) // a fromValue of a number
                 .doFinally { finally = true; println("Finally") } // ... into what's going on
         // print element from the source
         println("empty consumer:")
-        source.subscribe(onNext =  { v ->
-            if (3 == v) throw Exception("vilain exception !!")
+        // iterate over the source fully : no backpressure = request(Long.maxValue)
+        source.subscribe(onNext =  {
+            throw Exception("vilain exception !!")
         }, onError = { t ->
             "vilain exception !!" `should equal to` t.message!!
             onError = true
@@ -25,26 +26,26 @@ class MultiSubscribeTest {
             onComplete = true
         })
         delay(100)
-        finally `should equal to` true
         onError `should equal to` true
         onComplete `should equal to` false
+        finally `should equal to` true
     }
 
     @Test
-    fun `multi from range subscription with subscribe onNext function`() = runBlocking<Unit> {
+    fun `solo from value subscription with subscribe onNext function`() = runBlocking<Unit> {
         var finally = false
         var onNext = false
-        val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
+        val source = SoloBuilder.fromValue(1) // a fromValue of a number
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
-                .doFinally { finally = true; println("Finally") }         // ... into what's going on
                 .doOnNext {
                     println(it)
                     onNext = true
                 }
+                .doFinally { finally = true; println("Finally") } // ... into what's going on
         // iterate over the source fully : no backpressure = request(Long.maxValue)
         source.subscribe()
         delay(100)
-        finally `should equal to` true
         onNext `should equal to` true
+        finally `should equal to` true
     }
 }

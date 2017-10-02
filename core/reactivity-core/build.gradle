@@ -26,10 +26,6 @@ dependencies {
     // Reactive Streams
     compile "org.reactivestreams:reactive-streams:$reactive_streams_version"
     testCompile "org.reactivestreams:reactive-streams-tck:$reactive_streams_version"
-
-    // TODO remove when dev is done, used only for accessing code
-    testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:$kotlinx_coroutines_version"
-    testCompile "io.projectreactor:reactor-core:3.1.0.RELEASE"
 }
 
 // Install bytecode transformation pipeline so that compiled classes from classes directory

@@ -28,7 +28,7 @@ interface SubscribeWith<T> : Publisher<T> {
 /**
  * This is the interface declaring the callback functions
  * related to each functions of [Subscriber] & [Subscription]
- * will be implemented in both [Multi] and [Solo]
+ * will be implemented in both [Multi] and [SoloPublisher]
  */
 interface WithLambdas<T> : SubscribeWith<T> {
     // Methods for Publisher with lambdas

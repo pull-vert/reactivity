@@ -1,4 +1,4 @@
-package reactivity.experimental
+package reactivity.experimental.jdk8
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
@@ -6,6 +6,8 @@ import kotlinx.coroutines.experimental.rx2.rxFlowable
 import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
+import reactivity.experimental.Schedulers
+import reactivity.experimental.multi
 
 class MultiCoroutineBuilderTest {
 

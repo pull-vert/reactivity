@@ -10,7 +10,7 @@ import reactivity.experimental.internal.util.validateSubscription
 /**
  * This is the interface declaring the publishOn functions
  * for executing the subscriber in other context than the publisher
- * will be implemented in both [Multi] and [Solo]
+ * will be implemented in both [Multi] and [SoloPublisher]
  */
 interface WithPublishOn {
     fun publishOn(delayError: Boolean): WithPublishOn

@@ -11,7 +11,6 @@ interface Exceptions {
          * combinations and async).
          *
          * @return a [RuntimeException] that can be identified via [.isCancel]
-         * @see isCancel
          */
         fun failWithCancel(): RuntimeException {
             return CancelException()

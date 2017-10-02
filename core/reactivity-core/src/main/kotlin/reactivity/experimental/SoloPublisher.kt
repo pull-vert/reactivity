@@ -12,7 +12,7 @@ import java.io.Closeable
 import kotlin.coroutines.experimental.startCoroutine
 
 /**
- * Creates cold reactive [Solo] that runs a given [block] in a coroutine.
+ * Creates cold reactive [SoloPublisher] that runs a given [block] in a coroutine.
  * Every time the returned publisher is subscribed, it starts a new coroutine in the specified [scheduler].
  * Coroutine emits items with `produce`. Unsubscribing cancels running coroutine.
  *
@@ -25,10 +25,10 @@ import kotlin.coroutines.experimental.startCoroutine
  * | Normal completion or `close` without cause   | `onComplete`
  * | Failure with exception or `close` with cause | `onError`
  */
-fun <T> solo(
+internal fun <T> soloPublisher(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): Solo<T> = SoloImpl(Publisher { subscriber ->
+) = SoloPublisherImpl<T>(Publisher { subscriber ->
     val newContext = newCoroutineContext(scheduler.context)
     val coroutine = SoloCoroutine(newContext, subscriber)
     coroutine.initParentJob(scheduler.context[Job])
@@ -36,41 +36,42 @@ fun <T> solo(
     block.startCoroutine(coroutine, coroutine)
 }, scheduler)
 
+///**
+// * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
+// *
+// * @author Frédéric Montariol
+// */
+//object SoloBuilder : SoloPublisherBuilder() {
+//    @JvmStatic
+//    fun <T> fromValue(value: T): SoloPublisher<T> = Companion.fromValue(value)
+//
+//    @JvmStatic
+//    fun <T> fromValue(scheduler: Scheduler, value: T): SoloPublisher<T> = Companion.fromValue(scheduler, value)
+//}
+
 /**
- * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
+ * Builder for [SoloPublisherImpl], a single (or empty) value Reactive Stream [Publisher]
  *
  * @author Frédéric Montariol
  */
-object SoloBuilder {
-    // Static factory methods to create a Solo
+abstract class SoloPublisherBuilder {
+    // protected Static factory methods to create a SoloPublisher
+    protected companion object {
 
-    /**
-     * Creates a [Solo] from a [value]
-     *
-     * @return the [Solo]<T> created
-     *
-     * @param T the type of the input [value]
-     */
-    @JvmStatic
-    fun <T> fromValue(value: T) = fromValue(DEFAULT_SCHEDULER, value)
+        @JvmStatic
+        fun <T> fromValue(value: T) = fromValue(DEFAULT_SCHEDULER, value)
 
-    /**
-     * Creates a [Solo] from a [value]
-     *
-     * @return the [Solo]<T> created
-     *
-     * @param T the type of the input [value]
-     */
-    @JvmStatic
-    fun <T> fromValue(scheduler: Scheduler, value: T) = solo(scheduler) {
-        send(value)
+        @JvmStatic
+        fun <T> fromValue(scheduler: Scheduler, value: T) = soloPublisher(scheduler) {
+            send(value)
+        }
     }
 }
 
 /**
- * Subscribes to this [Solo] and performs the specified action for the unique received element.
+ * Subscribes to this [SoloPublisher] and performs the specified action for the unique received element.
  */
-inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
+inline suspend fun <T> SoloPublisher<T>.consumeUnique(action: (T) -> Unit) {
     action.invoke(awaitSingle())
 }
 
@@ -90,16 +91,16 @@ interface DeferredCloseable<out T> : Deferred<T>, Closeable {
  *
  * @author Frédéric Montariol
  */
-interface Solo<T> : PublisherCommons<T> {
+interface SoloPublisher<T> : PublisherCommons<T> {
     // functions from WithCallbacks
-    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T>
+    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): SoloPublisher<T>
 
-    override fun doOnNext(onNext: (T) -> Unit): Solo<T>
-    override fun doOnError(onError: (Throwable) -> Unit): Solo<T>
-    override fun doOnComplete(onComplete: () -> Unit): Solo<T>
-    override fun doOnCancel(onCancel: () -> Unit): Solo<T>
-    override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T>
-    override fun doFinally(finally: () -> Unit): Solo<T>
+    override fun doOnNext(onNext: (T) -> Unit): SoloPublisher<T>
+    override fun doOnError(onError: (Throwable) -> Unit): SoloPublisher<T>
+    override fun doOnComplete(onComplete: () -> Unit): SoloPublisher<T>
+    override fun doOnCancel(onCancel: () -> Unit): SoloPublisher<T>
+    override fun doOnRequest(onRequest: (Long) -> Unit): SoloPublisher<T>
+    override fun doFinally(finally: () -> Unit): SoloPublisher<T>
 
     // function from WithPublishOn
     /**
@@ -107,7 +108,7 @@ interface Solo<T> : PublisherCommons<T> {
      *
      * @param delayError if error should be delayed
      */
-    override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
+    override fun publishOn(delayError: Boolean): SoloPublisher<T>
 
     /**
      * Returns a [Solo] that is published with the provided [scheduler] and the [delayError] option
@@ -115,96 +116,98 @@ interface Solo<T> : PublisherCommons<T> {
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param delayError if error should be delayed
      */
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
+    override fun publishOn(scheduler: Scheduler, delayError: Boolean): SoloPublisher<T>
 
-    // Operators specific to Solo
+    // Operators specific to SoloPublisher
 }
 
-internal class SoloImpl<T> internal constructor(private val delegate: Publisher<T>,
-                                                override val initialScheduler: Scheduler)
-    : Solo<T>, Publisher<T> by delegate {
+open class SoloPublisherImpl<T>(val delegate: Publisher<T>,
+                                val initialScheduler: Scheduler)
+    : SoloPublisher<T>, Publisher<T> by delegate {
 
-    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T> {
+    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): SoloPublisherImpl<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.onSubscribeBlock = onSubscribe
             return this
         }
-        // otherwise this is not a PublisherWithCallbacks
+        // otherwise creates a new PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onSubscribeBlock = onSubscribe
-        return SoloImpl(publisherCallbacks, initialScheduler)
+        return SoloPublisherImpl(publisherCallbacks, initialScheduler)
     }
 
-    override fun doOnNext(onNext: (T) -> Unit): Solo<T> {
+    override fun doOnNext(onNext: (T) -> Unit): SoloPublisherImpl<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.onNextBlock = onNext
             return this
         }
-        // otherwise this is not a PublisherWithCallbacks
+        // otherwise creates a new PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onNextBlock = onNext
-        return SoloImpl(publisherCallbacks, initialScheduler)
+        return SoloPublisherImpl(publisherCallbacks, initialScheduler)
     }
 
-    override fun doOnError(onError: (Throwable) -> Unit): Solo<T> {
+    override fun doOnError(onError: (Throwable) -> Unit): SoloPublisherImpl<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.onErrorBlock = onError
             return this
         }
-        // otherwise this is not a PublisherWithCallbacks
+        // otherwise creates a new PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onErrorBlock = onError
-        return SoloImpl(publisherCallbacks, initialScheduler)
+        return SoloPublisherImpl(publisherCallbacks, initialScheduler)
     }
 
-    override fun doOnComplete(onComplete: () -> Unit): Solo<T> {
+    override fun doOnComplete(onComplete: () -> Unit): SoloPublisherImpl<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.onCompleteBlock = onComplete
             return this
         }
-        // otherwise this is not a PublisherWithCallbacks
+        // otherwise creates a new PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onCompleteBlock = onComplete
-        return SoloImpl(publisherCallbacks, initialScheduler)
+        return SoloPublisherImpl(publisherCallbacks, initialScheduler)
     }
 
-    override fun doOnCancel(onCancel: () -> Unit): Solo<T> {
+    override fun doOnCancel(onCancel: () -> Unit): SoloPublisherImpl<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.onCancelBlock = onCancel
             return this
         }
-        // otherwise this is not a PublisherWithCallbacks
+        // otherwise creates a new PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onCancelBlock = onCancel
-        return SoloImpl(publisherCallbacks, initialScheduler)
+        return SoloPublisherImpl(publisherCallbacks, initialScheduler)
     }
 
-    override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T> {
+    override fun doOnRequest(onRequest: (Long) -> Unit): SoloPublisherImpl<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.onRequestBlock = onRequest
             return this
         }
-        // otherwise this is not a PublisherWithCallbacks
+        // otherwise creates a new PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.onRequestBlock = onRequest
-        return SoloImpl(publisherCallbacks, initialScheduler)
+        return SoloPublisherImpl(publisherCallbacks, initialScheduler)
     }
 
-    override fun doFinally(finally: () -> Unit): Solo<T> {
+    override fun doFinally(finally: () -> Unit): SoloPublisherImpl<T> {
         if (delegate is PublisherWithCallbacks) {
             delegate.finallyBlock = finally
             return this
         }
-        // otherwise this is not a PublisherWithCallbacks
+        // otherwise creates a new PublisherWithCallbacks
         val publisherCallbacks = PublisherWithCallbacks(this)
         publisherCallbacks.finallyBlock = finally
-        return SoloImpl(publisherCallbacks, initialScheduler)
+        return SoloPublisherImpl(publisherCallbacks, initialScheduler)
     }
 
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T> {
-        return solo(scheduler) {
+    override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
+
+    override fun publishOn(scheduler: Scheduler, delayError: Boolean): SoloPublisherImpl<T> {
+        return soloPublisher(scheduler) {
             val completableConsumer = SoloPublishOn<T>(delayError)
-            this@SoloImpl.subscribe(completableConsumer)
+            this@SoloPublisherImpl.subscribe(completableConsumer)
             completableConsumer.consumeUnique {
                 send(it)
             }

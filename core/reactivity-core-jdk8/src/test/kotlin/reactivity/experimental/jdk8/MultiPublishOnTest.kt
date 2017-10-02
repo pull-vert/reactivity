@@ -1,10 +1,12 @@
-package reactivity.experimental
+package reactivity.experimental.jdk8
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should be greater than`
 import org.amshove.kluent.`should be less than`
 import org.junit.Test
+import reactivity.experimental.Schedulers
+import reactivity.experimental.multi
 
 class MultiPublishOnTest {
     @Test

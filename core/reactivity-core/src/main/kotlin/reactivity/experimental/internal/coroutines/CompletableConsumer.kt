@@ -7,7 +7,6 @@ import kotlinx.coroutines.experimental.internal.LockFreeLinkedListNode
 import kotlinx.coroutines.experimental.internal.Symbol
 import kotlinx.coroutines.experimental.selects.SelectClause0
 import kotlinx.coroutines.experimental.selects.SelectClause1
-import reactivity.experimental.ClosedProducerException
 import kotlin.coroutines.experimental.CoroutineContext
 
 internal const val DEFAULT_CLOSE_MESSAGE = "Consumer was closed"
@@ -111,6 +110,8 @@ val CLOSE_RESUMED: Any = Symbol("CLOSE_RESUMED")
 @JvmField
 val GET_COMPLETED_FAILED: Any = Symbol("GET_COMPLETED_FAILED")
 
+private class ClosedProducerException(message: String?) : CancellationException(message)
+
 /**
  * Represents closed consumer.
  * @suppress **This is unstable API and it is subject to change.**
@@ -118,6 +119,7 @@ val GET_COMPLETED_FAILED: Any = Symbol("GET_COMPLETED_FAILED")
 class Closed<in E>(
         @JvmField val closeCause: Throwable?
 ) : LockFreeLinkedListNode(), ConsumeOrClosed<E> {
+
     val produceException: Throwable get() = closeCause ?: ClosedProducerException(DEFAULT_CLOSE_MESSAGE)
     val awaitException: Throwable get() = closeCause ?: ClosedConsumerException(DEFAULT_CLOSE_MESSAGE)
 
