@@ -32,22 +32,52 @@ interface SubscribeWith<T> : Publisher<T> {
  */
 interface WithLambdas<T> : SubscribeWith<T> {
     // Methods for Publisher with lambdas
+    /**
+     * Subscribe to this Publisher, the Reactive Stream starts
+     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
+     */
     fun subscribe(): Disposable {
         return subscribeWith(SubscriberLambda())
     }
 
+    /**
+     * Subscribe to this Publisher, the Reactive Stream starts
+     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
+     * @param onNext the function to execute for each data of the stream
+     */
     fun subscribe(onNext: (T) -> Unit): Disposable {
         return subscribeWith(SubscriberLambda(onNext))
     }
 
+    /**
+     * Subscribe to this Publisher, the Reactive Stream starts
+     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
+     * @param onNext the function to execute for each data of the stream
+     * @param onError the function to execute if stream ends with an error
+     */
     fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError))
     }
 
+    /**
+     * Subscribe to this Publisher, the Reactive Stream starts
+     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
+     * @param onNext the function to execute for each data of the stream
+     * @param onError the function to execute if the stream ends with an error
+     * @param onComplete the function to execute if stream ends successfully
+     */
     fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete))
     }
 
+    /**
+     * Subscribe to this Publisher, the Reactive Stream starts
+     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
+     * @param onNext the function to execute for each data of the stream
+     * @param onError the function to execute if the stream ends with an error
+     * @param onComplete the function to execute if stream ends successfully
+     * @param onSubscribe the function to execute every time the stream is subscribed
+     */
     fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): Disposable {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
     }
