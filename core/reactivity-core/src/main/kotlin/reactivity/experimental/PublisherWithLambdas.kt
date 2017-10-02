@@ -33,7 +33,7 @@ interface SubscribeWith<T> : Publisher<T> {
 interface WithLambdas<T> : SubscribeWith<T> {
     // Methods for Publisher with lambdas
     /**
-     * Subscribe to this Publisher, the Reactive Stream starts
+     * Subscribe to this [Publisher], the Reactive Stream starts
      * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
      */
     fun subscribe(): Disposable {
@@ -41,7 +41,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
     }
 
     /**
-     * Subscribe to this Publisher, the Reactive Stream starts
+     * Subscribe to this [Publisher], the Reactive Stream starts
      * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
      * @param onNext the function to execute for each data of the stream
      */
@@ -50,7 +50,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
     }
 
     /**
-     * Subscribe to this Publisher, the Reactive Stream starts
+     * Subscribe to this [Publisher], the Reactive Stream starts
      * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
      * @param onNext the function to execute for each data of the stream
      * @param onError the function to execute if stream ends with an error
@@ -60,7 +60,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
     }
 
     /**
-     * Subscribe to this Publisher, the Reactive Stream starts
+     * Subscribe to this [Publisher], the Reactive Stream starts
      * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
      * @param onNext the function to execute for each data of the stream
      * @param onError the function to execute if the stream ends with an error
@@ -71,7 +71,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
     }
 
     /**
-     * Subscribe to this Publisher, the Reactive Stream starts
+     * Subscribe to this [Publisher], the Reactive Stream starts
      * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
      * @param onNext the function to execute for each data of the stream
      * @param onError the function to execute if the stream ends with an error
