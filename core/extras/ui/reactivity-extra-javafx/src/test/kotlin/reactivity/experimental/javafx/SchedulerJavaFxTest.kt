@@ -1,12 +1,11 @@
-package reactivity.experimental.swing
+package reactivity.experimental.javafx
 
 import javafx.application.Platform
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal`
 import org.junit.Test
-import reactivity.experimental.javafx.SchedulerJavaFx
-import reactivity.experimental.core.multi
+import reactivity.experimental.multi
 
 class SchedulerJavaFxTest {
     @Test

@@ -4,7 +4,7 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal`
 import org.junit.Test
-import reactivity.experimental.core.multi
+import reactivity.experimental.multi
 import javax.swing.SwingUtilities
 
 class SchedulerSwingTest {
