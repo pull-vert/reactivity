@@ -1,6 +1,6 @@
 package reactivity.http2.experimental
 
-import reactivity.experimental.SoloPublisher
+import reactivity.experimental.core.SoloPublisher
 
 /**
  * Encapsulates multiple Exchanges belonging to one HttpRequest

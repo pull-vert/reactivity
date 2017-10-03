@@ -6,7 +6,7 @@ import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal`
 import org.junit.Test
 import reactivity.experimental.javafx.SchedulerJavaFx
-import reactivity.experimental.multi
+import reactivity.experimental.core.multi
 
 class SchedulerJavaFxTest {
     @Test

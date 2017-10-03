@@ -1,8 +1,8 @@
 package reactivity.experimental.android
 
 import kotlinx.coroutines.experimental.android.UI
-import reactivity.experimental.Scheduler
-import reactivity.experimental.SchedulerImpl
+import reactivity.experimental.core.Scheduler
+import reactivity.experimental.core.SchedulerImpl
 
 object SchedulerAndroid {
     @JvmStatic

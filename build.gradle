@@ -53,7 +53,7 @@ subprojects {
 }
 
 // Between subprojects dependencies
-project(':core:reactivity-core-jdk8') {
+project(':core:reactivity-jdk8') {
     dependencies {
         compile project(':core:reactivity-core')
     }
@@ -71,15 +71,15 @@ project(':core:extras:ui:reactivity-extra-javafx') {
     dependencies {
         // provided, reactivity-extra-android is an addon of reactivity
         compileOnly project(':core:reactivity-core')
-        testCompile project(':core:reactivity-core')
+        testCompile project(':core:reactivity-jdk8')
     }
 }
 
 project(':core:extras:ui:reactivity-extra-swing') {
     dependencies {
         // provided, reactivity-extra-android is an addon of reactivity
-        compileOnly project(':core:reactivity-core')
-        testCompile project(':core:reactivity-core')
+        compileOnly project(':core:reactivity')
+        testCompile project(':core:reactivity-jdk8')
     }
 }
 

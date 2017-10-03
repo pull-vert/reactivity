@@ -3,6 +3,7 @@ package reactivity.experimental;
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
 import org.junit.Test;
+import reactivity.experimental.core.MultiBuilder;
 
 public class MultiJdk6Test {
     @Test
