@@ -78,7 +78,7 @@ project(':core:extras:ui:reactivity-extra-javafx') {
 project(':core:extras:ui:reactivity-extra-swing') {
     dependencies {
         // provided, reactivity-extra-android is an addon of reactivity
-        compileOnly project(':core:reactivity')
+        compileOnly project(':core:reactivity-core')
         testCompile project(':core:reactivity-jdk8')
     }
 }
