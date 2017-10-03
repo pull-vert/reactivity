@@ -105,7 +105,6 @@ interface Solo<T> : SoloPublisher<T> {
 
     // function from WithPublishOn
     override fun publishOn(delayError: Boolean): Solo<T>
-
     override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
 
     // Operators specific to Solo
@@ -113,11 +112,10 @@ interface Solo<T> : SoloPublisher<T> {
     // Operators specific to Solo in JDK8
 
     fun toCompletableFuture(): CompletableFuture<T>
-
     fun toCompletableFuture(scheduler: Scheduler): CompletableFuture<T>
 }
 
-open class SoloImpl<T> internal constructor(del: SoloPublisherImpl<T>)
+internal class SoloImpl<T> internal constructor(del: SoloPublisherImpl<T>)
     : SoloPublisherImpl<T>(del.delegate, del.initialScheduler), Solo<T> {
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit) = SoloImpl(super.doOnSubscribe(onSubscribe))

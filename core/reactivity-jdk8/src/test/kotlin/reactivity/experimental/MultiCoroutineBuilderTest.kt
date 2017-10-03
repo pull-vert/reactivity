@@ -7,7 +7,6 @@ import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
 import reactivity.experimental.core.Schedulers
-import reactivity.experimental.core.multi
 
 class MultiCoroutineBuilderTest {
 

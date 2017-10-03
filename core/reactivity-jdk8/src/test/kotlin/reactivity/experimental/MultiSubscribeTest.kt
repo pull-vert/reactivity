@@ -4,7 +4,6 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal to`
 import org.junit.Test
-import reactivity.experimental.core.MultiBuilder
 
 class MultiSubscribeTest {
     @Test

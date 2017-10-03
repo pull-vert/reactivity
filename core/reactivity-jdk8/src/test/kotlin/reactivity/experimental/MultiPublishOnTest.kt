@@ -6,7 +6,6 @@ import org.amshove.kluent.`should be greater than`
 import org.amshove.kluent.`should be less than`
 import org.junit.Test
 import reactivity.experimental.core.Schedulers
-import reactivity.experimental.core.multi
 
 class MultiPublishOnTest {
     @Test

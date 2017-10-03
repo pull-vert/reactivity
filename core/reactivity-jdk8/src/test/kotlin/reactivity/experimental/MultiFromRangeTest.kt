@@ -6,7 +6,6 @@ import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal to`
 import org.amshove.kluent.`should equal`
 import org.junit.Test
-import reactivity.experimental.core.MultiBuilder
 import reactivity.experimental.core.Schedulers
 
 class MultiFromRangeTest {

@@ -7,6 +7,6 @@ package reactivity.experimental.core
 val DEFAULT_SCHEDULER = Schedulers.defaultDispatcher()
 
 /**
- * Common functions for [Multi] and [SoloPublisher]
+ * Common functions for [MultiPublisher] and [SoloPublisher]
  */
 interface PublisherCommons<T> : WithCallbacks<T>, WithPublishOn, WithLambdas<T>

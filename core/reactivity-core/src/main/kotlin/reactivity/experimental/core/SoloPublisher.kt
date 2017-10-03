@@ -57,7 +57,7 @@ internal fun <T> soloPublisher(
  * @author Frédéric Montariol
  */
 abstract class SoloPublisherBuilder {
-    // protected Static factory methods to create a SoloPublisher
+    // protected Static factory methods to create a SoloPublisherImpl
     protected companion object {
 
         @JvmStatic
@@ -106,14 +106,14 @@ interface SoloPublisher<T> : PublisherCommons<T> {
 
     // function from WithPublishOn
     /**
-     * Returns a [Solo] that is published with [DEFAULT_SCHEDULER] and the [delayError] option
+     * Returns a [Solo][reactivity.experimental.Solo] that is published with [DEFAULT_SCHEDULER] and the [delayError] option
      *
      * @param delayError if error should be delayed
      */
     override fun publishOn(delayError: Boolean): SoloPublisher<T>
 
     /**
-     * Returns a [Solo] that is published with the provided [scheduler] and the [delayError] option
+     * Returns a [Solo][reactivity.experimental.Solo] that is published with the provided [scheduler] and the [delayError] option
      *
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param delayError if error should be delayed

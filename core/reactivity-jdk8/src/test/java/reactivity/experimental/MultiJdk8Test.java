@@ -1,7 +1,6 @@
 package reactivity.experimental;
 
 import org.junit.Test;
-import reactivity.experimental.core.MultiBuilder;
 
 public class MultiJdk8Test {
     @Test
