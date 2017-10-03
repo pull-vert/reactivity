@@ -25,6 +25,8 @@ import kotlin.coroutines.experimental.startCoroutine
  * | Normal completion or `close` without cause   | `onComplete`
  * | Failure with exception or `close` with cause | `onError`
  */
+// TODO provide a custom ProducerScope impl that checks send is only called once, and throws exception otherwise !
+// TODO after that remove SoloCoroutine
 internal fun <T> soloPublisher(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
