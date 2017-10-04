@@ -5,47 +5,35 @@ import java.util.concurrent.Executor
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 
+// for Kotlin easiest call
+val SECHEDULER_EMPTY_CONTEXT: Scheduler = SchedulerImpl(EmptyCoroutineContext)
+
+// for Java static call
 object Schedulers {
 
     @JvmStatic
-    fun defaultDispatcher(): Scheduler {
-        return SchedulerImpl(DefaultDispatcher)
-    }
+    fun defaultDispatcher(): Scheduler = SchedulerImpl(DefaultDispatcher)
 
     @JvmStatic
-    fun emptyContext(): Scheduler {
-        return SchedulerImpl(EmptyCoroutineContext)
-    }
+    fun emptyContext() = SECHEDULER_EMPTY_CONTEXT
 
     @JvmStatic
-    fun commonPoolDispatcher(): Scheduler {
-        return SchedulerImpl(CommonPool)
-    }
+    fun commonPoolDispatcher(): Scheduler = SchedulerImpl(CommonPool)
 
     @JvmStatic
-    fun singleThreadContext(): Scheduler {
-        return SchedulerImpl(newSingleThreadContext("singleThread"))
-    }
+    fun singleThreadContext(): Scheduler = SchedulerImpl(newSingleThreadContext("singleThread"))
 
     @JvmStatic
-    fun fixedThreadPoolContext(nThreads: Int): Scheduler {
-        return SchedulerImpl(newFixedThreadPoolContext(nThreads, "fixedThread"))
-    }
+    fun fixedThreadPoolContext(nThreads: Int): Scheduler = SchedulerImpl(newFixedThreadPoolContext(nThreads, "fixedThread"))
 
     @JvmStatic
-    fun unconfinedDispatcher(): Scheduler {
-        return SchedulerImpl(Unconfined)
-    }
+    fun unconfinedDispatcher(): Scheduler = SchedulerImpl(Unconfined)
 
     @JvmStatic
-    fun fromExecutorDispatcher(exectutor: Executor): Scheduler {
-        return SchedulerImpl(exectutor.asCoroutineDispatcher())
-    }
+    fun fromExecutorDispatcher(exectutor: Executor): Scheduler = SchedulerImpl(exectutor.asCoroutineDispatcher())
 
     @JvmStatic
-    fun fromCoroutineContext(context: CoroutineContext): Scheduler {
-        return SchedulerImpl(context)
-    }
+    fun fromCoroutineContext(context: CoroutineContext): Scheduler = SchedulerImpl(context)
 }
 
 class SchedulerImpl(override val context: CoroutineContext) : Scheduler
