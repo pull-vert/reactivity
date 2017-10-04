@@ -16,3 +16,7 @@ fun <T> PublisherCommons<Publisher<T>>.merge(scheduler: Scheduler) = multi(sched
         }
     }
 }
+
+fun <T> T.toSolo() = SoloBuilder.fromValue(this)
+
+fun <T> T.toSolo(scheduler: Scheduler) = SoloBuilder.fromValue(scheduler,this)
