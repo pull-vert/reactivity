@@ -6,7 +6,7 @@ import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal to`
 import org.amshove.kluent.`should equal`
 import org.junit.Test
-import reactivity.experimental.core.Schedulers
+import reactivity.experimental.core.SCHEDULER_COMMON_POOL_DISPATCHER
 
 class MultiFromRangeTest {
     @Test
@@ -73,7 +73,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range subscription without cancellation, and Common pool scheduler`() = runBlocking<Unit> {
         var finally = false
-        val source = MultiBuilder.fromRange(Schedulers.commonPoolDispatcher(),
+        val source = MultiBuilder.fromRange(SCHEDULER_COMMON_POOL_DISPATCHER,
                 1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") } // ... into what's going on

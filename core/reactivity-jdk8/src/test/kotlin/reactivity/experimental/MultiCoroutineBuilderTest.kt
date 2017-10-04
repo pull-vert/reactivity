@@ -6,7 +6,7 @@ import kotlinx.coroutines.experimental.rx2.rxFlowable
 import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
-import reactivity.experimental.core.Schedulers
+import reactivity.experimental.core.schedulerFromCoroutineContext
 
 class MultiCoroutineBuilderTest {
 
@@ -15,7 +15,7 @@ class MultiCoroutineBuilderTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?
-        val source = multi(Schedulers.fromCoroutineContext(coroutineContext)) {
+        val source = multi(schedulerFromCoroutineContext(coroutineContext)) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item

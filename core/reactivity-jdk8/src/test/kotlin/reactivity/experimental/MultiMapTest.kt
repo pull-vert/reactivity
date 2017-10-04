@@ -6,7 +6,7 @@ import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal to`
 import org.amshove.kluent.`should equal`
 import org.junit.Test
-import reactivity.experimental.core.Schedulers
+import reactivity.experimental.core.schedulerFromCoroutineContext
 
 class MultiMapTest {
     @Test
@@ -15,7 +15,7 @@ class MultiMapTest {
         val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
-                .map(Schedulers.fromCoroutineContext(coroutineContext)) { number ->
+                .map(schedulerFromCoroutineContext(coroutineContext)) { number ->
                     number + 1
                 }
         // iterate over the source fully
@@ -41,7 +41,7 @@ class MultiMapTest {
         var onError = false
         var onComplete = false
         val source = MultiBuilder.fromRange(1, 5)
-                .map(Schedulers.fromCoroutineContext(coroutineContext)) { number ->
+                .map(schedulerFromCoroutineContext(coroutineContext)) { number ->
                     if (3 == number) throw Exception("vilain exception !!")
                     number
                 }

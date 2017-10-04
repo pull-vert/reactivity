@@ -5,13 +5,15 @@ import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should be greater than`
 import org.amshove.kluent.`should be less than`
 import org.junit.Test
-import reactivity.experimental.core.Schedulers
+import reactivity.experimental.core.SCHEDULER_COMMON_POOL_DISPATCHER
+import reactivity.experimental.core.SECHEDULER_EMPTY_CONTEXT
+import reactivity.experimental.core.schedulerFromCoroutineContext
 
 class MultiPublishOnTest {
     @Test
     fun `multi builder publishOn emptyThreadContext`() = runBlocking {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(Schedulers.fromCoroutineContext(coroutineContext)) {
+        var source = multi(schedulerFromCoroutineContext(coroutineContext)) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item
@@ -21,7 +23,7 @@ class MultiPublishOnTest {
         var start: Long? = null
         var time: Long? = null
         source = source
-                .publishOn(Schedulers.emptyContext(), false, 2) // specify buffer size of 2 items
+                .publishOn(SECHEDULER_EMPTY_CONTEXT, false, 2) // specify buffer size of 2 items
                 .doOnSubscribe {
                     start = System.currentTimeMillis()
                     println("starting timer")
@@ -45,7 +47,7 @@ class MultiPublishOnTest {
     @Test
     fun `multi builder publishOn CommonPool`() = runBlocking {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(Schedulers.fromCoroutineContext(coroutineContext)) {
+        var source = multi(schedulerFromCoroutineContext(coroutineContext)) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item
@@ -55,7 +57,7 @@ class MultiPublishOnTest {
         var start: Long? = null
         var time: Long? = null
         source = source
-                .publishOn(Schedulers.commonPoolDispatcher(), false, 2) // specify buffer size of 2 items
+                .publishOn(SCHEDULER_COMMON_POOL_DISPATCHER, false, 2) // specify buffer size of 2 items
                 .doOnSubscribe {
                     start = System.currentTimeMillis()
                     println("starting timer")

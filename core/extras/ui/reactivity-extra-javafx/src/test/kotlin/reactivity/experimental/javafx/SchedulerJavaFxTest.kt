@@ -13,7 +13,7 @@ class SchedulerJavaFxTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?
-        val source = multi(SchedulerJavaFx.javaFxDispatcher()) {
+        val source = multi(SCHEDULER_JAVA_FX_DISPATCHER) {
             for (x in 1..3) {
                 check(Platform.isFxApplicationThread())
                 delay(100)
