@@ -318,8 +318,8 @@ interface MultiPublisher<T> : PublisherCommons<T> {
     fun <R> fusedFilterMap(scheduler: Scheduler, predicate: (T) -> Boolean, mapper: (T) -> R): MultiPublisher<R>
 }
 
-open class MultiPublisherImpl<T> (val delegate: Publisher<T>,
-                                             val initialScheduler: Scheduler)
+open class MultiPublisherImpl<T>(val delegate: Publisher<T>,
+                                 override val initialScheduler: Scheduler)
     : MultiPublisher<T>, Publisher<T> by delegate {
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): MultiPublisherImpl<T> {

@@ -124,7 +124,7 @@ interface SoloPublisher<T> : PublisherCommons<T> {
 }
 
 open class SoloPublisherImpl<T>(val delegate: Publisher<T>,
-                                val initialScheduler: Scheduler)
+                                override val initialScheduler: Scheduler)
     : SoloPublisher<T>, Publisher<T> by delegate {
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): SoloPublisherImpl<T> {
