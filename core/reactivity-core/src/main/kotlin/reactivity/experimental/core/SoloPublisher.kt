@@ -206,14 +206,11 @@ open class SoloPublisherImpl<T>(val delegate: Publisher<T>,
 
     override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
 
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean): SoloPublisherImpl<T> {
-        return soloPublisher(scheduler) {
-            val completableConsumer = SoloPublishOn<T>(delayError)
-            this@SoloPublisherImpl.subscribe(completableConsumer)
-            completableConsumer.consumeUnique {
-                send(it)
-            }
+    override fun publishOn(scheduler: Scheduler, delayError: Boolean) = soloPublisher(scheduler) {
+        val completableConsumer = SoloPublishOn<T>(delayError)
+        this@SoloPublisherImpl.subscribe(completableConsumer)
+        completableConsumer.consumeUnique {
+            send(it)
         }
     }
-
 }
