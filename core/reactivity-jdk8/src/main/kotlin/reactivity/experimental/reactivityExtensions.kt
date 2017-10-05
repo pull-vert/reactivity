@@ -25,3 +25,7 @@ fun <T> CompletableFuture<T>.toSolo() = Solo.fromCompletableFuture(this)
 fun <T> CompletableFuture<T>.toSolo(scheduler: Scheduler) = Solo.fromCompletableFuture(scheduler,this)
 
 // Multi
+fun <T> Iterable<T>.toMulti() = Multi.fromIterable(this)
+fun <T> Iterable<T>.toMulti(scheduler: Scheduler) = Multi.fromIterable(scheduler, this)
+fun <T> Publisher<T>.toMulti() = Multi.fromPublisher(this)
+fun <T> Publisher<T>.toMulti(scheduler: Scheduler) = Multi.fromPublisher(scheduler, this)

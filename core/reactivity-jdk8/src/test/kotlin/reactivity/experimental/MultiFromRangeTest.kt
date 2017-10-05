@@ -13,7 +13,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range 2 consumers`() = runBlocking {
         // create a publisher that produces numbers from 1 to 3
-        val source = MultiBuilder.fromRange(1, 3)
+        val source = Multi.fromRange(1, 3)
         // print elements from the source
         var count = 0
         println("first consumer:")
@@ -36,7 +36,7 @@ class MultiFromRangeTest {
     fun `multi from range subscription with cancellation`() = runBlocking {
         var finally = false
         // create a publisher that produces numbers from 1 to 5
-        val source = MultiBuilder.fromRange(1, 5)
+        val source = Multi.fromRange(1, 5)
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") } // ... into what's going on
         // print elements from the source
@@ -55,7 +55,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range subscription without cancellation`() = runBlocking<Unit> {
         var finally = false
-        val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
+        val source = Multi.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") } // ... into what's going on
         // iterate over the source fully
@@ -75,7 +75,7 @@ class MultiFromRangeTest {
     @Test
     fun `multi from range subscription without cancellation, and Common pool scheduler`() = runBlocking<Unit> {
         var finally = false
-        val source = MultiBuilder.fromRange(SCHEDULER_COMMON_POOL_DISPATCHER,
+        val source = Multi.fromRange(SCHEDULER_COMMON_POOL_DISPATCHER,
                 1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") } // ... into what's going on

@@ -12,7 +12,7 @@ class MultiSubscribeTest {
         var finally = false
         var onError = false
         var onComplete = false
-        val source = MultiBuilder.fromRange(1, 5)
+        val source = Multi.fromRange(1, 5)
                 .doFinally { finally = true; println("Finally") } // ... into what's going on
         // print element from the source
         println("empty consumer:")
@@ -34,7 +34,7 @@ class MultiSubscribeTest {
     fun `multi from range subscription with subscribe onNext function`() = runBlocking<Unit> {
         var finally = false
         var onNext = false
-        val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
+        val source = Multi.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") }         // ... into what's going on
                 .doOnNext {

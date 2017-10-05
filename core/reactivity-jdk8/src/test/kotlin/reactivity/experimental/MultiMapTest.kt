@@ -12,7 +12,7 @@ class MultiMapTest {
     @Test
     fun `multi from range map simple`() = runBlocking<Unit> {
         var result = 0
-        val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
+        val source = Multi.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
                 .map(schedulerFromCoroutineContext(coroutineContext)) { number ->
@@ -35,12 +35,12 @@ class MultiMapTest {
     }
 
     @Test
-    fun `multi from range map with Exception cancellation`() = runBlocking {
+    fun `multi from iterable map with Exception cancellation`() = runBlocking {
         // create a publisher that produces number 1
         var finally = false
         var onError = false
         var onComplete = false
-        val source = MultiBuilder.fromRange(1, 5)
+        val source = (1..5).toMulti()
                 .map(schedulerFromCoroutineContext(coroutineContext)) { number ->
                     if (3 == number) throw Exception("vilain exception !!")
                     number
