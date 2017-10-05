@@ -1,5 +1,6 @@
 package reactivity.experimental
 
+import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.runBlocking
@@ -67,6 +68,7 @@ class MultiFromRangeTest {
         When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,
         which gets dispatched onto the main thread to print this last element at
         a later point in time, while the source completes and prints "Finally". */
+        delay(100)
         finally `should equal to` true
     }
 
