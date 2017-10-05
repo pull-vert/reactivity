@@ -33,12 +33,11 @@ fun <T> solo(
  *
  * @author Frédéric Montariol
  */
-abstract class Solo<T> protected constructor() : SoloPublisher<T> {
+abstract class Solo<T> protected constructor() : DefaultSolo<T> {
 
     /**
      * Builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
      *
-     * @author Frédéric Montariol
      */
     companion object : SoloPublisherBuilder() {
         /**
@@ -86,18 +85,17 @@ abstract class Solo<T> protected constructor() : SoloPublisher<T> {
     }
 
     // functions from WithCallbacks
-    abstract override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T>
-
-    abstract override fun doOnNext(onNext: (T) -> Unit): Solo<T>
-    abstract override fun doOnError(onError: (Throwable) -> Unit): Solo<T>
-    abstract override fun doOnComplete(onComplete: () -> Unit): Solo<T>
-    abstract override fun doOnCancel(onCancel: () -> Unit): Solo<T>
-    abstract override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T>
-    abstract override fun doFinally(finally: () -> Unit): Solo<T>
+    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T> = SoloImpl(super.doOnSubscribe(onSubscribe))
+    override fun doOnNext(onNext: (T) -> Unit): Solo<T> = SoloImpl(super.doOnNext(onNext))
+    override fun doOnError(onError: (Throwable) -> Unit): Solo<T> = SoloImpl(super.doOnError(onError))
+    override fun doOnComplete(onComplete: () -> Unit): Solo<T> = SoloImpl(super.doOnComplete(onComplete))
+    override fun doOnCancel(onCancel: () -> Unit): Solo<T> = SoloImpl(super.doOnCancel(onCancel))
+    override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T> = SoloImpl(super.doOnRequest(onRequest))
+    override fun doFinally(finally: () -> Unit): Solo<T> = SoloImpl(super.doFinally(finally))
 
     // function from WithPublishOn
-    abstract override fun publishOn(delayError: Boolean): Solo<T>
-    abstract override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
+    override fun publishOn(delayError: Boolean): Solo<T> = SoloImpl(super.publishOn(delayError))
+    override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T> = SoloImpl(super.publishOn(scheduler, delayError))
 
     // Operators specific to Solo
 
@@ -107,23 +105,13 @@ abstract class Solo<T> protected constructor() : SoloPublisher<T> {
     abstract fun toCompletableFuture(scheduler: Scheduler): CompletableFuture<T>
 }
 
-internal class SoloImpl<T> internal constructor(private val del: DefaultSoloPublisher<T>)
-    : Solo<T>(), DefaultSoloPublisher<T>, Publisher<T> by del.delegate {
+internal class SoloImpl<T> internal constructor(private val del: DefaultSolo<T>)
+    : Solo<T>(), Publisher<T> by del.delegate {
 
     override val delegate: Publisher<T>
         get() = del.delegate
     override val initialScheduler: Scheduler
         get() = del.initialScheduler
-
-    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit) = SoloImpl(super.doOnSubscribe(onSubscribe))
-    override fun doOnNext(onNext: (T) -> Unit) = SoloImpl(super.doOnNext(onNext))
-    override fun doOnError(onError: (Throwable) -> Unit) = SoloImpl(super.doOnError(onError))
-    override fun doOnComplete(onComplete: () -> Unit) = SoloImpl(super.doOnComplete(onComplete))
-    override fun doOnCancel(onCancel: () -> Unit) = SoloImpl(super.doOnCancel(onCancel))
-    override fun doOnRequest(onRequest: (Long) -> Unit) = SoloImpl(super.doOnRequest(onRequest))
-    override fun doFinally(finally: () -> Unit) = SoloImpl(super.doFinally(finally))
-    override fun publishOn(delayError: Boolean) = SoloImpl(super.publishOn(delayError))
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean) = SoloImpl(super.publishOn(scheduler, delayError))
 
     override fun toCompletableFuture() = toCompletableFuture(initialScheduler)
 
