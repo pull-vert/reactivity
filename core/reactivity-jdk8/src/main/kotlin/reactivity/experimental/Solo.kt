@@ -69,7 +69,7 @@ abstract class Solo<T> protected constructor() : DefaultSolo<T> {
          */
         @JvmStatic
         fun <T> fromCompletableFuture(completableFuture: CompletableFuture<T>)
-                = fromCompletableFuture(DEFAULT_SCHEDULER, completableFuture)
+                = fromCompletableFuture(SECHEDULER_DEFAULT_DISPATCHER, completableFuture)
 
         /**
          * Creates a [Solo] from a [completableFuture]

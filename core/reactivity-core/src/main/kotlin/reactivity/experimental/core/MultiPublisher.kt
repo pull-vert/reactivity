@@ -45,7 +45,7 @@ abstract class MultiPublisherBuilder {
          * @return the [Multi][reactivity.experimental.Multi]<Int> created
          */
         @JvmStatic
-        fun fromRange(start: Int, count: Int) = fromRange(DEFAULT_SCHEDULER, start, count)
+        fun fromRange(start: Int, count: Int) = fromRange(SECHEDULER_DEFAULT_DISPATCHER, start, count)
 
         /**
          * Creates a [Multi][reactivity.experimental.Multi] from a range of Int (starting from [start] and emmitting
@@ -66,7 +66,7 @@ abstract class MultiPublisherBuilder {
          * @param T the type of the input [iterable]
          */
         @JvmStatic
-        fun <T> fromIterable(iterable: Iterable<T>) = fromIterable(DEFAULT_SCHEDULER, iterable)
+        fun <T> fromIterable(iterable: Iterable<T>) = fromIterable(SECHEDULER_DEFAULT_DISPATCHER, iterable)
 
         /**
          * Creates a [Multi][reactivity.experimental.Multi] from a [Iterable]
@@ -88,7 +88,7 @@ abstract class MultiPublisherBuilder {
          * @param T the type of the input [Publisher]
          */
         @JvmStatic
-        fun <T> fromPublisher(publisher: Publisher<T>) = fromPublisher(DEFAULT_SCHEDULER, publisher)
+        fun <T> fromPublisher(publisher: Publisher<T>) = fromPublisher(SECHEDULER_DEFAULT_DISPATCHER, publisher)
 
         /**
          * Creates a [Multi][reactivity.experimental.Multi] from a [Publisher]

@@ -59,7 +59,7 @@ fun <T> defaultSoloPublisher(
 abstract class SoloPublisherBuilder {
     // protected Static factory methods to create a DefaultSoloImpl
     protected companion object {
-        fun <T> fromValue(value: T) = fromValue(DEFAULT_SCHEDULER, value)
+        fun <T> fromValue(value: T) = fromValue(SECHEDULER_DEFAULT_DISPATCHER, value)
 
         fun <T> fromValue(scheduler: Scheduler, value: T) = defaultSoloPublisher(scheduler) {
             send(value)
@@ -173,7 +173,7 @@ interface DefaultSolo<T> : PublisherCommons<T> {
     }
 
     /**
-     * Returns a [Solo][reactivity.experimental.Solo] that is published with [DEFAULT_SCHEDULER] and the [delayError] option
+     * Returns a [Solo][reactivity.experimental.Solo] that is published with [initialScheduler] and the [delayError] option
      *
      * @param delayError if error should be delayed
      */
