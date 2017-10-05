@@ -27,7 +27,7 @@ import kotlin.coroutines.experimental.startCoroutine
  */
 // TODO provide a custom ProducerScope impl that checks send is only called once, and throws exception otherwise !
 // TODO after that remove SoloCoroutine
-internal fun <T> soloPublisher(
+fun <T> defaultSoloPublisher(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
 ): DefaultSoloPublisher<T> = SoloPublisherImpl(Publisher { subscriber ->
@@ -61,7 +61,7 @@ abstract class SoloPublisherBuilder {
     protected companion object {
         fun <T> fromValue(value: T) = fromValue(DEFAULT_SCHEDULER, value)
 
-        fun <T> fromValue(scheduler: Scheduler, value: T) = soloPublisher(scheduler) {
+        fun <T> fromValue(scheduler: Scheduler, value: T) = defaultSoloPublisher(scheduler) {
             send(value)
         }
     }
@@ -119,10 +119,6 @@ interface SoloPublisher<T> : PublisherCommons<T> {
 
     // Operators specific to SoloPublisher
 }
-
-class SoloPublisherImpl<T>(override val delegate: Publisher<T>,
-                                   override val initialScheduler: Scheduler)
-    : DefaultSoloPublisher<T>, Publisher<T> by delegate
 
 interface DefaultSoloPublisher<T> : SoloPublisher<T> {
 
@@ -208,7 +204,7 @@ interface DefaultSoloPublisher<T> : SoloPublisher<T> {
 
     override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
 
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean) = soloPublisher(scheduler) {
+    override fun publishOn(scheduler: Scheduler, delayError: Boolean) = defaultSoloPublisher(scheduler) {
         val completableConsumer = SoloPublishOn<T>(delayError)
         this@DefaultSoloPublisher.subscribe(completableConsumer)
         completableConsumer.consumeUnique {
@@ -216,3 +212,7 @@ interface DefaultSoloPublisher<T> : SoloPublisher<T> {
         }
     }
 }
+
+private class SoloPublisherImpl<T>(override val delegate: Publisher<T>,
+                                   override val initialScheduler: Scheduler)
+    : DefaultSoloPublisher<T>, Publisher<T> by delegate

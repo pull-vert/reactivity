@@ -1,16 +1,13 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.future.future
-import kotlinx.coroutines.experimental.newCoroutineContext
 import kotlinx.coroutines.experimental.reactive.awaitSingle
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
 import reactivity.experimental.core.*
 import java.util.concurrent.CompletableFuture
-import kotlin.coroutines.experimental.startCoroutine
 
 /**
  * Creates cold reactive [Solo] that runs a given [block] in a coroutine.
@@ -29,13 +26,7 @@ import kotlin.coroutines.experimental.startCoroutine
 fun <T> solo(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): Solo<T> = SoloImpl(SoloPublisherImpl(Publisher { subscriber ->
-    val newContext = newCoroutineContext(scheduler.context)
-    val coroutine = SoloCoroutine(newContext, subscriber)
-    coroutine.initParentJob(scheduler.context[Job])
-    subscriber.onSubscribe(coroutine) // do it first (before starting coroutine), to avoid unnecessary suspensions
-    block.startCoroutine(coroutine, coroutine)
-}, scheduler))
+): Solo<T> = SoloImpl(defaultSoloPublisher(scheduler, block))
 
 /**
  * Single (or empty) value Reactive Stream [Publisher]

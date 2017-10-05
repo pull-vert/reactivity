@@ -450,7 +450,7 @@ open class MultiPublisherImpl<T>(val delegate: Publisher<T>,
 
     override fun findFirst(predicate: (T) -> Boolean) = findFirst(initialScheduler, predicate)
 
-    override fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean) = soloPublisher(scheduler) {
+    override fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean) = defaultSoloPublisher(scheduler) {
         var produced = false
         openSubscription().use { channel ->
             // open channel to the source
