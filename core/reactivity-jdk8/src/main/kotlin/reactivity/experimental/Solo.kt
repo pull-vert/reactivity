@@ -38,85 +38,91 @@ fun <T> solo(
 }, scheduler))
 
 /**
- * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
- *
- * @author Frédéric Montariol
- */
-object SoloBuilder : SoloPublisherBuilder() {
-    /**
-     * Creates a [Solo] from a [value]
-     *
-     * @return the [Solo]<T> created
-     *
-     * @param T the type of the input [value]
-     */
-    @JvmStatic
-    fun <T> fromValue(value: T): Solo<T> = SoloImpl(Companion.fromValue(value))
-
-    /**
-     * Creates a [Solo] from a [value]
-     *
-     * @return the [Solo]<T> created
-     *
-     * @param T the type of the input [value]
-     */
-    @JvmStatic
-    fun <T> fromValue(scheduler: Scheduler, value: T): Solo<T> = SoloImpl(Companion.fromValue(scheduler, value))
-
-    /**
-     * Creates a [Solo] from a [completableFuture]
-     *
-     * @return the [Solo]<T> created
-     *
-     * @param T the type of the input [completableFuture]
-     */
-    @JvmStatic
-    fun <T> fromCompletableFuture(completableFuture: CompletableFuture<T>)
-            = fromCompletableFuture(DEFAULT_SCHEDULER, completableFuture)
-
-    /**
-     * Creates a [Solo] from a [completableFuture]
-     *
-     * @return the [Solo]<T> created
-     *
-     * @param T the type of the input [completableFuture]
-     */
-    @JvmStatic
-    fun <T> fromCompletableFuture(scheduler: Scheduler, completableFuture: CompletableFuture<T>) = solo(scheduler) {
-        send(completableFuture.await())
-    }
-}
-
-/**
  * Single (or empty) value Reactive Stream [Publisher]
  *
  * @author Frédéric Montariol
  */
-interface Solo<T> : SoloPublisher<T> {
-    // functions from WithCallbacks
-    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T>
+abstract class Solo<T> protected constructor() : SoloPublisher<T> {
 
-    override fun doOnNext(onNext: (T) -> Unit): Solo<T>
-    override fun doOnError(onError: (Throwable) -> Unit): Solo<T>
-    override fun doOnComplete(onComplete: () -> Unit): Solo<T>
-    override fun doOnCancel(onCancel: () -> Unit): Solo<T>
-    override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T>
-    override fun doFinally(finally: () -> Unit): Solo<T>
+    /**
+     * Builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
+     *
+     * @author Frédéric Montariol
+     */
+    companion object : SoloPublisherBuilder() {
+        /**
+         * Creates a [Solo] from a [value]
+         *
+         * @return the [Solo]<T> created
+         *
+         * @param T the type of the input [value]
+         */
+        @JvmStatic
+        fun <T> fromValue(value: T): Solo<T> = SoloImpl(SoloPublisherBuilder.fromValue(value))
+
+        /**
+         * Creates a [Solo] from a [value]
+         *
+         * @return the [Solo]<T> created
+         *
+         * @param T the type of the input [value]
+         */
+        @JvmStatic
+        fun <T> fromValue(scheduler: Scheduler, value: T): Solo<T> = SoloImpl(SoloPublisherBuilder.fromValue(scheduler, value))
+
+        /**
+         * Creates a [Solo] from a [completableFuture]
+         *
+         * @return the [Solo]<T> created
+         *
+         * @param T the type of the input [completableFuture]
+         */
+        @JvmStatic
+        fun <T> fromCompletableFuture(completableFuture: CompletableFuture<T>)
+                = fromCompletableFuture(DEFAULT_SCHEDULER, completableFuture)
+
+        /**
+         * Creates a [Solo] from a [completableFuture]
+         *
+         * @return the [Solo]<T> created
+         *
+         * @param T the type of the input [completableFuture]
+         */
+        @JvmStatic
+        fun <T> fromCompletableFuture(scheduler: Scheduler, completableFuture: CompletableFuture<T>) = solo(scheduler) {
+            send(completableFuture.await())
+        }
+    }
+
+    // functions from WithCallbacks
+    abstract override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T>
+
+    abstract override fun doOnNext(onNext: (T) -> Unit): Solo<T>
+    abstract override fun doOnError(onError: (Throwable) -> Unit): Solo<T>
+    abstract override fun doOnComplete(onComplete: () -> Unit): Solo<T>
+    abstract override fun doOnCancel(onCancel: () -> Unit): Solo<T>
+    abstract override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T>
+    abstract override fun doFinally(finally: () -> Unit): Solo<T>
 
     // function from WithPublishOn
-    override fun publishOn(delayError: Boolean): Solo<T>
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
+    abstract override fun publishOn(delayError: Boolean): Solo<T>
+    abstract override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
 
     // Operators specific to Solo
 
     // Operators specific to Solo in JDK8
 
-    fun toCompletableFuture(): CompletableFuture<T>
-    fun toCompletableFuture(scheduler: Scheduler): CompletableFuture<T>
+    abstract fun toCompletableFuture(): CompletableFuture<T>
+    abstract fun toCompletableFuture(scheduler: Scheduler): CompletableFuture<T>
 }
 
-internal class SoloImpl<T> internal constructor(del: SoloPublisherImpl<T>)
-    : SoloPublisherImpl<T>(del.delegate, del.initialScheduler), Solo<T> {
+internal class SoloImpl<T> internal constructor(private val del: DefaultSoloPublisher<T>)
+    : Solo<T>(), DefaultSoloPublisher<T>, Publisher<T> by del.delegate {
+
+    override val delegate: Publisher<T>
+        get() = del.delegate
+    override val initialScheduler: Scheduler
+        get() = del.initialScheduler
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit) = SoloImpl(super.doOnSubscribe(onSubscribe))
     override fun doOnNext(onNext: (T) -> Unit) = SoloImpl(super.doOnNext(onNext))

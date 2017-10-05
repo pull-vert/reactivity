@@ -202,7 +202,7 @@ interface MultiPublisher<T> : PublisherCommons<T> {
      *
      * @param predicate the filter predicate
      */
-    fun findFirst(predicate: (T) -> Boolean): SoloPublisherImpl<T?>
+    fun findFirst(predicate: (T) -> Boolean): SoloPublisher<T?>
 
     /**
      * Returns a [SoloPublisher] containing the first received element that satisfies the given [predicate],
@@ -211,7 +211,7 @@ interface MultiPublisher<T> : PublisherCommons<T> {
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param predicate the filter predicate
      */
-    fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): SoloPublisherImpl<T?>
+    fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): SoloPublisher<T?>
 
     /**
      * Returns a [Multi][reactivity.experimental.Multi]<R> that use the [mapper] to transform each received element from [T]

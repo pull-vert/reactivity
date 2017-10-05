@@ -129,8 +129,8 @@ interface Multi<T> : MultiPublisher<T> {
     override fun filter(predicate: (T) -> Boolean): Multi<T>
     override fun filter(scheduler: Scheduler, predicate: (T) -> Boolean): Multi<T>
 
-    override fun findFirst(predicate: (T) -> Boolean): SoloPublisherImpl<T?>
-    override fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): SoloPublisherImpl<T?>
+    override fun findFirst(predicate: (T) -> Boolean): Solo<T?>
+    override fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): Solo<T?>
 
     override fun <R> flatMap(mapper: (T) -> Publisher<R>): Multi<R>
     override fun <R> flatMap(scheduler: Scheduler, mapper: (T) -> Publisher<R>): Multi<R>

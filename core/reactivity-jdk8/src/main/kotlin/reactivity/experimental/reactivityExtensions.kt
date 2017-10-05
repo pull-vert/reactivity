@@ -3,12 +3,13 @@ package reactivity.experimental
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import org.reactivestreams.Publisher
-import reactivity.experimental.core.DEFAULT_SCHEDULER
 import reactivity.experimental.core.PublisherCommons
 import reactivity.experimental.core.Scheduler
+import java.util.concurrent.CompletableFuture
 
 fun <T> PublisherCommons<Publisher<T>>.merge() = merge(initialScheduler)
 
+// TODO : Junit to test that !!
 fun <T> PublisherCommons<Publisher<T>>.merge(scheduler: Scheduler) = multi(scheduler) {
     consumeEach { pub ->                 // for each publisher received on the source channel
         launch(coroutineContext) {       // launch a child coroutine
@@ -17,6 +18,10 @@ fun <T> PublisherCommons<Publisher<T>>.merge(scheduler: Scheduler) = multi(sched
     }
 }
 
-fun <T> T.toSolo() = SoloBuilder.fromValue(this)
+// Solo
+fun <T> T.toSolo() = Solo.fromValue(this)
+fun <T> T.toSolo(scheduler: Scheduler) = Solo.fromValue(scheduler,this)
+fun <T> CompletableFuture<T>.toSolo() = Solo.fromCompletableFuture(this)
+fun <T> CompletableFuture<T>.toSolo(scheduler: Scheduler) = Solo.fromCompletableFuture(scheduler,this)
 
-fun <T> T.toSolo(scheduler: Scheduler) = SoloBuilder.fromValue(scheduler,this)
+// Multi
