@@ -79,6 +79,26 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
         fun <T> fromIterable(scheduler: Scheduler, iterable: Iterable<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromIterable(scheduler, iterable))
 
         /**
+         * Creates a [Multi] from a [Array]
+         *
+         * @return the [Multi]<T> created
+         *
+         * @param T the type of the input [array]
+         */
+        @JvmStatic
+        fun <T> fromArray(array: Array<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromArray(array))
+
+        /**
+         * Creates a [Multi] from a [Array]
+         *
+         * @return the [Multi]<T> created
+         *
+         * @param T the type of the input [array]
+         */
+        @JvmStatic
+        fun <T> fromArray(scheduler: Scheduler, array: Array<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromArray(scheduler, array))
+
+                /**
          * Creates a [Multi] from a [Publisher]
          *
          * @return the [Multi]<T> created
