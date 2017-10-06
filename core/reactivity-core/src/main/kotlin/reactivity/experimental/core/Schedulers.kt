@@ -9,8 +9,8 @@ import kotlin.coroutines.experimental.EmptyCoroutineContext
 /**
  * The default scheduler used for instantiation of Multi and Solo
  */
-val SECHEDULER_DEFAULT_DISPATCHER: Scheduler = SchedulerImpl(DefaultDispatcher)
-val SECHEDULER_EMPTY_CONTEXT: Scheduler = SchedulerImpl(EmptyCoroutineContext)
+val SCHEDULER_DEFAULT_DISPATCHER: Scheduler = SchedulerImpl(DefaultDispatcher)
+val SCHEDULER_EMPTY_CONTEXT: Scheduler = SchedulerImpl(EmptyCoroutineContext)
 val SCHEDULER_COMMON_POOL_DISPATCHER: Scheduler = SchedulerImpl(CommonPool)
 fun schedulerSingleThreadContext(name: String): Scheduler = SchedulerImpl(newSingleThreadContext(name))
 fun schedulerFixedThreadPoolContext(nThreads: Int, name: String): Scheduler = SchedulerImpl(newFixedThreadPoolContext(nThreads, name))
@@ -22,10 +22,10 @@ fun schedulerFromCoroutineContext(context: CoroutineContext): Scheduler = Schedu
 object Schedulers {
 
     @JvmField
-    val DEFAULT_DISPATCHER = SECHEDULER_DEFAULT_DISPATCHER
+    val DEFAULT_DISPATCHER = SCHEDULER_DEFAULT_DISPATCHER
 
     @JvmField
-    val EMPTY_CONTEXT = SECHEDULER_EMPTY_CONTEXT
+    val EMPTY_CONTEXT = SCHEDULER_EMPTY_CONTEXT
 
     @JvmField
     val COMMON_POOL_DISPATCHER = SCHEDULER_COMMON_POOL_DISPATCHER

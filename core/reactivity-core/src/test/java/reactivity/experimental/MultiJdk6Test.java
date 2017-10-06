@@ -7,7 +7,7 @@
 //
 //public class MultiJdk6Test {
 //    @Test
-//    public void rangeJavaTest() {
+//    public void rangeJava() {
 //        MultiBuilder.fromRange(1, 3)
 //                // Works with an anonymous function for jdk6 and jdk6
 //                .subscribe(new Function1<Integer, Unit>() {

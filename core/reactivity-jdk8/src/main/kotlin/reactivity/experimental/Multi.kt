@@ -6,7 +6,9 @@ import kotlinx.coroutines.experimental.reactive.asPublisher
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
-import reactivity.experimental.core.*
+import reactivity.experimental.core.DefaultMulti
+import reactivity.experimental.core.Scheduler
+import reactivity.experimental.core.multiPublisher
 
 /**
  * Creates cold reactive [Multi] that runs a given [block] in a coroutine.
@@ -39,7 +41,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
      *
      * @author Frédéric Montariol
      */
-    companion object : MultiPublisherBuilder() {
+    companion object {
         /**
          * Creates a [Multi] from a range of Int (starting from [start] and emmitting
          * [count] items)
@@ -47,7 +49,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          * @return the [Multi]<Int> created
          */
         @JvmStatic
-        fun fromRange(start: Int, count: Int): Multi<Int> = MultiImpl(MultiPublisherBuilder.fromRange(start, count))
+        fun fromRange(start: Int, count: Int): Multi<Int> = IntRange(start, start + count - 1).toMulti()
 
         /**
          * Creates a [Multi] from a range of Int (starting from [start] and emmitting
@@ -56,7 +58,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          * @return the [Multi]<Int> created
          */
         @JvmStatic
-        fun fromRange(scheduler: Scheduler, start: Int, count: Int): Multi<Int> = MultiImpl(MultiPublisherBuilder.fromRange(scheduler, start, count))
+        fun fromRange(scheduler: Scheduler, start: Int, count: Int) = IntRange(start, start + count - 1).toMulti(scheduler)
 
         /**
          * Creates a [Multi] from a [Iterable]
@@ -66,7 +68,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          * @param T the type of the input [iterable]
          */
         @JvmStatic
-        fun <T> fromIterable(iterable: Iterable<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromIterable(iterable))
+        fun <T> fromIterable(iterable: Iterable<T>): Multi<T> = iterable.toMulti()
 
         /**
          * Creates a [Multi] from a [Iterable]
@@ -76,7 +78,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          * @param T the type of the input [iterable]
          */
         @JvmStatic
-        fun <T> fromIterable(scheduler: Scheduler, iterable: Iterable<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromIterable(scheduler, iterable))
+        fun <T> fromIterable(scheduler: Scheduler, iterable: Iterable<T>) = iterable.toMulti(scheduler)
 
         /**
          * Creates a [Multi] from a [Array]
@@ -86,7 +88,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          * @param T the type of the input [array]
          */
         @JvmStatic
-        fun <T> fromArray(array: Array<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromArray(array))
+        fun <T> fromArray(array: Array<T>) = array.toMulti()
 
         /**
          * Creates a [Multi] from a [Array]
@@ -96,7 +98,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          * @param T the type of the input [array]
          */
         @JvmStatic
-        fun <T> fromArray(scheduler: Scheduler, array: Array<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromArray(scheduler, array))
+        fun <T> fromArray(scheduler: Scheduler, array: Array<T>) = array.toMulti(scheduler)
 
                 /**
          * Creates a [Multi] from a [Publisher]
@@ -106,7 +108,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          * @param T the type of the input [Publisher]
          */
         @JvmStatic
-        fun <T> fromPublisher(publisher: Publisher<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromPublisher(publisher))
+        fun <T> fromPublisher(publisher: Publisher<T>) = publisher.toMulti()
 
         /**
          * Creates a [Multi] from a [Publisher]
@@ -118,7 +120,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          * @param T the type of the input [Publisher]
          */
         @JvmStatic
-        fun <T> fromPublisher(scheduler: Scheduler, publisher: Publisher<T>): Multi<T> = MultiImpl(MultiPublisherBuilder.fromPublisher(scheduler, publisher))
+        fun <T> fromPublisher(scheduler: Scheduler, publisher: Publisher<T>) = publisher.toMulti(scheduler)
     }
 
     // functions from WithCallbacks

@@ -34,96 +34,41 @@ fun <T> multiPublisher(
  *
  * @author Frédéric Montariol
  */
-abstract class MultiPublisherBuilder {
+object DefaultMultiFactory {
     // Static factory methods to create a DefaultMulti
 
-    protected companion object {
-        /**
-         * Creates a [DefaultMulti] from a range of Int (starting from [start] and emmitting
-         * [count] items)
-         *
-         * @return the [DefaultMulti]<Int> created
-         */
-        @JvmStatic
-        fun fromRange(start: Int, count: Int) = fromRange(SECHEDULER_DEFAULT_DISPATCHER, start, count)
-
-        /**
-         * Creates a [DefaultMulti] from a range of Int (starting from [start] and emmitting
-         * [count] items)
-         *
-         * @return the [DefaultMulti]<Int> created
-         */
-        @JvmStatic
-        fun fromRange(scheduler: Scheduler, start: Int, count: Int) = multiPublisher(scheduler) {
-            for (x in start until start + count) send(x)
-        }
-
-        /**
-         * Creates a [DefaultMulti] from a [Iterable]
-         *
-         * @return the [DefaultMulti]<T> created
-         *
-         * @param T the type of the input [iterable]
-         */
-        @JvmStatic
-        fun <T> fromIterable(iterable: Iterable<T>) = fromIterable(SECHEDULER_DEFAULT_DISPATCHER, iterable)
-
-        /**
-         * Creates a [DefaultMulti] from a [Iterable]
-         *
-         * @return the [DefaultMulti]<T> created
-         *
-         * @param T the type of the input [iterable]
-         */
-        @JvmStatic
-        fun <T> fromIterable(scheduler: Scheduler, iterable: Iterable<T>) = multiPublisher(scheduler) {
-            for (x in iterable) send(x)
-        }
-
-        /**
-         * Creates a [DefaultMulti] from a [Array]
-         *
-         * @return the [DefaultMulti]<T> created
-         *
-         * @param T the type of the input [array]
-         */
-        @JvmStatic
-        fun <T> fromArray(array: Array<T>) = fromArray(SECHEDULER_DEFAULT_DISPATCHER, array)
-
-        /**
-         * Creates a [DefaultMulti] from a [Array]
-         *
-         * @return the [DefaultMulti]<T> created
-         *
-         * @param T the type of the input [array]
-         */
-        @JvmStatic
-        fun <T> fromArray(scheduler: Scheduler, array: Array<T>) = multiPublisher(scheduler) {
-            for (x in array) send(x)
-        }
-
-        /**
-         * Creates a [DefaultMulti] from a [Publisher]
-         *
-         * @return the [DefaultMulti]<T> created
-         *
-         * @param T the type of the input [Publisher]
-         */
-        @JvmStatic
-        fun <T> fromPublisher(publisher: Publisher<T>) = fromPublisher(SECHEDULER_DEFAULT_DISPATCHER, publisher)
-
-        /**
-         * Creates a [DefaultMulti] from a [Publisher]
-         *
-         * *To notice : no need for [DefaultMulti] coroutine here !*
-         *
-         * @return the [DefaultMulti]<T> created
-         *
-         * @param T the type of the input [Publisher]
-         */
-        @JvmStatic
-        fun <T> fromPublisher(scheduler: Scheduler, publisher: Publisher<T>): DefaultMulti<T> = DefaultMultiImpl(publisher, scheduler)
+    /**
+     * Creates a [DefaultMulti] from a [Iterable]
+     *
+     * @return the [DefaultMulti]<T> created
+     *
+     * @param T the type of the input [iterable]
+     */
+    fun <T> fromIterable(scheduler: Scheduler, iterable: Iterable<T>) = multiPublisher(scheduler) {
+        for (x in iterable) send(x)
     }
+
+    /**
+     * Creates a [DefaultMulti] from a [Array]
+     *
+     * @return the [DefaultMulti]<T> created
+     *
+     * @param T the type of the input [array]
+     */
+    fun <T> fromArray(scheduler: Scheduler, array: Array<T>) = multiPublisher(scheduler) {
+        for (x in array) send(x)
+    }
+
+    /**
+     * Creates a [DefaultMulti] from a [Publisher]
+     *
+     * *To notice : no need for [DefaultMulti] coroutine here !*
+     *
+     * @return the [DefaultMulti]<T> created
+     *
+     * @param T the type of the input [Publisher]
+     */
+    fun <T> fromPublisher(scheduler: Scheduler, publisher: Publisher<T>): DefaultMulti<T> = DefaultMultiImpl(publisher, scheduler)
 }
 
 /**

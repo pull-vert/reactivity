@@ -6,7 +6,7 @@ import org.amshove.kluent.`should be greater than`
 import org.amshove.kluent.`should be less than`
 import org.junit.Test
 import reactivity.experimental.core.SCHEDULER_COMMON_POOL_DISPATCHER
-import reactivity.experimental.core.SECHEDULER_EMPTY_CONTEXT
+import reactivity.experimental.core.SCHEDULER_EMPTY_CONTEXT
 import reactivity.experimental.core.schedulerFromCoroutineContext
 
 class MultiPublishOnTest {
@@ -23,7 +23,7 @@ class MultiPublishOnTest {
         var start: Long? = null
         var time: Long? = null
         source = source
-                .publishOn(SECHEDULER_EMPTY_CONTEXT, false, 2) // specify buffer size of 2 items
+                .publishOn(SCHEDULER_EMPTY_CONTEXT, false, 2) // specify buffer size of 2 items
                 .doOnSubscribe {
                     start = System.currentTimeMillis()
                     println("starting timer")

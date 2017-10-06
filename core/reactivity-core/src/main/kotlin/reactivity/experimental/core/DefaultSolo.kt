@@ -56,14 +56,11 @@ fun <T> defaultSoloPublisher(
  *
  * @author Frédéric Montariol
  */
-abstract class SoloPublisherBuilder {
+object DefaultSoloFactory {
     // protected Static factory methods to create a DefaultSoloImpl
-    protected companion object {
-        fun <T> fromValue(value: T) = fromValue(SECHEDULER_DEFAULT_DISPATCHER, value)
 
-        fun <T> fromValue(scheduler: Scheduler, value: T) = defaultSoloPublisher(scheduler) {
-            send(value)
-        }
+    fun <T> fromValue(scheduler: Scheduler, value: T) = defaultSoloPublisher(scheduler) {
+        send(value)
     }
 }
 

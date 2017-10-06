@@ -1,12 +1,14 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.channels.ProducerScope
-import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.future.future
 import kotlinx.coroutines.experimental.reactive.awaitSingle
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
-import reactivity.experimental.core.*
+import reactivity.experimental.core.DefaultSolo
+import reactivity.experimental.core.DefaultSoloFactory
+import reactivity.experimental.core.Scheduler
+import reactivity.experimental.core.defaultSoloPublisher
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -39,7 +41,7 @@ abstract class Solo<T> protected constructor() : DefaultSolo<T> {
      * Builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
      *
      */
-    companion object : SoloPublisherBuilder() {
+    companion object {
         /**
          * Creates a [Solo] from a [value]
          *
@@ -48,7 +50,7 @@ abstract class Solo<T> protected constructor() : DefaultSolo<T> {
          * @param T the type of the input [value]
          */
         @JvmStatic
-        fun <T> fromValue(value: T): Solo<T> = SoloImpl(SoloPublisherBuilder.fromValue(value))
+        fun <T> fromValue(value: T): Solo<T> = value.toSolo()
 
         /**
          * Creates a [Solo] from a [value]
@@ -58,30 +60,27 @@ abstract class Solo<T> protected constructor() : DefaultSolo<T> {
          * @param T the type of the input [value]
          */
         @JvmStatic
-        fun <T> fromValue(scheduler: Scheduler, value: T): Solo<T> = SoloImpl(SoloPublisherBuilder.fromValue(scheduler, value))
+        fun <T> fromValue(scheduler: Scheduler, value: T): Solo<T> = value.toSolo(scheduler)
 
         /**
-         * Creates a [Solo] from a [completableFuture]
+         * Creates a [Solo] from a [CompletableFuture]
          *
          * @return the [Solo]<T> created
          *
          * @param T the type of the input [completableFuture]
          */
         @JvmStatic
-        fun <T> fromCompletableFuture(completableFuture: CompletableFuture<T>)
-                = fromCompletableFuture(SECHEDULER_DEFAULT_DISPATCHER, completableFuture)
+        fun <T> fromCompletableFuture(completableFuture: CompletableFuture<T>) = completableFuture.toSolo()
 
         /**
-         * Creates a [Solo] from a [completableFuture]
+         * Creates a [Solo] from a [CompletableFuture]
          *
          * @return the [Solo]<T> created
          *
          * @param T the type of the input [completableFuture]
          */
         @JvmStatic
-        fun <T> fromCompletableFuture(scheduler: Scheduler, completableFuture: CompletableFuture<T>) = solo(scheduler) {
-            send(completableFuture.await())
-        }
+        fun <T> fromCompletableFuture(scheduler: Scheduler, completableFuture: CompletableFuture<T>) = completableFuture.toSolo(scheduler)
     }
 
     // functions from WithCallbacks
