@@ -40,7 +40,7 @@ class MultiPublishOnTest {
         }
 
         delay(2000) // suspend the main thread for a few seconds
-        time!! `should be greater than` 1500
+        time!! `should be greater than` 1499
         time!! `should be less than` 2000
     }
 
