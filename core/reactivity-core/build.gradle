@@ -2,6 +2,8 @@ buildscript {
     ext.reactive_streams_version = '1.0.1'
 
     repositories {
+        // needed for atomicfu dependency
+        maven { setUrl("https://dl.bintray.com/kotlin/kotlinx/") }
         mavenCentral()
     }
     dependencies {
@@ -19,9 +21,6 @@ dependencies {
     compileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
         exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
     }
-    testCompile("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
-        exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
-    }
 
     // Reactive Streams
     compile "org.reactivestreams:reactive-streams:$reactive_streams_version"
@@ -37,6 +36,7 @@ atomicFU {
     inputFiles = sourceSets.main.output.classesDirs
     outputDir = CLASSES_POST_ATOMICFU
     classPath = sourceSets.main.runtimeClasspath
+    variant = "FU" // "VH" to use Java 9 VarHandle, "BOTH" to produce multi-version code
 }
 
 atomicFU.dependsOn compileKotlin
