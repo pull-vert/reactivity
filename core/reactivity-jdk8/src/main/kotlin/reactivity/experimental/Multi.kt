@@ -9,6 +9,10 @@ import org.reactivestreams.Subscription
 import reactivity.experimental.core.DefaultMulti
 import reactivity.experimental.core.Scheduler
 import reactivity.experimental.core.multiPublisher
+import java.util.stream.DoubleStream
+import java.util.stream.IntStream
+import java.util.stream.LongStream
+import java.util.stream.Stream
 
 /**
  * Creates cold reactive [Multi] that runs a given [block] in a coroutine.
@@ -121,6 +125,74 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
          */
         @JvmStatic
         fun <T> fromPublisher(scheduler: Scheduler, publisher: Publisher<T>) = publisher.toMulti(scheduler)
+
+        /**
+         * Creates a [Multi] from a [Stream]
+         *
+         * @return the [Multi]<T> created
+         *
+         * @param T the type of the input [stream]
+         */
+        @JvmStatic
+        fun <T> fromStream(stream: Stream<T>) = stream.toMulti()
+
+        /**
+         * Creates a [Multi] from a [Stream]
+         *
+         * @return the [Multi]<T> created
+         *
+         * @param T the type of the input [stream]
+         */
+        @JvmStatic
+        fun <T> fromStream(scheduler: Scheduler, stream: Stream<T>) = stream.toMulti(scheduler)
+
+        /**
+         * Creates a [Multi] from a [IntStream]
+         *
+         * @return the [Multi]<Int> created
+         */
+        @JvmStatic
+        fun fromIntStream(stream: IntStream) = stream.toMulti()
+
+        /**
+         * Creates a [Multi] from a [IntStream]
+         *
+         * @return the [Multi]<Int> created
+         */
+        @JvmStatic
+        fun fromIntStream(scheduler: Scheduler, stream: IntStream) = stream.toMulti(scheduler)
+
+        /**
+         * Creates a [Multi] from a [LongStream]
+         *
+         * @return the [Multi]<Long> created
+         */
+        @JvmStatic
+        fun fromLongStream(stream: LongStream) = stream.toMulti()
+
+        /**
+         * Creates a [Multi] from a [LongStream]
+         *
+         * @return the [Multi]<Long> created
+         */
+        @JvmStatic
+        fun fromLongStream(scheduler: Scheduler, stream: LongStream) = stream.toMulti(scheduler)
+
+        /**
+         * Creates a [Multi] from a [DoubleStream]
+         *
+         * @return the [Multi]<Double> created
+         */
+        @JvmStatic
+        fun fromDoubleStream(stream: DoubleStream) = stream.toMulti()
+
+        /**
+         * Creates a [Multi] from a [DoubleStream]
+         *
+         * @return the [Multi]<Double> created
+         */
+        @JvmStatic
+        fun fromDoubleStream(scheduler: Scheduler, stream: DoubleStream) = stream.toMulti(scheduler)
     }
 
     // functions from WithCallbacks

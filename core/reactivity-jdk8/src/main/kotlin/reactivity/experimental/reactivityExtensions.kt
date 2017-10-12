@@ -6,6 +6,10 @@ import kotlinx.coroutines.experimental.reactive.consumeEach
 import org.reactivestreams.Publisher
 import reactivity.experimental.core.*
 import java.util.concurrent.CompletableFuture
+import java.util.stream.DoubleStream
+import java.util.stream.IntStream
+import java.util.stream.LongStream
+import java.util.stream.Stream
 
 fun <T> PublisherCommons<Publisher<T>>.merge() = merge(initialScheduler)
 
@@ -36,3 +40,7 @@ fun LongArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = thi
 fun ShortArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toList().toMulti(scheduler)
 fun <T> Array<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER): Multi<T> = MultiImpl(DefaultMultiFactory.fromArray(scheduler, this))
 fun <T> Publisher<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER): Multi<T> = MultiImpl(DefaultMultiFactory.fromPublisher(scheduler, this))
+fun <T> Stream<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toArray().toMulti(scheduler)
+fun IntStream.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toArray().toMulti(scheduler)
+fun LongStream.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toArray().toMulti(scheduler)
+fun DoubleStream.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toArray().toMulti(scheduler)
