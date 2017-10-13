@@ -3,9 +3,12 @@ package reactivity.experimental
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.runBlocking
+import org.amshove.kluent.`should be greater than`
+import org.amshove.kluent.`should be less than`
 import org.amshove.kluent.`should equal to`
 import org.amshove.kluent.`should equal`
 import org.junit.Test
+import reactivity.experimental.core.schedulerFixedThreadPoolContext
 import reactivity.experimental.core.schedulerFromCoroutineContext
 
 class MultiMapTest {
@@ -60,5 +63,33 @@ class MultiMapTest {
         finally `should equal to` true
         onError `should equal to` true
         onComplete `should equal to` false
+    }
+
+    @Test
+    fun `multi builder map FixedThreadPoolContext`() = runBlocking {
+        // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
+        var source = multi(schedulerFromCoroutineContext(coroutineContext)) {
+            for (x in 1..3) {
+                send(x) // this is a suspending function
+                println("Sent $x") // print after successfully sent item
+            }
+        }
+        // subscribe on another thread with a slow subscriber using Multi
+        var start: Long? = null
+        var time: Long? = null
+        source.map(schedulerFixedThreadPoolContext(3, "test")) { it * 2 }
+                .doOnSubscribe {
+                    start = System.currentTimeMillis()
+                    println("starting timer")
+                }
+                .doOnComplete {
+                    val end = System.currentTimeMillis()
+                    time = end - start!!
+                    println("Completed in $time ms")
+                }.consumeEach { println(it); delay(300) }
+
+        delay(700) // suspend the main thread for a few time
+        time!! `should be greater than` 600
+        time!! `should be less than` 900
     }
 }
