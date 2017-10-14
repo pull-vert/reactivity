@@ -212,29 +212,19 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
     override fun publishOn(delayError: Boolean, prefetch: Int): Multi<T> = MultiImpl(super.publishOn(delayError, prefetch))
     override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T> = MultiImpl(super.publishOn(scheduler, delayError, prefetch))
     override fun <R> map(mapper: (T) -> R): Multi<R> = MultiImpl(super.map(mapper))
-    override fun <R> map(scheduler: Scheduler, mapper: (T) -> R): Multi<R> = MultiImpl(super.map(scheduler, mapper))
     override fun filter(predicate: (T) -> Boolean): Multi<T> = MultiImpl(super.filter(predicate))
-    override fun filter(scheduler: Scheduler, predicate: (T) -> Boolean): Multi<T> = MultiImpl(super.filter(scheduler, predicate))
     override fun findFirst(predicate: (T) -> Boolean): Solo<T?> = SoloImpl(super.findFirst(predicate))
-    override fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean): Solo<T?> = SoloImpl(super.findFirst(scheduler, predicate))
     override fun <R> flatMap(mapper: (T) -> Publisher<R>): Multi<R> = MultiImpl(super.flatMap(mapper))
-    override fun <R> flatMap(scheduler: Scheduler, mapper: (T) -> Publisher<R>): Multi<R> = MultiImpl(super.flatMap(scheduler, mapper))
     override fun <U> takeUntil(other: Publisher<U>): Multi<T> = MultiImpl(super.takeUntil(other))
-    override fun <U> takeUntil(scheduler: Scheduler, other: Publisher<U>): Multi<T> = MultiImpl(super.takeUntil(scheduler, other))
     override fun mergeWith(vararg others: Publisher<T>): Multi<T> = MultiImpl(super.mergeWith(*others))
-    override fun mergeWith(scheduler: Scheduler, vararg others: Publisher<T>): Multi<T> = MultiImpl(super.mergeWith(scheduler, *others))
     override fun take(n: Long): Multi<T> = MultiImpl(super.take(n))
-    override fun take(scheduler: Scheduler, n: Long): Multi<T> = MultiImpl(super.take(scheduler, n))
 
     // Combined Operators
 
     override fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R> = MultiImpl(super.fusedFilterMap(predicate, mapper))
-    override fun <R> fusedFilterMap(scheduler: Scheduler, predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R> = MultiImpl(super.fusedFilterMap(scheduler, predicate, mapper))
 
     // Needs to be implemented
-    override fun <R> groupBy(keyMapper: (T) -> R) = groupBy(initialScheduler, keyMapper)
-
-    override fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R): Multi<MultiGrouped<T, R>> = multi(scheduler) {
+    override fun <R> groupBy(keyMapper: (T) -> R): Multi<MultiGrouped<T, R>> = multi(initialScheduler) {
         var key: R
         var channel: Channel<T>
         val channelMap = mutableMapOf<R, Channel<T>>()
@@ -247,7 +237,7 @@ abstract class Multi<T> protected constructor(): DefaultMulti<T> {
                 /** Creates a [kotlinx.coroutines.experimental.channels.LinkedListChannel] */
                 channel = Channel(Channel.UNLIMITED)
                 // Converts a stream of elements received from the channel to the hot reactive publisher
-                send(MultiGroupedImpl(channel.asPublisher(coroutineContext).toMulti(scheduler) as MultiImpl, key) as MultiGrouped<T, R>)
+                send(MultiGroupedImpl(channel.asPublisher(coroutineContext).toMulti(initialScheduler) as MultiImpl, key) as MultiGrouped<T, R>)
                 channelMap[key] = channel // adds to Map
             }
 

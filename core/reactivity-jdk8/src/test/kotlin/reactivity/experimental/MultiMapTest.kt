@@ -18,9 +18,7 @@ class MultiMapTest {
         val source = Multi.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
-                .map(schedulerFromCoroutineContext(coroutineContext)) { number ->
-                    number + 1
-                }
+                .map{ it + 1 }
         // iterate over the source fully
         source.consumeEach {
             println(it)
@@ -44,7 +42,7 @@ class MultiMapTest {
         var onError = false
         var onComplete = false
         val source = (1..5).toMulti()
-                .map(schedulerFromCoroutineContext(coroutineContext)) { number ->
+                .map { number ->
                     if (3 == number) throw Exception("vilain exception !!")
                     number
                 }
@@ -77,7 +75,7 @@ class MultiMapTest {
         // subscribe on another thread with a slow subscriber using Multi
         var start: Long? = null
         var time: Long? = null
-        source.map(schedulerFixedThreadPoolContext(3, "test")) { it * 2 }
+        source.map { it * 2 }
                 .doOnSubscribe {
                     start = System.currentTimeMillis()
                     println("starting timer")

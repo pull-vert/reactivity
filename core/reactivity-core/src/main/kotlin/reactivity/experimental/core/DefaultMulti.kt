@@ -222,16 +222,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      *
      * @param mapper the mapper function
      */
-    fun <R> map(mapper: (T) -> R) = map(initialScheduler, mapper)
-
-    /**
-     * Returns a [Multi][reactivity.experimental.Multi] that uses the [mapper] to transform each received element from [T]
-     * to [R] and then send it when transformation is done
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param mapper the mapper function
-     */
-    fun <R> map(scheduler: Scheduler, mapper: (T) -> R) = multiPublisher(scheduler) {
+    fun <R> map(mapper: (T) -> R) = multiPublisher(initialScheduler) {
         consumeEach {
             // consume the source stream
             send(mapper(it))     // map
@@ -244,16 +235,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      *
      * @param predicate the filter predicate
      */
-    fun filter(predicate: (T) -> Boolean) = filter(initialScheduler, predicate)
-
-    /**
-     * Returns a [Multi][reactivity.experimental.Multi] that filters each received element, sending it
-     * only if [predicate] is satisfied
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param predicate the filter predicate
-     */
-    fun filter(scheduler: Scheduler, predicate: (T) -> Boolean) = multiPublisher(scheduler) {
+    fun filter(predicate: (T) -> Boolean) = multiPublisher(initialScheduler) {
         consumeEach {
             // consume the source stream
             if (predicate(it))       // filter
@@ -267,16 +249,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      *
      * @param predicate the filter predicate
      */
-    fun findFirst(predicate: (T) -> Boolean) = findFirst(initialScheduler, predicate)
-
-    /**
-     * Returns a [Solo][reactivity.experimental.Solo] containing the first received element that satisfies the given [predicate],
-     * or empty if no received element satisfies it
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param predicate the filter predicate
-     */
-    fun findFirst(scheduler: Scheduler, predicate: (T) -> Boolean) = defaultSoloPublisher(scheduler) {
+    fun findFirst(predicate: (T) -> Boolean) = defaultSoloPublisher(initialScheduler) {
         var produced = false
         openSubscription().use { channel ->
             // open channel to the source
@@ -299,16 +272,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      *
      * @param mapper the mapper function
      */
-    fun <R> flatMap(mapper: (T) -> Publisher<R>) = flatMap(initialScheduler, mapper)
-
-    /**
-     * Returns a [Multi][reactivity.experimental.Multi]<R> that use the [mapper] to transform each received element from [T]
-     * to [Publisher]<R> and then send each received element of this [Publisher]
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param mapper the mapper function
-     */
-    fun <R> flatMap(scheduler: Scheduler, mapper: (T) -> Publisher<R>) = multiPublisher(scheduler) {
+    fun <R> flatMap(mapper: (T) -> Publisher<R>) = multiPublisher(initialScheduler) {
         consumeEach {
             // consume the source stream
             val pub = mapper(it)
@@ -325,16 +289,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      *
      * @param other the other publisher
      */
-    fun <U> takeUntil(other: Publisher<U>) = takeUntil(initialScheduler, other)
-
-    /**
-     * Returns a [Multi][reactivity.experimental.Multi] that relay all the received elements from the source stream until the
-     * other stream either completes or emits anything
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param other the other publisher
-     */
-    fun <U> takeUntil(scheduler: Scheduler, other: Publisher<U>) = multiPublisher(scheduler) {
+    fun <U> takeUntil(other: Publisher<U>) = multiPublisher(initialScheduler) {
         openSubscription().use { thisChannel ->
             // explicitly open channel to Publisher<T>
             other.openSubscription().use { otherChannel ->
@@ -353,16 +308,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      *
      * @param others the other publishers
      */
-    fun mergeWith(vararg others: Publisher<T>) = mergeWith(initialScheduler, *others)
-
-    /**
-     * Returns a [Multi][reactivity.experimental.Multi] that flattens the source streams with the parameter [Publisher] into
-     * a single Publisher, without any transformation
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param others the other publishers
-     */
-    fun mergeWith(scheduler: Scheduler, vararg others: Publisher<T>) = multiPublisher(scheduler) {
+    fun mergeWith(vararg others: Publisher<T>) = multiPublisher(initialScheduler) {
         launch(coroutineContext) {
             /** launch a first child coroutine for this [Multi][reactivity.experimental.Multi] */
             consumeEach {
@@ -384,15 +330,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      *
      * @param n number of items to send
      */
-    fun take(n: Long) = take(initialScheduler, n)
-
-    /**
-     * Returns a [Multi][reactivity.experimental.Multi] that will send the [n] first received elements from the source stream
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param n number of items to send
-     */
-    fun take(scheduler: Scheduler, n: Long) = multiPublisher(scheduler) {
+    fun take(n: Long) = multiPublisher(initialScheduler) {
         openSubscription().use { channel ->
             // explicitly open channel to Publisher<T>
             var count = 0L
@@ -414,18 +352,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      * @param predicate the filter predicate
      * @param mapper the mapper function
      */
-    fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R)
-            = fusedFilterMap(initialScheduler, predicate, mapper)
-
-    /**
-     * Returns a [Multi][reactivity.experimental.Multi] that filters each received element, sending it only if [predicate] is satisfied,
-     * if so it uses the [mapper] to transform each element from [T] to [R] type
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param predicate the filter predicate
-     * @param mapper the mapper function
-     */
-    fun <R> fusedFilterMap(scheduler: Scheduler, predicate: (T) -> Boolean, mapper: (T) -> R) = multiPublisher(scheduler) {
+    fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R) = multiPublisher(initialScheduler) {
         consumeEach {
             // consume the source stream
             if (predicate(it))       // filter part
@@ -434,6 +361,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
     }
 
     // Needs to be implemented in subclass
+
     /**
      * Returns a [Multi][reactivity.experimental.Multi] that can contain several [MultiGrouped][reactivity.experimental.MultiGrouped]
      * , each is a group of received elements from the source stream that are related with the same key
@@ -441,21 +369,10 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      * @param keyMapper a function that extracts the key for each item
      */
     fun <R> groupBy(keyMapper: (T) -> R): DefaultMulti<out DefaultMultiGrouped<T, R>>
-
-    /**
-     * Returns a [Multi][reactivity.experimental.Multi] that can contain several [MultiGrouped][reactivity.experimental.MultiGrouped]
-     * , each is a group of received elements from the source stream that are related with the same key
-     *
-     * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
-     * @param keyMapper a function that extracts the key for each item
-     */
-    fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R): DefaultMulti<out DefaultMultiGrouped<T, R>>
 }
 
 private class DefaultMultiImpl<T>(override val delegate: Publisher<T>,
                                   override val initialScheduler: Scheduler)
     : DefaultMulti<T>, Publisher<T> by delegate {
     override fun <R> groupBy(keyMapper: (T) -> R) = throw NotImplementedError("Must be implemented in subclass !!")
-
-    override fun <R> groupBy(scheduler: Scheduler, keyMapper: (T) -> R) = throw NotImplementedError("Must be implemented in subclass !!")
 }
