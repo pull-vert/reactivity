@@ -4,5 +4,5 @@ Reactive stream echosystem implementation in Kotlin whith suspending coroutines 
 
 ## Modules
 
-[Reactivity Core projects](core/README.md)
+[Reactivity Core projects](core/README.md)<br />
 [Reactivity HTTP2](reactivity-http2/README.md)
