@@ -1,17 +1,6 @@
 buildscript {
     ext.reactive_streams_version = '1.0.1'
-
-    repositories {
-        // needed for atomicfu dependency
-        maven { setUrl("https://dl.bintray.com/kotlin/kotlinx/") }
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version"
-    }
 }
-
-apply plugin: 'kotlinx-atomicfu'
 
 dependencies {
     // https://github.com/Kotlin/kotlinx.coroutines/tree/master/reactive/kotlinx-coroutines-reactive
@@ -25,26 +14,6 @@ dependencies {
     // Reactive Streams
     compile "org.reactivestreams:reactive-streams:$reactive_streams_version"
     testCompile "org.reactivestreams:reactive-streams-tck:$reactive_streams_version"
-}
-
-// Install bytecode transformation pipeline so that compiled classes from classes directory
-// get transformed to a different classes-post-atomicfu directory to be used later by tests and delivery.
-
-def CLASSES_POST_ATOMICFU = file("$buildDir/classes-post-atomicfu/main")
-
-atomicFU {
-    inputFiles = sourceSets.main.output.classesDirs
-    outputDir = CLASSES_POST_ATOMICFU
-    classPath = sourceSets.main.runtimeClasspath
-    variant = "FU" // "VH" to use Java 9 VarHandle, "BOTH" to produce multi-version code
-}
-
-atomicFU.dependsOn compileKotlin
-testClasses.dependsOn atomicFU
-jar.dependsOn atomicFU
-
-jar {
-    from files(CLASSES_POST_ATOMICFU, sourceSets.main.output.resourcesDir)
 }
 
 // Compile & Test with Java 6

@@ -2,5 +2,5 @@ include 'core:reactivity-core',
         'core:reactivity-jdk8',
         'core:extras:ui:reactivity-extra-android',
         'core:extras:ui:reactivity-extra-javafx',
-        'core:extras:ui:reactivity-extra-swing',
-        'reactivity-http2'
+        'core:extras:ui:reactivity-extra-swing'//,
+//        'reactivity-http2'

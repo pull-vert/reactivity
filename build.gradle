@@ -7,37 +7,85 @@ buildscript {
     ext.kluent_version = '1.30'
 
     repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
-allprojects {
-    group 'io.reactivity'
-    version '1.0-SNAPSHOT'
-}
-
-subprojects {
-    description = 'Suspending Reactive projects in Kotlin for the JVM'
-
-    apply plugin: 'kotlin'
-
-    repositories {
         // needed for atomicfu dependency
         maven { setUrl("https://dl.bintray.com/kotlin/kotlinx/") }
         jcenter()
         mavenCentral()
     }
 
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version"
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3"
+    }
+}
+
+allprojects {
+    group 'io.reactivity'
+    version '0.0.1'
+}
+
+subprojects {
+    description = 'Suspending Reactive projects in Kotlin for the JVM'
+
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+
+    apply plugin: 'kotlin'
+    apply plugin: 'kotlinx-atomicfu'
     apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
+
+    // Install bytecode transformation pipeline so that compiled classes from classes directory
+// get transformed to a different classes-post-atomicfu directory to be used later by tests and delivery.
+
+    def CLASSES_POST_ATOMICFU = file("$buildDir/classes-post-atomicfu/main")
+
+    atomicFU {
+        inputFiles = sourceSets.main.output.classesDirs
+        outputDir = CLASSES_POST_ATOMICFU
+        classPath = sourceSets.main.runtimeClasspath
+        variant = "FU" // "VH" to use Java 9 VarHandle, "BOTH" to produce multi-version code
+    }
+
+    atomicFU.dependsOn compileKotlin
+    testClasses.dependsOn atomicFU
+    jar.dependsOn atomicFU
+
+    jar {
+        from files(CLASSES_POST_ATOMICFU, sourceSets.main.output.resourcesDir)
+    }
 
     publishing {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
+                groupId group
+                artifactId archivesBaseName
+                version '0.0.1'
             }
+        }
+    }
+
+    bintray {
+        user = property('user')
+        key = property('key')
+        publications = ['mavenJava']
+        override = true
+        pkg {
+            repo = 'reactivity'
+            name = 'reactivity'
+            licenses = ['Apache-2.0']
+            vcsUrl = 'https://github.com/pull-vert/reactivity.git'
+//            version {
+//                name = '0.0.1'
+//                desc = 'Reactivity - Suspending Reactive projects in Kotlin for the JVM'
+//                released  = new Date()
+//                vcsTag = '0.0.1'
+//                attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin']
+//            }
         }
     }
 
@@ -83,8 +131,8 @@ project(':core:extras:ui:reactivity-extra-swing') {
     }
 }
 
-project(':reactivity-http2') {
-    dependencies {
-        compile project(':core:reactivity-core')
-    }
-}
+//project(':reactivity-http2') {
+//    dependencies {
+//        compile project(':core:reactivity-core')
+//    }
+//}
