@@ -1,6 +1,6 @@
 # Reactivity for JDK8
 
-Work In Progress :
+Work In Progress, all operators are not implemented yet.
 
 <!--- TOC -->
 
