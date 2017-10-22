@@ -17,7 +17,7 @@ Work In Progress :
 
 ### With gradle
 
-To use this library, you must add the repository like this :
+To use this library, you must add the specific repository :
 
 ```groovy
 repositories {
@@ -40,6 +40,7 @@ TODO explain the steps with maven project
 ### In Kotlin
 ```kotlin
 (1..3).toMulti()
+    .map{it * 2}
     .subscribe { x ->
         println("Processed $x")
     }
@@ -47,6 +48,7 @@ TODO explain the steps with maven project
 ### In Java
 ```java
 Multi.fromRange(1, 3)
+    .map((value) -> value * 2)
     .subscribe((value) -> {
         System.out.println("Processed  " + value);
         return null;
