@@ -1,5 +1,7 @@
 # Reactivity Core projects
 
+[ ![Download](https://api.bintray.com/packages/pull-vert/reactivity/reactivity/images/download.svg) ](https://api.bintray.com/packages/pull-vert/reactivity/reactivity/_latestVersion)
+
 Reactivity is a [Reactive Streams](http://www.reactive-streams.org/) implementation on the JVM using Kotlin language.
 
 The asynchronism (Event Loop) is based on suspending functions in coroutines, using [Kotlinx coroutines reactive](https://github.com/Kotlin/kotlinx.coroutines/tree/master/reactive/kotlinx-coroutines-reactive)
