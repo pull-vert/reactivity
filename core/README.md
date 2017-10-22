@@ -8,7 +8,7 @@ This directory contains modules to use for JDK 6 to 9.
 
 ## Modules
 
-Reactivity core, **must not be used alone, use the one for your JDK version** [reactivity-core](reactivity-core/README.md)<br />
+[reactivity-core](reactivity-core/README.md), **must not be used alone, use the one for your JDK version**<br />
 For JDK6, use [reactivity-jdk6](reactivity-jdk6/README.md)<br />
 For JDK7, use [reactivity-jdk7](reactivity-jdk7/README.md)<br />
 For JDK8, use [reactivity-jdk8](reactivity-jdk8/README.md)<br />
