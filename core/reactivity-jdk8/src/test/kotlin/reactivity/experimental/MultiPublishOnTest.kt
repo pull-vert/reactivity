@@ -34,9 +34,9 @@ class MultiPublishOnTest {
                     println("Completed in $time ms")
                 }
 
-        source.subscribe{x ->
+        source.subscribe{
             Thread.sleep(500) // 500ms to process each item
-            println("Processed $x")
+            println("Processed $it")
         }
 
         delay(2000) // suspend the main thread for a few seconds

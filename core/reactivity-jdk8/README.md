@@ -41,15 +41,13 @@ TODO explain the steps with maven project
 ```kotlin
 (1..3).toMulti()
     .map{it * 2}
-    .subscribe { x ->
-        println("Processed $x")
-    }
+    .subscribe {println("Processed $it")}
 ```
 ### In Java
 ```java
 Multi.fromRange(1, 3)
-    .map((value) -> value * 2)
-    .subscribe((value) -> {
+    .map(value -> value * 2)
+    .subscribe(value -> {
         System.out.println("Processed  " + value);
         return null;
     });
