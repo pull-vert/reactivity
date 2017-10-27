@@ -172,7 +172,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      * @param delayError if error should be delayed
      */
     override fun publishOn(scheduler: Scheduler, delayError: Boolean) = multiPublisher(scheduler) {
-        val channel = MultiPublishOn<T>(delayError, Int.MAX_VALUE)
+        val channel = PublisherPublishOn<T>(delayError, Int.MAX_VALUE)
         this@DefaultMulti.subscribe(channel)
         channel.consumeEach {
             send(it)
@@ -199,7 +199,7 @@ interface DefaultMulti<T> : PublisherCommons<T> {
      * until all items are received
      */
     fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int) = multiPublisher(scheduler) {
-        val channel = MultiPublishOn<T>(delayError, prefetch)
+        val channel = PublisherPublishOn<T>(delayError, prefetch)
         this@DefaultMulti.subscribe(channel)
         channel.use { chan ->
             var count = 0

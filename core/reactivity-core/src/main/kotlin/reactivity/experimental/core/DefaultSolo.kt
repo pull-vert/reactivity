@@ -1,15 +1,13 @@
 package reactivity.experimental.core
 
 import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.ProducerScope
-import kotlinx.coroutines.experimental.newCoroutineContext
+import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlinx.coroutines.experimental.reactive.awaitSingle
+import kotlinx.coroutines.experimental.reactive.publish
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
-import reactivity.experimental.core.internal.coroutines.consumeUnique
 import java.io.Closeable
-import kotlin.coroutines.experimental.startCoroutine
 
 /**
  * Creates cold reactive [SoloPublisher] that runs a given [block] in a coroutine.
@@ -30,13 +28,7 @@ import kotlin.coroutines.experimental.startCoroutine
 fun <T> defaultSoloPublisher(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): DefaultSolo<T> = DefaultSoloImpl(Publisher { subscriber ->
-    val newContext = newCoroutineContext(scheduler.context)
-    val coroutine = SoloCoroutine(newContext, subscriber)
-    coroutine.initParentJob(scheduler.context[Job])
-    subscriber.onSubscribe(coroutine) // do it first (before starting coroutine), to avoid unnecessary suspensions
-    block.startCoroutine(coroutine, coroutine)
-}, scheduler)
+): DefaultSolo<T> = DefaultSoloImpl(publish(scheduler.context, block), scheduler)
 
 ///**
 // * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
@@ -183,9 +175,9 @@ interface DefaultSolo<T> : PublisherCommons<T> {
      * @param delayError if error should be delayed
      */
     override fun publishOn(scheduler: Scheduler, delayError: Boolean) = defaultSoloPublisher(scheduler) {
-        val completableConsumer = SoloPublishOn<T>(delayError)
-        this@DefaultSolo.subscribe(completableConsumer)
-        completableConsumer.consumeUnique {
+        val channel = PublisherPublishOn<T>(delayError, Int.MAX_VALUE)
+        this@DefaultSolo.subscribe(channel)
+        channel.consumeEach {
             send(it)
         }
     }
