@@ -29,7 +29,7 @@ allprojects {
 
 subprojects {
     // ignore folders that are not projects
-    if (name == 'core' || name == 'extras' || name == 'ui') {
+    if (name == 'core' || name == 'extras' || name == 'ui' || name == 'nio') {
         return
     }
 
@@ -122,6 +122,12 @@ project(':core:reactivity-jdk8') {
     }
 }
 
+project(':core:nio:reactivity-nio-jdk8') {
+    dependencies {
+        compile project(':core:reactivity-jdk8')
+    }
+}
+
 project(':core:extras:ui:reactivity-extra-android') {
     dependencies {
         // provided, reactivity-extra-android is an addon of reactivity
@@ -148,6 +154,6 @@ project(':core:extras:ui:reactivity-extra-swing') {
 
 //project(':reactivity-http2') {
 //    dependencies {
-//        compile project(':core:reactivity-core')
+//        compile project(':core:nio:reactivity-nio-jdk8')
 //    }
 //}

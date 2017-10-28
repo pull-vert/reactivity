@@ -1,0 +1,7 @@
+dependencies {
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-nio:$kotlinx_coroutines_version"
+
+    testCompile("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
+        exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
+    }
+}
