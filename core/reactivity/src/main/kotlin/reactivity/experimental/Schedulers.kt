@@ -1,4 +1,4 @@
-package reactivity.experimental.core
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.*
 import java.util.concurrent.Executor

@@ -5,7 +5,7 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal`
 import org.junit.Test
-import reactivity.experimental.multi
+import reactivity.experimental.jdk8.multiOld
 
 class SchedulerJavaFxTest {
     @Test
@@ -13,7 +13,7 @@ class SchedulerJavaFxTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?
-        val source = multi(SCHEDULER_JAVA_FX_DISPATCHER) {
+        val source = multiOld(SCHEDULER_JAVA_FX_DISPATCHER) {
             for (x in 1..3) {
                 check(Platform.isFxApplicationThread())
                 delay(100)

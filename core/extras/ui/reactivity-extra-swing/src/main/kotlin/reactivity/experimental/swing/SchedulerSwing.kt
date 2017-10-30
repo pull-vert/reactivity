@@ -1,8 +1,8 @@
 package reactivity.experimental.swing
 
 import kotlinx.coroutines.experimental.swing.Swing
-import reactivity.experimental.core.Scheduler
-import reactivity.experimental.core.SchedulerImpl
+import reactivity.experimental.Scheduler
+import reactivity.experimental.SchedulerImpl
 
 // for Kotlin easier call
 val SCHEDULER_SWING_DISPATCHER: Scheduler = SchedulerImpl(Swing)

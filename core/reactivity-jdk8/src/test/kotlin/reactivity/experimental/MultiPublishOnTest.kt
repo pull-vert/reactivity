@@ -5,9 +5,6 @@ import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should be greater than`
 import org.amshove.kluent.`should be less than`
 import org.junit.Test
-import reactivity.experimental.core.SCHEDULER_COMMON_POOL_DISPATCHER
-import reactivity.experimental.core.SCHEDULER_EMPTY_CONTEXT
-import reactivity.experimental.core.schedulerFromCoroutineContext
 
 class MultiPublishOnTest {
     @Test

@@ -1,15 +1,8 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.future.await
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import org.reactivestreams.Publisher
-import reactivity.experimental.core.*
-import java.util.concurrent.CompletableFuture
-import java.util.stream.DoubleStream
-import java.util.stream.IntStream
-import java.util.stream.LongStream
-import java.util.stream.Stream
 
 fun <T> PublisherCommons<Publisher<T>>.merge() = merge(initialScheduler)
 
@@ -23,13 +16,14 @@ fun <T> PublisherCommons<Publisher<T>>.merge(scheduler: Scheduler) = multi(sched
 }
 
 // Solo
-fun <T> T.toSolo(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER): Solo<T> = SoloImpl(DefaultSoloFactory.fromValue(scheduler, this))
-fun <T> CompletableFuture<T>.toSolo(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = solo(scheduler) {
-    send(this@toSolo.await())
+fun <T> T.toSolo(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = solo(scheduler) {
+    send(this@toSolo)
 }
 
 // Multi
-fun <T> Iterable<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER): Multi<T> = MultiImpl(DefaultMultiFactory.fromIterable(scheduler, this))
+fun <T> Iterable<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = multi(scheduler) {
+    for (x in this@toMulti) send(x)
+}
 fun BooleanArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toList().toMulti(scheduler)
 fun ByteArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toList().toMulti(scheduler)
 fun CharArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toList().toMulti(scheduler)
@@ -38,9 +32,7 @@ fun FloatArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = th
 fun IntArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toList().toMulti(scheduler)
 fun LongArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toList().toMulti(scheduler)
 fun ShortArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toList().toMulti(scheduler)
-fun <T> Array<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER): Multi<T> = MultiImpl(DefaultMultiFactory.fromArray(scheduler, this))
-fun <T> Publisher<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER): Multi<T> = MultiImpl(DefaultMultiFactory.fromPublisher(scheduler, this))
-fun <T> Stream<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toArray().toMulti(scheduler)
-fun IntStream.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toArray().toMulti(scheduler)
-fun LongStream.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toArray().toMulti(scheduler)
-fun DoubleStream.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = this.toArray().toMulti(scheduler)
+fun <T> Array<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = multi(scheduler) {
+    for (x in this@toMulti) send(x)
+}
+fun <T> Publisher<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER): Multi<T> = MultiImpl(this@toMulti, scheduler)

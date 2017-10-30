@@ -1,13 +1,10 @@
-package reactivity.experimental.core
+package reactivity.experimental
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.experimental.core.internal.extensions.cancelledSubscription
-import reactivity.experimental.core.internal.extensions.onErrorDropped
-import reactivity.experimental.core.internal.extensions.validateSubscription
 
 interface SubscribeWith<T> : Publisher<T> {
     /**

@@ -4,7 +4,6 @@ import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal`
 import org.junit.Test
-import reactivity.experimental.core.consumeUnique
 
 class SoloFromValueTest {
     @Test

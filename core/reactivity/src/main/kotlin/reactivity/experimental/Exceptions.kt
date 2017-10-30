@@ -1,4 +1,4 @@
-package reactivity.experimental.core
+package reactivity.experimental
 
 interface Exceptions {
 

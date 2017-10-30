@@ -1,7 +1,7 @@
-include 'core:reactivity-core',
+include 'core:reactivity',
         'core:reactivity-jdk8',
         'core:extras:ui:reactivity-extra-android',
         'core:extras:ui:reactivity-extra-javafx',
         'core:extras:ui:reactivity-extra-swing',
-        'core:nio:reactivity-nio-jdk8'//,
+        'core:extras:nio:reactivity-extra-nio'//,
 //        'reactivity-http2'

@@ -1,10 +1,9 @@
-package reactivity.experimental.core
+package reactivity.experimental
 
 import kotlinx.atomicfu.atomic
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.experimental.core.internal.extensions.*
 
 /**
  * This is the interface declaring the callback functions

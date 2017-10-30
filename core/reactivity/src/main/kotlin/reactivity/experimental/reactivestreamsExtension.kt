@@ -1,8 +1,7 @@
-package reactivity.experimental.core.internal.extensions
+package reactivity.experimental
 
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.experimental.core.Exceptions
 
 // Extensions for Subscriber
 

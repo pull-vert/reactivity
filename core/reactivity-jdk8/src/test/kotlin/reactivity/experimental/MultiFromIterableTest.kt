@@ -22,7 +22,7 @@ class MultiFromIterableTest {
     @Test
     fun `multi from Iterable static subscription`() = runBlocking<Unit> {
         var finally = false
-        val source = Multi.fromIterable(listOf("0", "58")) // a list of Strings
+        val source = MultiBuilder.fromIterable(listOf("0", "58")) // a list of Strings
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") } // ... into what's going on
         // iterate over the source fully

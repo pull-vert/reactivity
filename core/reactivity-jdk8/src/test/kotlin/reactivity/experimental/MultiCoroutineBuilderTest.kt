@@ -6,7 +6,6 @@ import kotlinx.coroutines.experimental.rx2.rxFlowable
 import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
-import reactivity.experimental.core.schedulerFromCoroutineContext
 
 class MultiCoroutineBuilderTest {
 

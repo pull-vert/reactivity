@@ -8,14 +8,12 @@ import org.amshove.kluent.`should be less than`
 import org.amshove.kluent.`should equal to`
 import org.amshove.kluent.`should equal`
 import org.junit.Test
-import reactivity.experimental.core.schedulerFixedThreadPoolContext
-import reactivity.experimental.core.schedulerFromCoroutineContext
 
 class MultiMapTest {
     @Test
     fun `multi from range map simple`() = runBlocking<Unit> {
         var result = 0
-        val source = Multi.fromRange(1, 5) // a fromRange of five numbers
+        val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
                 .map{ it + 1 }

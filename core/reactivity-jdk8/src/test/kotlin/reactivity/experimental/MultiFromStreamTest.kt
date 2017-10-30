@@ -5,6 +5,7 @@ import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal to`
 import org.junit.Test
+import reactivity.experimental.jdk8.toMulti
 import java.util.stream.IntStream
 
 class MultiFromStreamTest {

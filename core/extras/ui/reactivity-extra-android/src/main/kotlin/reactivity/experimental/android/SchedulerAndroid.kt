@@ -1,8 +1,8 @@
 package reactivity.experimental.android
 
 import kotlinx.coroutines.experimental.android.UI
-import reactivity.experimental.core.Scheduler
-import reactivity.experimental.core.SchedulerImpl
+import reactivity.experimental.Scheduler
+import reactivity.experimental.SchedulerImpl
 
 // for Kotlin easier call
 val SCHEDULER_ANDROID_DISPATCHER: Scheduler = SchedulerImpl(UI)

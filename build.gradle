@@ -118,37 +118,34 @@ subprojects {
 // Between subprojects dependencies
 project(':core:reactivity-jdk8') {
     dependencies {
-        compile project(':core:reactivity-core')
+        compile project(':core:reactivity')
     }
 }
 
-project(':core:nio:reactivity-nio-jdk8') {
+project(':core:extras:nio:reactivity-extra-nio') {
     dependencies {
-        compile project(':core:reactivity-jdk8')
+        compile project(':core:reactivity')
     }
 }
 
 project(':core:extras:ui:reactivity-extra-android') {
     dependencies {
         // provided, reactivity-extra-android is an addon of reactivity
-        compileOnly project(':core:reactivity-core')
-        testCompile project(':core:reactivity-core')
+        compile project(':core:reactivity')
     }
 }
 
 project(':core:extras:ui:reactivity-extra-javafx') {
     dependencies {
         // provided, reactivity-extra-android is an addon of reactivity
-        compileOnly project(':core:reactivity-core')
-        testCompile project(':core:reactivity-jdk8')
+        compile project(':core:reactivity')
     }
 }
 
 project(':core:extras:ui:reactivity-extra-swing') {
     dependencies {
         // provided, reactivity-extra-android is an addon of reactivity
-        compileOnly project(':core:reactivity-core')
-        testCompile project(':core:reactivity-jdk8')
+        compile project(':core:reactivity')
     }
 }
 

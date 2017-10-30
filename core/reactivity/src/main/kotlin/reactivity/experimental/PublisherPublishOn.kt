@@ -1,10 +1,9 @@
-package reactivity.experimental.core
+package reactivity.experimental
 
 import kotlinx.coroutines.experimental.channels.LinkedListChannel
 import kotlinx.coroutines.experimental.channels.SubscriptionReceiveChannel
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import reactivity.experimental.core.internal.extensions.validateSubscription
 
 /**
  * This is the interface declaring the publishOn functions

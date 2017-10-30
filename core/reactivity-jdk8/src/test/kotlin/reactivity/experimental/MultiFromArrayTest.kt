@@ -5,7 +5,6 @@ import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.runBlocking
 import org.amshove.kluent.`should equal to`
 import org.junit.Test
-import reactor.core.publisher.toFlux
 
 class MultiFromArrayTest {
     @Test
@@ -47,7 +46,7 @@ class MultiFromArrayTest {
     @Test
     fun `multi from Array static subscription`() = runBlocking<Unit> {
         var finally = false
-        val source = Multi.fromArray(arrayOf("0", "58")) // an array of Strings
+        val source = MultiBuilder.fromArray(arrayOf("0", "58")) // an array of Strings
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") } // ... into what's going on
         // iterate over the source fully
