@@ -119,7 +119,7 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onSubscribeBlock = onSubscribe
+            delegate.onSubscribeBlock = onSubscribe
             return this
         }
         // otherwise creates a new PublisherWithCallbacks
@@ -130,7 +130,7 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnNext(onNext: (T) -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onNextBlock = onNext
+            delegate.onNextBlock = onNext
             return this
         }
         // otherwise creates a new PublisherWithCallbacks
@@ -141,7 +141,7 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnError(onError: (Throwable) -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onErrorBlock = onError
+            delegate.onErrorBlock = onError
             return this
         }
         // otherwise creates a new PublisherWithCallbacks
@@ -152,7 +152,7 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnComplete(onComplete: () -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onCompleteBlock = onComplete
+            delegate.onCompleteBlock = onComplete
             return this
         }
         // otherwise creates a new PublisherWithCallbacks
@@ -163,7 +163,7 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnCancel(onCancel: () -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onCancelBlock = onCancel
+            delegate.onCancelBlock = onCancel
             return this
         }
         // otherwise creates a new PublisherWithCallbacks
@@ -174,7 +174,7 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onRequestBlock = onRequest
+            delegate.onRequestBlock = onRequest
             return this
         }
         // otherwise creates a new PublisherWithCallbacks
@@ -185,7 +185,7 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
 
     override fun doFinally(finally: () -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).finallyBlock = finally
+            delegate.finallyBlock = finally
             return this
         }
         // otherwise creates a new PublisherWithCallbacks
