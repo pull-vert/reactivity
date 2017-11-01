@@ -2,7 +2,7 @@ description = 'Suspending Reactive projects in Kotlin'
 
 buildscript {
     ext.kotlin_version = '1.1.51'
-    ext.kotlinx_coroutines_version = '0.19.2'
+    ext.kotlinx_coroutines_version = '0.19.3'
     ext.atomicfu_version = '0.9'
 
     // for tests
