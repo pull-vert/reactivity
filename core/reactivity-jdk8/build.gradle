@@ -2,10 +2,6 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinx_coroutines_version"
 
-    testCompileOnly("org.jetbrains.kotlinx:atomicfu:$atomicfu_version") {
-        exclude module: "kotlin-stdlib-jre8" //exclude by artifact name
-    }
-
     // TODO remove when dev is done, used only for accessing code
     testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:$kotlinx_coroutines_version"
     testCompile "io.projectreactor:reactor-core:3.1.1.RELEASE"

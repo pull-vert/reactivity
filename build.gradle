@@ -1,9 +1,14 @@
-description = 'Suspending Reactive projects in Kotlin'
+allprojects {
+    group 'io.reactivity'
+    def deployVersion = properties['DeployVersion']
+    if (deployVersion != null) version = deployVersion
+}
 
 buildscript {
     ext.kotlin_version = '1.1.51'
     ext.kotlinx_coroutines_version = '0.19.3'
-    ext.atomicfu_version = '0.9'
+    ext.atomicFU_version = '0.9'
+    ext.dokka_version = '0.9.15'
 
     // for tests
     ext.kluent_version = '1.30'
@@ -17,135 +22,96 @@ buildscript {
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version"
+        classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
+        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicFU_version"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3"
     }
 }
 
-allprojects {
-    group 'io.reactivity'
-    version '0.0.1'
+// --------------- pom configuration ---------------
+
+def pomConfig = {
+    licenses {
+        license {
+            name "The Apache Software License, Version 2.0"
+            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution "repo"
+        }
+    }
+    developers {
+        developer {
+            id "Reactivity"
+            name "Frederic Montariol"
+        }
+    }
+
+    scm {
+        url "https://github.com/pull-vert/reactivity"
+    }
 }
 
+// --------------- Configure sub-projects with Kotlin sources ---------------
+
+//def sourceless = ['core', 'extras', 'ui', 'nio']
+
+//configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
 subprojects {
-    // ignore folders that are not projects
-    if (name == 'core' || name == 'extras' || name == 'ui' || name == 'nio') {
-        return
+    apply plugin: 'kotlin'
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+
+    kotlin.experimental.coroutines "enable"
+
+    tasks.withType(Test) {
+        testLogging.showStandardStreams = true
     }
 
     repositories {
         jcenter()
-        mavenCentral()
-    }
-
-    apply plugin: 'kotlin'
-    apply plugin: 'kotlinx-atomicfu'
-    apply plugin: 'maven-publish'
-    apply plugin: 'com.jfrog.bintray'
-
-    task sourcesJar(type: Jar) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
-    }
-
-    artifacts {
-        archives sourcesJar
-    }
-
-    // Install bytecode transformation pipeline so that compiled classes from classes directory
-// get transformed to a different classes-post-atomicfu directory to be used later by tests and delivery.
-
-    def CLASSES_POST_ATOMICFU = file("$buildDir/classes-post-atomicfu/main")
-
-    atomicFU {
-        inputFiles = sourceSets.main.output.classesDirs
-        outputDir = CLASSES_POST_ATOMICFU
-        classPath = sourceSets.main.runtimeClasspath
-        variant = "FU" // "VH" to use Java 9 VarHandle, "BOTH" to produce multi-version code
-    }
-
-    atomicFU.dependsOn compileKotlin
-    testClasses.dependsOn atomicFU
-    jar.dependsOn atomicFU
-
-    jar {
-        from files(CLASSES_POST_ATOMICFU, sourceSets.main.output.resourcesDir)
-    }
-
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-                groupId group
-                artifactId archivesBaseName
-                version '0.0.1'
-                artifact sourcesJar
-            }
-        }
-    }
-
-    bintray {
-        user = bintray_user //this usually comes from gradle.properties file in ~/.gradle
-        key = bintray_api_key //this usually comes from gradle.properties file in ~/.gradle
-        publications = ['mavenJava']
-        override = true
-        pkg {
-            repo = 'reactivity'
-            name = 'reactivity'
-            licenses = ['Apache-2.0']
-            vcsUrl = 'https://github.com/pull-vert/reactivity.git'
-//            version {
-//                name = '0.0.1'
-//                desc = 'Reactivity - Suspending Reactive projects in Kotlin for the JVM'
-//                released  = new Date()
-//                vcsTag = '0.0.1'
-//                attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin']
-//            }
-        }
     }
 
     dependencies {
         compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-        testCompile "org.jetbrains.kotlin:kotlin-test-junit"
         // https://github.com/MarkusAmshove/Kluent
         testCompile "org.amshove.kluent:kluent:$kluent_version"
     }
-
-    kotlin.experimental.coroutines 'enable'
 }
 
-// Between subprojects dependencies
-project(':core:reactivity-jdk8') {
+// --------------- Configure sub-projects that use atomicFU ---------------
+def withAtomicFU = ['reactivity']
+
+configure(subprojects.findAll { withAtomicFU.contains(it.name) }) {
+    apply plugin: 'kotlinx-atomicfu'
+
     dependencies {
-        compile project(':core:reactivity')
+        compileOnly "org.jetbrains.kotlinx:atomicfu:$atomicFU_version"
+        testCompile "org.jetbrains.kotlinx:atomicfu:$atomicFU_version"
+    }
+
+    atomicFU {
+        inputFiles = sourceSets.main.output.classesDirs
+        outputDir = file("$buildDir/classes-atomicfu/main")
+        classPath = sourceSets.main.runtimeClasspath
+    }
+
+    jar {
+        mainSpec.sourcePaths.clear() // hack to clear existing paths
+        from files(atomicFU.outputs, sourceSets.main.output.resourcesDir)
+    }
+
+    test {
+        classpath = files(configurations.testRuntime, atomicFU.outputs, sourceSets.test.output.classesDirs,
+                sourceSets.main.output.resourcesDir)
     }
 }
 
-project(':core:extras:nio:reactivity-extra-nio') {
+// --------------- Configure between subprojects dependencies ---------------
+configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8'}) {
     dependencies {
-        compile project(':core:reactivity')
-    }
-}
-
-project(':core:extras:ui:reactivity-extra-android') {
-    dependencies {
-        // provided, reactivity-extra-android is an addon of reactivity
-        compile project(':core:reactivity')
-    }
-}
-
-project(':core:extras:ui:reactivity-extra-javafx') {
-    dependencies {
-        // provided, reactivity-extra-android is an addon of reactivity
-        compile project(':core:reactivity')
-    }
-}
-
-project(':core:extras:ui:reactivity-extra-swing') {
-    dependencies {
-        // provided, reactivity-extra-android is an addon of reactivity
-        compile project(':core:reactivity')
+        compile project(':reactivity')
     }
 }
 
@@ -154,3 +120,86 @@ project(':core:extras:ui:reactivity-extra-swing') {
 //        compile project(':core:nio:reactivity-nio-jdk8')
 //    }
 //}
+
+// --------------- Configure sub-projects that are published ---------------
+
+subprojects {
+    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+    apply plugin: 'org.jetbrains.dokka'
+    apply plugin: 'com.jfrog.bintray'
+
+    dokka {
+        outputFormat = 'kotlin-website'
+    }
+
+    task dokkaJavadoc(type: org.jetbrains.dokka.gradle.DokkaTask) {
+        outputFormat = 'javadoc'
+        outputDirectory = "$buildDir/javadoc"
+    }
+
+    tasks.withType(org.jetbrains.dokka.gradle.DokkaTask) {
+        jdkVersion = 8
+        includes = ['README.md']
+        linkMapping {
+            def relPath = rootProject.projectDir.toPath().relativize(projectDir.toPath())
+            dir = "$projectDir/src/main/kotlin"
+            url = "https://github.com/pull-vert/reactivity/tree/master/$relPath/src/main/kotlin"
+            suffix = "#L"
+        }
+    }
+
+    task javadocJar(type: Jar, dependsOn: dokkaJavadoc) {
+        classifier = 'javadoc'
+        from "$buildDir/javadoc"
+    }
+
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
+                artifact javadocJar
+                artifact sourcesJar
+                pom.withXml {
+                    def root = asNode()
+                    root.appendNode('name', project.name)
+                    root.appendNode('description', 'Suspending Reactive projects in Kotlin with kotlinx-coroutines')
+                    root.appendNode('url', 'https://github.com/pull-vert/reactivity')
+                    root.children().last() + pomConfig
+                }
+            }
+        }
+    }
+
+    bintray {
+        user = bintray_user //this usually comes from gradle.properties file in ~/.gradle
+        key = bintray_api_key //this usually comes from gradle.properties file in ~/.gradle
+        publications = ['maven']
+        override = true
+        pkg {
+            userOrg = 'reactivity'
+            repo = 'reactivity'
+            name = 'reactivity'
+//            licenses = ['Apache-2.0']
+            vcsUrl = 'https://github.com/pull-vert/reactivity.git'
+            version {
+                name = project.version
+                vcsTag = project.version
+                released  = new Date()
+            }
+        }
+    }
+
+    bintrayUpload.doLast {
+        println("Uploaded $project.name version $project.version")
+    }
+}
+
+apply plugin: 'base'
+
+clean.dependsOn gradle.includedBuilds.collect { it.task(':clean') }
