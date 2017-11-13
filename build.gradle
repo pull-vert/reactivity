@@ -5,7 +5,7 @@ allprojects {
 }
 
 buildscript {
-    ext.kotlin_version = '1.1.51'
+    ext.kotlin_version = '1.1.60'
     ext.kotlinx_coroutines_version = '0.19.3'
     ext.atomicFU_version = '0.9'
     ext.dokka_version = '0.9.15'
