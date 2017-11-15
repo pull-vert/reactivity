@@ -1,11 +1,4 @@
-package reactivity.experimental
-
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
-
-internal fun addSuppressed(t: Throwable, exception: Throwable) {
-    t.addSuppressed(exception)
-}
+package reactivity.experimental.common
 
 // Extensions for Subscriber
 

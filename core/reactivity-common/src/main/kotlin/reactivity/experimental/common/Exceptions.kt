@@ -1,24 +1,4 @@
-package reactivity.experimental
-
-/**
- * Throws a particular `Throwable` only if it belongs to a push of "fatal" error
- * varieties native to the JVM. These varieties are as follows:
- *   * [VirtualMachineError]  * [ThreadDeath]
- *  * [LinkageError]
- *
- * @param t the exception to evaluate
- */
-internal fun throwIfJvmFatal(t: Throwable) {
-    if (t is VirtualMachineError) {
-        throw t
-    }
-    if (t is ThreadDeath) {
-        throw t
-    }
-    if (t is LinkageError) {
-        throw t
-    }
-}
+package reactivity.experimental.common
 
 interface Exceptions {
 
@@ -111,28 +91,6 @@ interface Exceptions {
     }
 }
 
-/**
- * An exception that is propagated downward through [org.reactivestreams.Subscriber.onError]
- */
-internal open class ReactiveException : RuntimeException {
-
-    constructor(cause: Throwable) : super(cause)
-
-    constructor(message: String) : super(message)
-
-    @Synchronized override fun fillInStackTrace(): Throwable {
-        return if (cause != null)
-            cause!!.fillInStackTrace()
-        else
-            super.fillInStackTrace()
-    }
-
-    companion object {
-
-        private const val serialVersionUID = 2491425227432776143L
-    }
-}
-
 internal open class BubblingException : ReactiveException {
 
     constructor(message: String) : super(message)
@@ -142,20 +100,6 @@ internal open class BubblingException : ReactiveException {
     companion object {
 
         private const val serialVersionUID = 2491425277432776142L
-    }
-}
-
-internal class ErrorCallbackNotImplemented : UnsupportedOperationException {
-
-    constructor(cause: Throwable) : super(cause)
-
-    @Synchronized override fun fillInStackTrace(): Throwable {
-        return this
-    }
-
-    companion object {
-
-        private const val serialVersionUID = 2491425227432776143L
     }
 }
 

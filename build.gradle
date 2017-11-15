@@ -5,7 +5,7 @@ allprojects {
 }
 
 buildscript {
-    ext.kotlin_version = '1.1.60'
+    ext.kotlin_version = '1.2.0-rc-39'
     ext.kotlinx_coroutines_version = '0.19.3'
     ext.atomicFU_version = '0.9'
     ext.dokka_version = '0.9.15'
@@ -14,8 +14,9 @@ buildscript {
     ext.kluent_version = '1.30'
 
     repositories {
+        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
         // needed for atomicfu dependency
-        maven { setUrl("https://dl.bintray.com/kotlin/kotlinx/") }
+        maven { setUrl("https://dl.bintray.com/kotlin/kotlinx") }
         jcenter()
         mavenCentral()
     }
@@ -51,25 +52,27 @@ def pomConfig = {
 }
 
 // --------------- Configure sub-projects with Kotlin sources ---------------
-
-//def sourceless = ['core', 'extras', 'ui', 'nio']
-
-//configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
 subprojects {
+    repositories {
+        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
+        jcenter()
+    }
+}
+
+// --------------- Configure sub-projects with Kotlin JDK sources ---------------
+def sourceless = ['reactivity-common']
+configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
+
     apply plugin: 'kotlin'
+
+    kotlin.experimental.coroutines "enable"
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
     }
 
-    kotlin.experimental.coroutines "enable"
-
     tasks.withType(Test) {
         testLogging.showStandardStreams = true
-    }
-
-    repositories {
-        jcenter()
     }
 
     dependencies {
@@ -109,25 +112,15 @@ configure(subprojects.findAll { withAtomicFU.contains(it.name) }) {
 }
 
 // --------------- Configure between subprojects dependencies ---------------
-configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8'}) {
+configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8' /*|| it.name == 'reactivity-http2'*/}) {
     dependencies {
         compile project(':reactivity')
     }
 }
 
-//project(':reactivity-http2') {
-//    dependencies {
-//        compile project(':core:nio:reactivity-nio-jdk8')
-//    }
-//}
-
-// --------------- Configure sub-projects that are published ---------------
-
+// --------------- Configure sub-projects for Dokka JavaDoc ---------------
 subprojects {
-    apply plugin: 'maven'
-    apply plugin: 'maven-publish'
     apply plugin: 'org.jetbrains.dokka'
-    apply plugin: 'com.jfrog.bintray'
 
     dokka {
         outputFormat = 'kotlin-website'
@@ -153,6 +146,14 @@ subprojects {
         classifier = 'javadoc'
         from "$buildDir/javadoc"
     }
+}
+
+
+// --------------- Configure sub-projects that are published ---------------
+configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
+    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
 
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
