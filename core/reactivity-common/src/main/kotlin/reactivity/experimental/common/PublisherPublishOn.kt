@@ -1,7 +1,5 @@
 package reactivity.experimental.common
 
-import kotlinx.coroutines.experimental.channels.LinkedListChannel
-import kotlinx.coroutines.experimental.channels.SubscriptionReceiveChannel
 import kotlin.jvm.JvmField
 
 /**
@@ -52,16 +50,16 @@ internal class PublisherPublishOn<T> internal constructor(val delayError: Boolea
 
     override fun onError(t: Throwable) {
         println("PublisherPublishOn onError" + t)
-        close(cause = t)
+        close(t)
     }
 
     override fun onComplete() {
         println("PublisherPublishOn onComplete")
-        close(cause = null)
+        close(null)
     }
 
     // Subscription overrides
     override fun close() {
-        close(cause = null)
+        close(null)
     }
 }

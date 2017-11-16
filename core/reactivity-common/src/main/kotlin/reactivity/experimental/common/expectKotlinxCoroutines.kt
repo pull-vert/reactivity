@@ -4,11 +4,16 @@ import kotlin.coroutines.experimental.CoroutineContext
 
 // coroutine contexts
 expect abstract class CoroutineDispatcher: CoroutineContext
-expect class ThreadPoolDispatcher: CoroutineContext
-
 expect val DefaultDispatcher: CoroutineDispatcher
-expect object CommonPool : CoroutineDispatcher
-expect fun newSingleThreadContext(name: String): ThreadPoolDispatcher
-expect fun newFixedThreadPoolContext(nThreads: Int, name: String): ThreadPoolDispatcher
-expect object Unconfined : CoroutineDispatcher
-expect fun Executor.asCoroutineDispatcher(): CoroutineDispatcher
+
+// channels
+expect open class LinkedListChannel<E>() {
+    // from superclass AbstractSendChannel
+    protected open fun afterClose(cause: Throwable?)
+    // from SendChannel
+    fun offer(element: E): Boolean
+    fun close(cause: Throwable?): Boolean
+}
+expect interface SubscriptionReceiveChannel<out T> {
+    fun close()
+}
