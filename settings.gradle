@@ -2,6 +2,7 @@ rootProject.name = 'reactivity-root'
 
 include 'reactivity-common',
         'reactivity',
+        'reactivity-jdk6',
         'reactivity-jdk8',
         'reactivity-extra-android',
         'reactivity-extra-javafx',
@@ -11,6 +12,7 @@ include 'reactivity-common',
 
 project(':reactivity-common').projectDir = file('core/reactivity-common')
 project(':reactivity').projectDir = file('core/reactivity')
+project(':reactivity-jdk6').projectDir = file('core/reactivity-jdk6')
 project(':reactivity-jdk8').projectDir = file('core/reactivity-jdk8')
 project(':reactivity-extra-android').projectDir = file('core/extras/ui/reactivity-extra-android')
 project(':reactivity-extra-javafx').projectDir = file('core/extras/ui/reactivity-extra-javafx')

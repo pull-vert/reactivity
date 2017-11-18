@@ -5,4 +5,5 @@ package reactivity.experimental
  */
 interface PublisherCommons<T> : WithCallbacks<T>, WithPublishOn, WithLambdas<T>, Publisher<T> {
     val initialScheduler: Scheduler
+    val delegate: Publisher<T>
 }

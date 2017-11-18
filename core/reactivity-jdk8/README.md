@@ -17,7 +17,7 @@ Work In Progress, all operators are not implemented yet.
 
 ### With gradle
 
-To use this library, you must add the specific repository :
+To useCloseable this library, you must add the specific repository :
 
 ```groovy
 repositories {

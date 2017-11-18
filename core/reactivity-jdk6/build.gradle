@@ -1,0 +1,27 @@
+buildscript {
+    ext.reactive_streams_version = '1.0.1'
+}
+
+apply plugin: 'kotlin-platform-jvm'
+
+dependencies {
+    implement project(":reactivity-common")
+
+    // https://github.com/Kotlin/kotlinx.coroutines/tree/master/reactive/kotlinx-coroutines-reactive
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinx_coroutines_version"
+
+    // Reactive Streams
+    compile "org.reactivestreams:reactive-streams:$reactive_streams_version"
+    testCompile "org.reactivestreams:reactive-streams-tck:$reactive_streams_version"
+}
+
+// Compile & Test with Java 6
+compileKotlin {
+    sourceCompatibility = JavaVersion.VERSION_1_6
+    targetCompatibility = JavaVersion.VERSION_1_6
+}
+
+compileTestKotlin {
+    sourceCompatibility = JavaVersion.VERSION_1_6
+    targetCompatibility = JavaVersion.VERSION_1_6
+}

@@ -57,7 +57,7 @@ internal class MultiGroupedImpl<T, out U> internal constructor(private val del: 
     override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): MultiGrouped<T, U> = MultiGroupedImpl((this as Multi<T>).publishOn(scheduler, delayError, prefetch), key)
     override fun <R> map(mapper: (T) -> R): MultiGrouped<R, U> = MultiGroupedImpl((this as Multi<T>).map(mapper), key)
     override fun filter(predicate: (T) -> Boolean): MultiGrouped<T, U> = MultiGroupedImpl((this as Multi<T>).filter(predicate), key)
-    override fun findFirst(predicate: (T) -> Boolean): Solo<T?> = SoloImpl((this as Multi<T>).findFirst(predicate))
+    override fun findFirst(predicate: (T) -> Boolean): Solo<T?> = SoloImpl((this as Multi<T>).findFirst(predicate), initialScheduler)
     override fun <R> flatMap(mapper: (T) -> Publisher<R>): MultiGrouped<R, U> = MultiGroupedImpl((this as Multi<T>).flatMap(mapper), key)
     override fun <R> takeUntil(other: Publisher<R>): MultiGrouped<T, U> = MultiGroupedImpl((this as Multi<T>).takeUntil(other), key)
     override fun mergeWith(vararg others: Publisher<T>): MultiGrouped<T, U> = MultiGroupedImpl((this as Multi<T>).mergeWith(*others), key)

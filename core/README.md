@@ -6,12 +6,12 @@ The asynchronism (Event Loop) is based on suspending functions in coroutines, us
 
 [ ![Download](https://api.bintray.com/packages/pull-vert/reactivity/reactivity/images/download.svg) ](https://bintray.com/pull-vert/reactivity/reactivity/_latestVersion#files)
 
-This directory contains modules to use for JDK 6 to 9.
+This directory contains modules to useCloseable for JDK 6 to 9.
 
 ## Modules
 
-For JDK6 and JDK7, use[reactivity-core](reactivity-core/README.md)<br />
-For JDK8 and JDK9, use [reactivity-jdk8](reactivity-jdk8/README.md)<br />
+For JDK6 and JDK7, useCloseable[reactivity-core](reactivity-core/README.md)<br />
+For JDK8 and JDK9, useCloseable [reactivity-jdk8](reactivity-jdk8/README.md)<br />
 
 **Inspirations :**<br />
 [Kotlinx coroutines reactive guide](https://github.com/Kotlin/kotlinx.coroutines/blob/master/reactive/coroutines-guide-reactive.md)<br />

@@ -35,7 +35,7 @@ internal class PublisherPublishOn<T> internal constructor(val delayError: Boolea
 
     private fun initialRequest() {
         println("PublisherPublishOn initialRequest " + prefetch)
-        // In this function we need that the subscription is not null, so use of !!
+        // In this function we need that the subscription is not null, so useCloseable of !!
         if (prefetch == Int.MAX_VALUE) {
             subscription!!.request(Long.MAX_VALUE)
         } else {
