@@ -1,5 +1,5 @@
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinx_coroutines_version"
 
     // TODO remove when dev is done, used only for accessing code
