@@ -13,7 +13,7 @@ interface Exceptions {
          * @return a [RuntimeException] that can be identified via [.isCancel]
          */
         fun failWithCancel(): RuntimeException {
-            return reactivity.experimental.CancelException()
+            return CancelException()
         }
 
         /**
@@ -28,8 +28,8 @@ interface Exceptions {
          * path
          */
         fun bubble(t: Throwable): RuntimeException {
-            reactivity.experimental.Exceptions.Companion.throwIfFatal(t)
-            return reactivity.experimental.BubblingException(t)
+            throwIfFatal(t)
+            return BubblingException(t)
         }
 
         /**
@@ -42,10 +42,10 @@ interface Exceptions {
          * @param t the exception to evaluate
          */
         fun throwIfFatal(t: Throwable) {
-            if (t is reactivity.experimental.BubblingException) {
+            if (t is BubblingException) {
                 throw t
             }
-            reactivity.experimental.throwIfJvmFatal(t)
+            throwIfJvmFatal(t)
         }
 
         /**
@@ -58,7 +58,7 @@ interface Exceptions {
          */
         fun unwrap(t: Throwable): Throwable {
             var _t = t
-            while (_t is reactivity.experimental.ReactiveException) {
+            while (_t is ReactiveException) {
                 _t = _t.cause!!
             }
             return _t
@@ -73,7 +73,7 @@ interface Exceptions {
          * @return true if given [Throwable] is a callback not implemented exception.
          */
         fun isErrorCallbackNotImplemented(t: Throwable): Boolean {
-            return t is reactivity.experimental.ErrorCallbackNotImplemented
+            return t is ErrorCallbackNotImplemented
         }
 
         /**
@@ -86,12 +86,12 @@ interface Exceptions {
          * @see isErrorCallbackNotImplemented
          */
         fun errorCallbackNotImplemented(cause: Throwable): UnsupportedOperationException {
-            return reactivity.experimental.ErrorCallbackNotImplemented(cause)
+            return ErrorCallbackNotImplemented(cause)
         }
     }
 }
 
-internal open class BubblingException : reactivity.experimental.ReactiveException {
+internal open class BubblingException : ReactiveException {
 
     constructor(message: String) : super(message)
 
@@ -108,7 +108,7 @@ internal open class BubblingException : reactivity.experimental.ReactiveExceptio
  * denying any additional event.
  *
  */
-internal class CancelException : reactivity.experimental.BubblingException("The subscriber has denied dispatching") {
+internal class CancelException : BubblingException("The subscriber has denied dispatching") {
     companion object {
 
         private const val serialVersionUID = 2491425227432776144L
