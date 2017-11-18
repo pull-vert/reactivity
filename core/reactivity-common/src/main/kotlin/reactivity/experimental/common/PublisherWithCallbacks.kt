@@ -3,7 +3,7 @@ package reactivity.experimental.common
 /**
  * This is the interface declaring the callback functions
  * related to each functions of [Subscriber] & [Subscription]
- * will be implemented in both [Multi] and [SoloPublisher]
+ * will be implemented in both [Multi] and [Solo]
  */
 interface WithCallbacks<T> {
     fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): WithCallbacks<T>
