@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 expect internal fun throwIfJvmFatal(t: Throwable)
 

@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 // Extensions for Subscriber
 
@@ -95,10 +95,10 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?,
                                   error: Throwable,
                                   dataSignal: Any?): Throwable {
 
-    Exceptions.throwIfFatal(error)
+    reactivity.experimental.Exceptions.throwIfFatal(error)
     subscription?.cancel()
 
-    val t = Exceptions.unwrap(error)
+    val t = reactivity.experimental.Exceptions.unwrap(error)
     if (dataSignal != null) {
         if (dataSignal !== t && dataSignal is Throwable) {
             addSuppressed(t, dataSignal)
@@ -115,7 +115,7 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?,
  *
  */
 fun Subscriber<*>.onNextDropped() {
-    throw Exceptions.failWithCancel()
+    throw reactivity.experimental.Exceptions.failWithCancel()
 }
 
 /**
@@ -124,7 +124,7 @@ fun Subscriber<*>.onNextDropped() {
  * @param e the dropped exception
  */
 fun Subscriber<*>.onErrorDropped(e: Throwable) {
-   throw Exceptions.bubble(e)
+   throw reactivity.experimental.Exceptions.bubble(e)
 }
 
 /**

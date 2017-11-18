@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 /**
  * Creates cold reactive [Solo] that runs a given [block] in a coroutine.

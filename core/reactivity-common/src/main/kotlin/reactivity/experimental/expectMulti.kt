@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 expect abstract class Multi<T>: DefaultMulti<T> {
 

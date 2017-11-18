@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 // TODO : Junit to test that !!
 fun <T> PublisherCommons<Publisher<T>>.merge() = multi(initialScheduler) {

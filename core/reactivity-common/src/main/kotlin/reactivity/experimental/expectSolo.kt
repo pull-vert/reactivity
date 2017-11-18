@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 expect abstract class Solo<T> : PublisherCommons<T> {
     // functions from WithCallbacks

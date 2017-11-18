@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext

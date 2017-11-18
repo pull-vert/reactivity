@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 import kotlin.jvm.JvmField
 

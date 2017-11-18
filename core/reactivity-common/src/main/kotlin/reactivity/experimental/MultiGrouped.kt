@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 abstract class MultiGrouped<T, out U> : Multi<T> {
     abstract val key: U

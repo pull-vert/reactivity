@@ -1,4 +1,4 @@
-package reactivity.experimental.common
+package reactivity.experimental
 
 expect fun <T> atomic(initial: T): AtomicRef<T>
 
