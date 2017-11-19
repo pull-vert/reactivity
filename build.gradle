@@ -5,20 +5,10 @@ allprojects {
 }
 
 buildscript {
-    ext.kotlin_version = '1.2.0-rc-39'
-    ext.kotlinx_coroutines_version = '0.19.3'
-    ext.atomicFU_version = '0.9'
-    ext.dokka_version = '0.9.15'
-
-    // for tests
-    ext.kluent_version = '1.30'
 
     repositories {
         maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
-        // needed for atomicfu dependency
-        maven { setUrl("https://dl.bintray.com/kotlin/kotlinx") }
         jcenter()
-        mavenCentral()
     }
 
     dependencies {
