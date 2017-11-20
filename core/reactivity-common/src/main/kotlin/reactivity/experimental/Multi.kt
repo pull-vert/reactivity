@@ -345,7 +345,7 @@ interface IMultiImpl<T> : IMulti<T> {
             if (channelMap.containsKey(key)) { // this channel exists already
                 channel = channelMap[key]!!
             } else { // have to create a new MultiPublisherGrouped
-                /** Creates a [kotlinx.coroutines.experimental.channels.LinkedListChannel] */
+                /** Creates a [LinkedListChannel] */
                 channel = Channel(Int.MAX_VALUE) // To avoid having to expect the companion object UNLIMITED of Channel
                 // Converts a stream of elements received from the channel to the hot reactive publisher
                 send(MultiGroupedImpl(channel.asPublisher(context).toMulti(initialScheduler), key) as MultiGrouped<T, R>)
