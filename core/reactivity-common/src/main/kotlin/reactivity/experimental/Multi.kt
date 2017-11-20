@@ -138,7 +138,7 @@ interface IMulti<T> : PublisherCommons<T> {
 
 internal class MultiImpl<T>(override val delegate: Publisher<T>,
                         override val initialScheduler: Scheduler)
-    : AMulti<T>, Publisher<T> by delegate
+    : AMulti<T>(), Publisher<T> by delegate
 
 interface IMultiImpl<T> : IMulti<T> {
 

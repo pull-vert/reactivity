@@ -1,3 +1,3 @@
 package reactivity.experimental
 
-expect abstract class Scheduler : WithContext
+expect abstract class Scheduler() : WithContext

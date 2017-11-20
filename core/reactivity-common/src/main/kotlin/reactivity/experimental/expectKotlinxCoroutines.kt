@@ -40,7 +40,7 @@ expect interface ReceiveChannel<out E> {
     val onReceive: SelectClause1<E>
     operator fun iterator() : ChannelIterator<E>
 }
-expect open class LinkedListChannel<E> {
+expect open class LinkedListChannel<E>() {
     // from superclass AbstractSendChannel
     protected open fun afterClose(cause: Throwable?)
     open fun close(cause: Throwable?): Boolean

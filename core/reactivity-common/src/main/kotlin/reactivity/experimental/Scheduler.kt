@@ -6,4 +6,4 @@ interface WithContext {
     val context: CoroutineContext
 }
 
-class SchedulerImpl(override val context: CoroutineContext) : Scheduler
+class SchedulerImpl(override val context: CoroutineContext) : Scheduler()

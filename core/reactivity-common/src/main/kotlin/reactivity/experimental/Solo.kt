@@ -56,7 +56,7 @@ interface ISolo<T> : PublisherCommons<T> {
 
 internal class SoloImpl<T>(override val delegate: Publisher<T>,
                             override val initialScheduler: Scheduler)
-    : ASolo<T>, Publisher<T> by delegate
+    : ASolo<T>(), Publisher<T> by delegate
 
 interface ISoloImpl<T> : ISolo<T> {
 
