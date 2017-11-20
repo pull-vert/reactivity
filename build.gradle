@@ -75,7 +75,7 @@ configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
 
 // --------------- Configure sub-projects that use atomicFU ---------------
 
-configure(subprojects.findAll { it.name.contains('reactivity-jdk') }) {
+configure(subprojects.findAll { it.name.contains('reactivity-jdk') || it.name == 'reactivity' }) {
     apply plugin: 'kotlinx-atomicfu'
 
     dependencies {
