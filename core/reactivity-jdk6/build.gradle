@@ -5,7 +5,7 @@ buildscript {
 apply plugin: 'kotlin-platform-jvm'
 
 dependencies {
-    implement project(":reactivity-common")
+    expectedBy project(":reactivity-common")
 
     // https://github.com/Kotlin/kotlinx.coroutines/tree/master/reactive/kotlinx-coroutines-reactive
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinx_coroutines_version"
