@@ -37,7 +37,7 @@ fun <T> Array<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = 
 // TODO : Junit to test that !!
 fun <T> PublisherCommons<Publisher<T>>.merge() = multi(initialScheduler) {
     consumeEach { pub ->                 // for each publisher received on the source channel
-        launch(coroutineContext) {       // launch a child coroutine
+        launch(context) {       // launch a child coroutine
             pub.consumeEach { send(it) } // resend all element from this publisher
         }
     }

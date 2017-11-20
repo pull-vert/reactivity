@@ -285,7 +285,7 @@ interface IMultiImpl<T> : IMulti<T> {
         consumeEach {
             // consume the source stream
             val pub = mapper(it)
-            launch(coroutineContext) {
+            launch(context) {
                 // launch a child coroutine
                 pub.consumeEach { send(it) }    // send every element from this publisher
             }
@@ -306,14 +306,14 @@ interface IMultiImpl<T> : IMulti<T> {
     }
 
     override fun mergeWith(vararg others: Publisher<T>) = multi(initialScheduler) {
-        launch(coroutineContext) {
+        launch(context) {
             /** launch a first child coroutine for this [Multi][reactivity.experimental.Multi] */
             consumeEach {
                 send(it)
             }
         }
         for (other in others) {
-            launch(coroutineContext) {
+            launch(context) {
                 /** launch a new child coroutine for each of the [others] [Publisher] */
                 other.consumeEach {
                     send(it) // resend all element from this publisher
@@ -348,7 +348,7 @@ interface IMultiImpl<T> : IMulti<T> {
                 /** Creates a [kotlinx.coroutines.experimental.channels.LinkedListChannel] */
                 channel = Channel(Int.MAX_VALUE) // To avoid having to expect the companion object UNLIMITED of Channel
                 // Converts a stream of elements received from the channel to the hot reactive publisher
-                send(MultiGroupedImpl(channel.asPublisher(coroutineContext).toMulti(initialScheduler), key) as MultiGrouped<T, R>)
+                send(MultiGroupedImpl(channel.asPublisher(context).toMulti(initialScheduler), key) as MultiGrouped<T, R>)
                 channelMap[key] = channel // adds to Map
             }
 

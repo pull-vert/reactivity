@@ -1,3 +1,5 @@
 package reactivity.experimental
 
-expect interface Closeable
+expect interface Closeable {
+    fun close()
+}

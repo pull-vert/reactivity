@@ -13,7 +13,7 @@ interface WithPublishOn {
 }
 
 internal class PublisherPublishOn<T> internal constructor(val delayError: Boolean, val prefetch: Int) :
-        LinkedListChannel<T>(), SubscriptionReceiveChannel<T>, Subscriber<T> {
+        LinkedListChannel<T>, Subscriber<T>, ReceiveChannel<T>, Closeable {
 
     @Volatile
     @JvmField
