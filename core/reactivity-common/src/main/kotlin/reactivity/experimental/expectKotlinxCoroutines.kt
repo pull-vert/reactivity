@@ -14,7 +14,7 @@ expect interface CoroutineScope {
 //    fun close(cause: Throwable?): Boolean
 //    fun offer(element: E): Boolean
 //}
-expect interface ProducerScope<E> {
+expect interface ProducerScope<in E> {
     suspend fun send(element: E)
     val context: CoroutineContext
 }
@@ -26,7 +26,7 @@ expect fun launch(
 
 // selects
 expect interface SelectClause1<out Q>
-expect interface SelectBuilder<R> {
+expect interface SelectBuilder<in R> {
     operator fun <Q> SelectClause1<Q>.invoke(block: suspend (Q) -> R)
 }
 expect suspend fun whileSelect(builder: SelectBuilder<Boolean>.() -> Unit)
