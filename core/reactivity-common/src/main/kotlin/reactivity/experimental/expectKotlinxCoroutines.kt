@@ -55,5 +55,8 @@ expect interface SubscriptionReceiveChannel<out T> : Closeable {
     val onReceive: SelectClause1<T>
 }
 expect inline suspend fun <E> ReceiveChannel<E>.consumeEach(action: (E) -> Unit)
-expect interface Channel<E> : ReceiveChannel<E>, SendChannel<E>
+expect interface Channel<E> : ReceiveChannel<E> {
+    suspend fun send(element: E)
+    fun close(cause: Throwable?): Boolean
+}
 expect fun <E> Channel(capacity: Int): Channel<E>
