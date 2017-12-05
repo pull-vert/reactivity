@@ -7,7 +7,6 @@ allprojects {
 buildscript {
 
     repositories {
-        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
         jcenter()
     }
 
@@ -44,14 +43,14 @@ def pomConfig = {
 // --------------- Configure sub-projects with Kotlin sources ---------------
 subprojects {
     repositories {
-        maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
         jcenter()
     }
 }
 
 // --------------- Configure sub-projects with Kotlin JDK sources ---------------
-def sourceless = ['reactivity-common']
-configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
+def sourcelessCommon = '-common'
+def sourcelessJs = '-js'
+configure(subprojects.findAll { !it.name.contains(sourcelessCommon) && !it.name.contains(sourcelessJs) }) {
 
     apply plugin: 'kotlin'
 
@@ -139,7 +138,7 @@ subprojects {
 
 
 // --------------- Configure sub-projects that are published ---------------
-configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
+configure(subprojects.findAll { !it.name.contains(sourcelessCommon) && !it.name.contains(sourcelessJs) }) {
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'

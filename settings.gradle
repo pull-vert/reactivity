@@ -7,7 +7,10 @@ include 'reactivity-common',
         'reactivity-extra-android',
         'reactivity-extra-javafx',
         'reactivity-extra-swing',
-        'reactivity-extra-nio'//,
+        'reactivity-extra-nio',
+        'kotlinx-coroutines-core-common',
+        'kotlinx-coroutines-core-jvm',
+        'kotlinx-coroutines-core-js'
 //        'reactivity-http2'
 
 project(':reactivity-common').projectDir = file('core/reactivity-common')
@@ -18,3 +21,6 @@ project(':reactivity-extra-android').projectDir = file('core/extras/ui/reactivit
 project(':reactivity-extra-javafx').projectDir = file('core/extras/ui/reactivity-extra-javafx')
 project(':reactivity-extra-swing').projectDir = file('core/extras/ui/reactivity-extra-swing')
 project(':reactivity-extra-nio').projectDir = file('core/extras/nio/reactivity-extra-nio')
+project(':kotlinx-coroutines-core-common').projectDir = file('kotlinx/common/core/kotlinx-coroutines-core-common')
+project(':kotlinx-coroutines-core-jvm').projectDir = file('kotlinx/jvm/core/kotlinx-coroutines-core-jvm')
+project(':kotlinx-coroutines-core-js').projectDir = file('kotlinx/js/core/kotlinx-coroutines-core-js')
