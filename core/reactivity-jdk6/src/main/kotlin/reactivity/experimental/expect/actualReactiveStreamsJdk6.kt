@@ -1,4 +1,4 @@
-package reactivity.experimental
+package reactivity.experimental.expect
 
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber

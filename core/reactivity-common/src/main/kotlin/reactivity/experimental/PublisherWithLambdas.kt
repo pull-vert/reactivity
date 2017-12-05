@@ -1,5 +1,7 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.*
+
 interface SubscribeWith<T> : Publisher<T> {
     /**
      * Subscribe the given [Subscriber] to this [Publisher] and return said

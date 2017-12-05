@@ -1,5 +1,6 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.Scheduler
 import kotlin.coroutines.experimental.CoroutineContext
 
 interface WithContext {

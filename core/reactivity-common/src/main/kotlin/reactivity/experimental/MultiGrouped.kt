@@ -1,5 +1,7 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.*
+
 abstract class MultiGrouped<T, out U> : Multi<T>() {
     abstract val key: U
     // functions from WithCallbacks

@@ -1,5 +1,10 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.Publisher
+import reactivity.experimental.expect.Subscriber
+import reactivity.experimental.expect.Subscription
+import reactivity.experimental.expect.atomic
+
 /**
  * This is the interface declaring the callback functions
  * related to each functions of [Subscriber] & [Subscription]

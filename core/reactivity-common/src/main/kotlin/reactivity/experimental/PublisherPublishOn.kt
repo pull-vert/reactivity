@@ -1,5 +1,9 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.Closeable
+import reactivity.experimental.expect.Scheduler
+import reactivity.experimental.expect.Subscriber
+import reactivity.experimental.expect.Subscription
 import kotlin.jvm.JvmField
 
 /**

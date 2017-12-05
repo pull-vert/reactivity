@@ -1,4 +1,7 @@
-package reactivity.experimental
+package reactivity.experimental.expect
+
+import reactivity.experimental.IMulti
+import reactivity.experimental.IMultiImpl
 
 expect abstract class Multi<T>() : IMulti<T>
 

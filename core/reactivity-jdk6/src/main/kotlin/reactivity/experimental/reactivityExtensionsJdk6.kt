@@ -1,6 +1,7 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.*
+import reactivity.experimental.expect.Scheduler
 import java.util.concurrent.Executor
 
 // for Kotlin easier call, top level functions

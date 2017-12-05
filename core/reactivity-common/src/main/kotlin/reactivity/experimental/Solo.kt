@@ -1,5 +1,7 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.*
+
 /**
  * Creates cold reactive [Solo] that runs a given [block] in a coroutine.
  * Every time the returned publisher is subscribed, it starts a new coroutine in the specified [scheduler].
@@ -55,7 +57,7 @@ interface ISolo<T> : PublisherCommons<T> {
 }
 
 internal class SoloImpl<T>(override val delegate: Publisher<T>,
-                            override val initialScheduler: Scheduler)
+                           override val initialScheduler: Scheduler)
     : ASolo<T>(), Publisher<T> by delegate
 
 interface ISoloImpl<T> : ISolo<T> {

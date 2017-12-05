@@ -1,4 +1,4 @@
-package reactivity.experimental
+package reactivity.experimental.expect
 
 /**
  * Throws a particular `Throwable` only if it belongs to a push of "fatal" error

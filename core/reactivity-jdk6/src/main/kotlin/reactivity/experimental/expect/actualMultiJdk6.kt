@@ -1,14 +1,15 @@
-package reactivity.experimental
+package reactivity.experimental.expect
 
 import kotlinx.coroutines.experimental.reactive.consumeEach
+import reactivity.experimental.*
 
-actual fun <T> Publisher<T>.toMulti() = multi(SCHEDULER_DEFAULT_DISPATCHER) {
+actual fun <T> Publisher<T>.toMulti(): Multi<T> = multi(SCHEDULER_DEFAULT_DISPATCHER) {
     this@toMulti.consumeEach {
         send(it)
     }
 }
 
-actual fun <T> Publisher<T>.toMulti(scheduler: Scheduler) = multi(scheduler) {
+actual fun <T> Publisher<T>.toMulti(scheduler: Scheduler): Multi<T> = multi(scheduler) {
     this@toMulti.consumeEach {
         send(it)
     }

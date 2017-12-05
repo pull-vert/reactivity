@@ -1,5 +1,9 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.ErrorCallbackNotImplemented
+import reactivity.experimental.expect.ReactiveException
+import reactivity.experimental.expect.throwIfJvmFatal
+
 interface Exceptions {
 
     companion object {

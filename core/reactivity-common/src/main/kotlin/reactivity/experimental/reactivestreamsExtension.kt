@@ -1,5 +1,9 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.Subscriber
+import reactivity.experimental.expect.Subscription
+import reactivity.experimental.expect.addSuppress
+
 // Extensions for Subscriber
 
 /**
@@ -92,8 +96,8 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?, error: Throwable)
  * @return mapped [Throwable]
  */
 fun Subscriber<*>.onOperatorError(subscription: Subscription?,
-                                  error: Throwable,
-                                  dataSignal: Any?): Throwable {
+                                                                 error: Throwable,
+                                                                 dataSignal: Any?): Throwable {
 
     Exceptions.throwIfFatal(error)
     subscription?.cancel()

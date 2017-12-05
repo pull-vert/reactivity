@@ -1,5 +1,7 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.*
+
 /**
  * Creates cold reactive [Multi] that runs a given [block] in a coroutine.
  * Every time the returned publisher is subscribed, it starts a new coroutine in the specified [scheduler].
@@ -137,7 +139,7 @@ interface IMulti<T> : PublisherCommons<T> {
 }
 
 internal class MultiImpl<T>(override val delegate: Publisher<T>,
-                        override val initialScheduler: Scheduler)
+                            override val initialScheduler: Scheduler)
     : AMulti<T>(), Publisher<T> by delegate
 
 interface IMultiImpl<T> : IMulti<T> {

@@ -1,4 +1,4 @@
-package reactivity.experimental
+package reactivity.experimental.expect
 
 expect interface Subscription {
     fun request(n: Long)

@@ -1,5 +1,6 @@
-package reactivity.experimental
+package reactivity.experimental.expect
 
+import reactivity.experimental.*
 import java.util.concurrent.Executor
 import kotlin.coroutines.experimental.CoroutineContext
 

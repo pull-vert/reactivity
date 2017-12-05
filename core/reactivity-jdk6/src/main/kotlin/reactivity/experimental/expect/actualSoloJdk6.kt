@@ -1,4 +1,8 @@
-package reactivity.experimental
+package reactivity.experimental.expect
+
+import reactivity.experimental.ISolo
+import reactivity.experimental.ISoloImpl
+import reactivity.experimental.toSolo
 
 actual abstract class Solo<T> : ISolo<T> {
     /**

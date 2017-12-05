@@ -1,5 +1,8 @@
 package reactivity.experimental
 
+import reactivity.experimental.expect.Publisher
+import reactivity.experimental.expect.Scheduler
+
 /**
  * Common functions for [Multi] and [Solo]
  */
