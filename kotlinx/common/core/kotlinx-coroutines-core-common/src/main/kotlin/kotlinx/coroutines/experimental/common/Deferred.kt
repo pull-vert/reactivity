@@ -161,9 +161,7 @@ public fun <T> async(
     block: suspend CoroutineScope.() -> T
 ): Deferred<T> {
     val newContext = newCoroutineContext(context)
-    val coroutine = if (start.isLazy)
-        LazyDeferredCoroutine(newContext, block) else
-        DeferredCoroutine<T>(newContext, active = true)
+    val coroutine = if (start.isLazy) LazyDeferredCoroutine(newContext, block) else DeferredCoroutine<T>(newContext, active = true)
     coroutine.initParentJob(context[Job])
     start(block, coroutine, coroutine)
     return coroutine
