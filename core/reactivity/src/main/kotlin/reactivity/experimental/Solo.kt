@@ -25,7 +25,7 @@ import org.reactivestreams.Subscription
 fun <T> solo(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): Solo<T> = SoloImpl(publish(scheduler.context, block), scheduler)
+): Solo<T> = SoloImpl(publish(scheduler.context, null, block), scheduler)
 
 ///**
 // * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]

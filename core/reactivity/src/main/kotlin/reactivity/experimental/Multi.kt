@@ -29,7 +29,7 @@ import org.reactivestreams.Subscription
 fun <T> multi(
         scheduler: Scheduler,
         block: suspend ProducerScope<T>.() -> Unit
-): Multi<T> = MultiImpl(publish(scheduler.context, block), scheduler)
+): Multi<T> = MultiImpl(publish(scheduler.context, null, block), scheduler)
 
 /**
  * Builder for [Multi], a multi values Reactive Stream [Publisher]
