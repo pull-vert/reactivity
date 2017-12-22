@@ -134,14 +134,14 @@ class JobTest : TestBase() {
 //        for (i in 0 until n) job.invokeOnCompletion { fireCount++ }.dispose()
 //    }
 //
-//    @Test
-//    fun testCancelledParent() {
-//        val parent = Job()
-//        parent.cancel()
-//        check(!parent.isActive)
-//        val child = Job(parent)
-//        check(!child.isActive)
-//    }
+    @Test
+    fun testCancelledParent() {
+        val parent = Job()
+        parent.cancel()
+        check(!parent.isActive)
+        val child = Job(parent)
+        check(!child.isActive)
+    }
 //
 //    @Test
 //    fun testDisposeSingleHandler() {
