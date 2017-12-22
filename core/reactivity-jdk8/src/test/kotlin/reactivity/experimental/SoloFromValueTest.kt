@@ -2,8 +2,8 @@ package reactivity.experimental
 
 import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should equal`
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class SoloFromValueTest {
     @Test
@@ -25,7 +25,7 @@ class SoloFromValueTest {
             count++
             println(it)
         }
-        count `should equal` 2
+        assertEquals(2, count)
     }
 
     @Test

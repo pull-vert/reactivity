@@ -1,5 +1,6 @@
 package reactivity.experimental
 
+import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.consumeEach
@@ -28,8 +29,9 @@ import org.reactivestreams.Subscription
  */
 fun <T> multi(
         scheduler: Scheduler,
+        parent: Job? = null,
         block: suspend ProducerScope<T>.() -> Unit
-): Multi<T> = MultiImpl(publish(scheduler.context, block), scheduler)
+): Multi<T> = MultiImpl(publish(scheduler.context, parent, block), scheduler)
 
 /**
  * Builder for [Multi], a multi values Reactive Stream [Publisher]

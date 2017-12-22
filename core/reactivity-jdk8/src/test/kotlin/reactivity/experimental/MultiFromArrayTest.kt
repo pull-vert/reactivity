@@ -3,8 +3,8 @@ package reactivity.experimental
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should equal to`
 import org.junit.Test
+import kotlin.test.assertTrue
 
 class MultiFromArrayTest {
     @Test
@@ -16,7 +16,7 @@ class MultiFromArrayTest {
         // iterate over the source fully
         source.consumeEach { println(it) }
         delay(100)
-        finally `should equal to` true
+        assertTrue(finally)
     }
 
     @Test
@@ -28,7 +28,7 @@ class MultiFromArrayTest {
         // iterate over the source fully
         source.consumeEach { println(it) }
         delay(100)
-        finally `should equal to` true
+        assertTrue(finally)
     }
 
     @Test
@@ -40,7 +40,7 @@ class MultiFromArrayTest {
         // iterate over the source fully
         source.consumeEach { println(it) }
         delay(100)
-        finally `should equal to` true
+        assertTrue(finally)
     }
 
     @Test
@@ -52,6 +52,6 @@ class MultiFromArrayTest {
         // iterate over the source fully
         source.consumeEach { println(it) }
         delay(100)
-        finally `should equal to` true
+        assertTrue(finally)
     }
 }

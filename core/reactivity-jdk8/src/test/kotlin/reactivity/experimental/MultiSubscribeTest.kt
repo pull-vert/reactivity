@@ -2,8 +2,10 @@ package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should equal to`
 import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class MultiSubscribeTest {
     @Test
@@ -19,15 +21,15 @@ class MultiSubscribeTest {
         source.subscribe(onNext =  { v ->
             if (3 == v) throw Exception("vilain exception !!")
         }, onError = { t ->
-            "vilain exception !!" `should equal to` t.message!!
+            assertEquals("vilain exception !!", t.message!!)
             onError = true
         } , onComplete = {
             onComplete = true
         })
         delay(100)
-        finally `should equal to` true
-        onError `should equal to` true
-        onComplete `should equal to` false
+        assertTrue(finally)
+        assertTrue(onError)
+        assertFalse(onComplete)
     }
 
     @Test
@@ -44,7 +46,7 @@ class MultiSubscribeTest {
         // iterate over the source fully : no backpressure = request(Long.maxValue)
         source.subscribe()
         delay(100)
-        finally `should equal to` true
-        onNext `should equal to` true
+        assertTrue(finally)
+        assertTrue(onNext)
     }
 }

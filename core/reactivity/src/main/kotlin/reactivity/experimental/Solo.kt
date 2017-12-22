@@ -1,5 +1,6 @@
 package reactivity.experimental
 
+import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlinx.coroutines.experimental.reactive.awaitSingle
@@ -24,8 +25,9 @@ import org.reactivestreams.Subscription
 // TODO provide a custom ProducerScope impl that checks send is only called once, and throws exception otherwise !
 fun <T> solo(
         scheduler: Scheduler,
+        parent: Job? = null,
         block: suspend ProducerScope<T>.() -> Unit
-): Solo<T> = SoloImpl(publish(scheduler.context, block), scheduler)
+): Solo<T> = SoloImpl(publish(scheduler.context, parent, block), scheduler)
 
 ///**
 // * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]

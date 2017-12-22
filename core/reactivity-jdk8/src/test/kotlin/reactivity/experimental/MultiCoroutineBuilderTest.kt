@@ -3,9 +3,9 @@ package reactivity.experimental
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
 import kotlinx.coroutines.experimental.rx2.rxFlowable
-import org.amshove.kluent.`should equal`
 import org.junit.Ignore
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class MultiCoroutineBuilderTest {
 
@@ -41,7 +41,7 @@ class MultiCoroutineBuilderTest {
             count++
         }
         delay(2000) // suspend the main thread for a few seconds
-        count `should equal` 6
+        assertEquals(6, count)
     }
 
     @Ignore

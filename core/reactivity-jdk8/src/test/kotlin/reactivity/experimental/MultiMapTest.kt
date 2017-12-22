@@ -3,11 +3,10 @@ package reactivity.experimental
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should be greater than`
-import org.amshove.kluent.`should be less than`
-import org.amshove.kluent.`should equal to`
-import org.amshove.kluent.`should equal`
 import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class MultiMapTest {
     @Test
@@ -30,7 +29,7 @@ class MultiMapTest {
         When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,
         which gets dispatched onto the main thread to print this last element at
         a later point in time, while the source completes and prints "Finally". */
-        result `should equal` 20
+        assertEquals(20, result)
     }
 
     @Test
@@ -50,15 +49,15 @@ class MultiMapTest {
         source.subscribe(onNext = {
             println(it)
         }, onError = { t ->
-            "vilain exception !!" `should equal to` t.message!!
+            assertEquals("vilain exception !!", t.message!!)
             onError = true
         } , onComplete = {
             onComplete = true
         })
         delay(100)
-        finally `should equal to` true
-        onError `should equal to` true
-        onComplete `should equal to` false
+        assertTrue(finally)
+        assertTrue(onError)
+        assertFalse(onComplete)
     }
 
     @Test
@@ -85,7 +84,7 @@ class MultiMapTest {
                 }.consumeEach { println(it); delay(300) }
 
         delay(700) // suspend the main thread for a few time
-        time!! `should be greater than` 600
-        time!! `should be less than` 900
+        assertTrue(time!! > 600)
+        assertTrue(time!! < 900)
     }
 }

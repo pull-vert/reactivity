@@ -3,10 +3,10 @@ package reactivity.experimental
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should equal to`
 import org.junit.Test
 import reactivity.experimental.jdk8.toMulti
 import java.util.stream.IntStream
+import kotlin.test.assertTrue
 
 class MultiFromStreamTest {
     @Test
@@ -18,6 +18,6 @@ class MultiFromStreamTest {
         // iterate over the source fully
         source.consumeEach { println(it) }
         delay(100)
-        finally `should equal to` true
+        assertTrue(finally)
     }
 }

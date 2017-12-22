@@ -2,9 +2,8 @@ package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should be greater than`
-import org.amshove.kluent.`should be less than`
 import org.junit.Test
+import kotlin.test.assertTrue
 
 class MultiPublishOnTest {
     @Test
@@ -37,8 +36,8 @@ class MultiPublishOnTest {
         }
 
         delay(2000) // suspend the main thread for a few seconds
-        time!! `should be greater than` 1499
-        time!! `should be less than` 2000
+        assertTrue(time!! > 1499)
+        assertTrue(time!! < 2000)
     }
 
     @Test
@@ -71,7 +70,7 @@ class MultiPublishOnTest {
         }
 
         delay(2000) // suspend the main thread for a few seconds
-        time!! `should be greater than` 1500
-        time!! `should be less than` 2000
+        assertTrue(time!! > 1499)
+        assertTrue(time!! < 2000)
     }
 }

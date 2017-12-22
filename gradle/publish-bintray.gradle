@@ -1,0 +1,48 @@
+// Configures publishing of Maven artifacts to Bintray
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            artifact javadocJar
+            artifact sourcesJar
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', project.name)
+                root.appendNode('description', 'Suspending Reactive projects in Kotlin with kotlinx-coroutines for Kotlin & Java')
+                root.appendNode('url', 'https://github.com/pull-vert/reactivity')
+                root.children().last() + pomConfig
+            }
+        }
+    }
+}
+
+bintray {
+    user = bintray_user //this usually comes from gradle.properties file in ~/.gradle
+    key = bintray_api_key //this usually comes from gradle.properties file in ~/.gradle
+    publications = ['maven']
+    pkg {
+        userOrg = 'reactivity'
+        repo = 'reactivity'
+        name = 'reactivity'
+        vcsUrl = 'https://github.com/pull-vert/reactivity.git'
+        version {
+            name = project.version
+            vcsTag = project.version
+            released  = new Date()
+        }
+    }
+}
+
+bintrayUpload.doLast {
+    println("Uploaded $project.name version $project.version")
+}

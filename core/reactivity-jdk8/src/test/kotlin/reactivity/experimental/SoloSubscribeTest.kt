@@ -2,8 +2,10 @@ package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should equal to`
 import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class SoloSubscribeTest {
 
@@ -20,15 +22,15 @@ class SoloSubscribeTest {
         han.subscribe(onNext =  {
             throw Exception("vilain exception !!")
         }, onError = { t ->
-            "vilain exception !!" `should equal to` t.message!!
+            assertEquals("vilain exception !!", t.message!!)
             onError = true
         } , onComplete = {
             onComplete = true
         })
         delay(100)
-        onError `should equal to` true
-        onComplete `should equal to` false
-        finally `should equal to` true
+        assertTrue(onError)
+        assertFalse(onComplete)
+        assertTrue(finally)
     }
 
     @Test
@@ -45,7 +47,7 @@ class SoloSubscribeTest {
         // iterate over the source fully : no backpressure = request(Long.maxValue)
         han.subscribe()
         delay(100)
-        onNext `should equal to` true
-        finally `should equal to` true
+        assertTrue(onNext)
+        assertTrue(finally)
     }
 }

@@ -5,26 +5,19 @@ allprojects {
 }
 
 buildscript {
-    ext.kotlin_version = '1.1.60'
-    ext.kotlinx_coroutines_version = '0.19.3'
-    ext.atomicFU_version = '0.9'
-    ext.dokka_version = '0.9.15'
-
-    // for tests
-    ext.kluent_version = '1.30'
-
     repositories {
-        // needed for atomicfu dependency
-        maven { setUrl("https://dl.bintray.com/kotlin/kotlinx/") }
         jcenter()
-        mavenCentral()
+        // needed for atomicfu dependency
+        maven { url "http://kotlin.bintray.com/kotlinx" }
+        maven { url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
         classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicFU_version"
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3"
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintray_version"
+        classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
     }
 }
 
@@ -52,38 +45,77 @@ def pomConfig = {
 
 // --------------- Configure sub-projects with Kotlin sources ---------------
 
-//def sourceless = ['core', 'extras', 'ui', 'nio']
+static def platformOf(project) {
+    if (project.name.endsWith("-common")) return "common"
+    if (project.name.endsWith("-js")) return "js"
+    return "jvm"
+}
 
-//configure(subprojects.findAll { !sourceless.contains(it.name)  }) {
+static def platformLib(base, platform) {
+    if (platform == "jvm") return base
+    return "$base-$platform"
+}
+
 subprojects {
-    apply plugin: 'kotlin'
+    def platform = platformOf(it)
+    apply plugin: "kotlin-platform-$platform"
 
-    tasks.withType(JavaCompile) {
-        options.encoding = 'UTF-8'
+    if (platform == "jvm") {
+        sourceCompatibility = 1.6
+        targetCompatibility = 1.6
+
+        tasks.withType(JavaCompile) {
+            options.encoding = 'UTF-8'
+        }
     }
 
     kotlin.experimental.coroutines "enable"
 
     tasks.withType(Test) {
-        testLogging.showStandardStreams = true
+        testLogging {
+            showStandardStreams = true
+            events "passed", "failed"
+        }
+        def stressTest = project.properties['stressTest']
+        if (stressTest != null) systemProperties['stressTest'] = stressTest
     }
 
     repositories {
         jcenter()
+        maven { url "http://kotlin.bintray.com/kotlinx" }
+        maven { url "https://dl.bintray.com/devexperts/Maven/" }
     }
 
-    dependencies {
-        compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    def kotlin_stdlib = platformLib("kotlin-stdlib", platform)
+    def kotlin_test = platformLib("kotlin-test", platform)
 
-        // https://github.com/MarkusAmshove/Kluent
-        testCompile "org.amshove.kluent:kluent:$kluent_version"
+    dependencies {
+        compile "org.jetbrains.kotlin:$kotlin_stdlib:$kotlin_version"
+        testCompile "org.jetbrains.kotlin:$kotlin_test:$kotlin_version"
+    }
+
+    if (platform == "common") {
+        dependencies {
+            testCompile "org.jetbrains.kotlin:kotlin-test-annotations-common:$kotlin_version"
+        }
+    }
+
+    if (platform == "jvm") {
+        dependencies {
+            testCompile "junit:junit:$junit_version"
+            testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+        }
+    }
+
+    if (platform == "js") {
+        apply from: rootProject.file('gradle/test-js.gradle')
     }
 }
 
 // --------------- Configure sub-projects that use atomicFU ---------------
-def withAtomicFU = ['reactivity']
+def withAtomicFU = 'reactivity'
 
-configure(subprojects.findAll { withAtomicFU.contains(it.name) }) {
+configure(subprojects.findAll { it.name.contains(withAtomicFU) && platformOf(it) == "jvm"}) {
     apply plugin: 'kotlinx-atomicfu'
 
     dependencies {
@@ -109,9 +141,20 @@ configure(subprojects.findAll { withAtomicFU.contains(it.name) }) {
 }
 
 // --------------- Configure between subprojects dependencies ---------------
-configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8'}) {
-    dependencies {
-        compile project(':reactivity')
+configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8' && it.name != 'reactivity-common'}) {
+    def platform = platformOf(it)
+    def reactivity = platformLib("reactivity", platform)
+
+    if (it.name == reactivity) {
+        dependencies {
+            expectedBy project(':reactivity-common')
+        }
+    } else {
+        dependencies {
+            compile project(":$reactivity")
+            //the only way IDEA can resolve test classes
+//            testCompile project(":reactivity").sourceSets.test.output
+        }
     }
 }
 
@@ -124,80 +167,8 @@ configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactiv
 // --------------- Configure sub-projects that are published ---------------
 
 subprojects {
-    apply plugin: 'maven'
-    apply plugin: 'maven-publish'
-    apply plugin: 'org.jetbrains.dokka'
-    apply plugin: 'com.jfrog.bintray'
-
-    dokka {
-        outputFormat = 'kotlin-website'
-    }
-
-    task dokkaJavadoc(type: org.jetbrains.dokka.gradle.DokkaTask) {
-        outputFormat = 'javadoc'
-        outputDirectory = "$buildDir/javadoc"
-    }
-
-    tasks.withType(org.jetbrains.dokka.gradle.DokkaTask) {
-        jdkVersion = 8
-        includes = ['README.md']
-        linkMapping {
-            def relPath = rootProject.projectDir.toPath().relativize(projectDir.toPath())
-            dir = "$projectDir/src/main/kotlin"
-            url = "https://github.com/pull-vert/reactivity/tree/master/$relPath/src/main/kotlin"
-            suffix = "#L"
-        }
-    }
-
-    task javadocJar(type: Jar, dependsOn: dokkaJavadoc) {
-        classifier = 'javadoc'
-        from "$buildDir/javadoc"
-    }
-
-    task sourcesJar(type: Jar, dependsOn: classes) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
-    }
-
-    publishing {
-        publications {
-            maven(MavenPublication) {
-                from components.java
-                artifact javadocJar
-                artifact sourcesJar
-                pom.withXml {
-                    def root = asNode()
-                    root.appendNode('name', project.name)
-                    root.appendNode('description', 'Suspending Reactive projects in Kotlin with kotlinx-coroutines')
-                    root.appendNode('url', 'https://github.com/pull-vert/reactivity')
-                    root.children().last() + pomConfig
-                }
-            }
-        }
-    }
-
-    bintray {
-        user = bintray_user //this usually comes from gradle.properties file in ~/.gradle
-        key = bintray_api_key //this usually comes from gradle.properties file in ~/.gradle
-        publications = ['maven']
-        override = true
-        pkg {
-            userOrg = 'reactivity'
-            repo = 'reactivity'
-            name = 'reactivity'
-//            licenses = ['Apache-2.0']
-            vcsUrl = 'https://github.com/pull-vert/reactivity.git'
-            version {
-                name = project.version
-                vcsTag = project.version
-                released  = new Date()
-            }
-        }
-    }
-
-    bintrayUpload.doLast {
-        println("Uploaded $project.name version $project.version")
-    }
+    apply from: rootProject.file('gradle/dokka.gradle')
+    apply from: rootProject.file('gradle/publish-bintray.gradle')
 }
 
 apply plugin: 'base'

@@ -2,10 +2,10 @@ package reactivity.experimental.swing
 
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should equal`
 import org.junit.Test
 import reactivity.experimental.multi
 import javax.swing.SwingUtilities
+import kotlin.test.assertEquals
 
 class SchedulerSwingTest {
     @Test
@@ -37,6 +37,6 @@ class SchedulerSwingTest {
             count++
         }
         delay(500) // suspend the main thread for a few seconds
-        count `should equal` 3
+        assertEquals(3, count)
     }
 }

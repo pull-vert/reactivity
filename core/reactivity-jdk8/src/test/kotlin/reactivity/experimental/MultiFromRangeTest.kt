@@ -4,9 +4,9 @@ import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.runBlocking
-import org.amshove.kluent.`should equal to`
-import org.amshove.kluent.`should equal`
 import org.junit.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class MultiFromRangeTest {
     @Test
@@ -28,7 +28,7 @@ class MultiFromRangeTest {
             count++
             println(it)
         }
-        count `should equal` 6
+        assertEquals(6, count)
     }
 
     @Test
@@ -47,12 +47,12 @@ class MultiFromRangeTest {
             }
             // `use` will close the channel when this block of code is complete
         }
-        cnt `should equal` 3
-        finally `should equal to` true
+        assertEquals(3, cnt)
+        assertTrue(finally)
     }
 
     @Test
-    fun `multi from range subscription without cancellation`() = runBlocking<Unit> {
+    fun `multi from range subscription without cancellation`() = runBlocking {
         var finally = false
         val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
@@ -68,11 +68,11 @@ class MultiFromRangeTest {
         which gets dispatched onto the main thread to print this last element at
         a later point in time, while the source completes and prints "Finally". */
         delay(100)
-        finally `should equal to` true
+        assertTrue(finally)
     }
 
     @Test
-    fun `multi from range subscription without cancellation, and Common pool scheduler`() = runBlocking<Unit> {
+    fun `multi from range subscription without cancellation, and Common pool scheduler`() = runBlocking {
         var finally = false
         val source = MultiBuilder.fromRange(SCHEDULER_COMMON_POOL_DISPATCHER,
                 1, 5) // a fromRange of five numbers
@@ -88,6 +88,6 @@ class MultiFromRangeTest {
         When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,
         which gets dispatched onto the main thread to print this last element at
         a later point in time, while the source completes and prints "Finally". */
-        finally `should equal to` true
+        assertTrue(finally)
     }
 }
