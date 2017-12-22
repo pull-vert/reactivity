@@ -2,6 +2,7 @@ package reactivity.experimental
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.experimental.DisposableHandle
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -33,7 +34,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
      * Subscribe to this [Publisher], the Reactive Stream starts
      * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
      */
-    fun subscribe(): Disposable {
+    fun subscribe(): DisposableHandle {
         return subscribeWith(SubscriberLambda())
     }
 
@@ -42,7 +43,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
      * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
      * @param onNext the function to execute for each data of the stream
      */
-    fun subscribe(onNext: (T) -> Unit): Disposable {
+    fun subscribe(onNext: (T) -> Unit): DisposableHandle {
         return subscribeWith(SubscriberLambda(onNext))
     }
 
@@ -52,7 +53,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
      * @param onNext the function to execute for each data of the stream
      * @param onError the function to execute if stream ends with an error
      */
-    fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): DisposableHandle {
         return subscribeWith(SubscriberLambda(onNext, onError))
     }
 
@@ -63,7 +64,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
      * @param onError the function to execute if the stream ends with an error
      * @param onComplete the function to execute if stream ends successfully
      */
-    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): DisposableHandle {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete))
     }
 
@@ -75,7 +76,7 @@ interface WithLambdas<T> : SubscribeWith<T> {
      * @param onComplete the function to execute if stream ends successfully
      * @param onSubscribe the function to execute every time the stream is subscribed
      */
-    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): Disposable {
+    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): DisposableHandle {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
     }
 }
@@ -84,7 +85,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
                                   private val onError: ((Throwable) -> Unit)? = null,
                                   private val onComplete: (() -> Unit)? = null,
                                   private val onSubscribe: ((Subscription) -> Unit)? = null)
-    : Subscriber<T>, Disposable {
+    : Subscriber<T>, DisposableHandle {
 
     val _subscription: AtomicRef<Subscription?> = atomic(null)
 
@@ -131,10 +132,6 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
             _subscription.value?.cancel()
             onError(t)
         }
-    }
-
-    override fun isDisposed(): Boolean {
-        return _subscription.value === cancelledSubscription()
     }
 
     override fun dispose() {
