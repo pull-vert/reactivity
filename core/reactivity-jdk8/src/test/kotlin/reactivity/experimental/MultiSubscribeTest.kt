@@ -33,7 +33,7 @@ class MultiSubscribeTest {
     }
 
     @Test
-    fun `multi from range subscription with subscribe onNext function`() = runBlocking<Unit> {
+    fun `multi from range subscription with subscribe onNext function`() = runBlocking {
         var finally = false
         var onNext = false
         val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers

@@ -104,9 +104,7 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
 
     override fun onComplete() {
         val s = _subscription.getAndSet(cancelledSubscription())
-        if (s === cancelledSubscription()) {
-            return
-        }
+        if (s === cancelledSubscription()) return
         try {
             this.onComplete?.invoke()
         } catch (t: Throwable) {
@@ -136,8 +134,6 @@ private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
 
     override fun dispose() {
         val s = _subscription.getAndSet(cancelledSubscription())
-        if (s != null && s !== cancelledSubscription()) {
-            s.cancel()
-        }
+        if (s != null && s !== cancelledSubscription()) s.cancel()
     }
 }

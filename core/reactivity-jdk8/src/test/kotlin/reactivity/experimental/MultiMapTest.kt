@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 
 class MultiMapTest {
     @Test
-    fun `multi from range map simple`() = runBlocking<Unit> {
+    fun `multi from range map simple`() = runBlocking {
         var result = 0
         val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight

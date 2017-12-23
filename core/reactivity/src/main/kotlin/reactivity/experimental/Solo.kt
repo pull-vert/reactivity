@@ -29,19 +29,6 @@ fun <T> solo(
         block: suspend ProducerScope<T>.() -> Unit
 ): Solo<T> = SoloImpl(publish(scheduler.context, parent, block), scheduler)
 
-///**
-// * Singleton builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
-// *
-// * @author Frédéric Montariol
-// */
-//object SoloBuilder : SoloPublisherBuilder() {
-//    @JvmStatic
-//    fun <T> fromValue(value: T): SoloPublisher<T> = Companion.fromValue(value)
-//
-//    @JvmStatic
-//    fun <T> fromValue(scheduler: Scheduler, value: T): SoloPublisher<T> = Companion.fromValue(scheduler, value)
-//}
-
 /**
  * Builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
  *

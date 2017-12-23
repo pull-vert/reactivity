@@ -8,7 +8,7 @@ import org.reactivestreams.Subscription
 /**
  * This is the interface declaring the publishOn functions
  * for executing the subscriber in other context than the publisher
- * will be implemented in both [Multi] and [SoloPublisher]
+ * will be implemented in both [Multi] and [Solo]
  */
 interface WithPublishOn {
     fun publishOn(delayError: Boolean): WithPublishOn

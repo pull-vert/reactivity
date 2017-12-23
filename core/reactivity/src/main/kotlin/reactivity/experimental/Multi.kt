@@ -129,6 +129,11 @@ object MultiBuilder {
  */
 interface Multi<T> : PublisherCommons<T> {
 
+    /**
+     * Key for identifiying common grouped elements, used by [Multi.groupBy] operator
+     */
+    var key: Key<*>
+
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
 
     override fun doOnNext(onNext: (T) -> Unit): Multi<T>
@@ -237,12 +242,12 @@ interface Multi<T> : PublisherCommons<T> {
     fun take(n: Long): Multi<T>
 
     /**
-     * Returns a [Multi] that can contain several [MultiGrouped][reactivity.experimental.MultiGrouped]
-     * , each is a group of received elements from the source stream that are related with the same key
+     * Returns a [Multi] that can contain several [Multi]
+     * , each is a group of received elements from the source stream that are related with the same [Key]
      *
      * @param keyMapper a function that extracts the key for each item
      */
-    fun <R> groupBy(keyMapper: (T) -> R): Multi<out MultiGrouped<T, R>>
+    fun <R> groupBy(keyMapper: (T) -> R): Multi<out Multi<T>>
 
     // Combined Operators
 
@@ -254,11 +259,18 @@ interface Multi<T> : PublisherCommons<T> {
      * @param mapper the mapper function
      */
     fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
+
+    /**
+     * Key for identifiying common grouped elements of this [Multi]. [E] is key type.
+     */
+    class Key<R>(val value: R)
 }
 
 internal open class MultiImpl<T>(open val delegate: Publisher<T>,
                            override val initialScheduler: Scheduler)
     : Multi<T>, Publisher<T> by delegate {
+
+    override lateinit var key: Multi.Key<*>
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
@@ -419,7 +431,7 @@ internal open class MultiImpl<T>(open val delegate: Publisher<T>,
 
     override fun mergeWith(vararg others: Publisher<T>) = multi(initialScheduler) {
         launch(coroutineContext) {
-            /** launch a first child coroutine for this [Multi][reactivity.experimental.Multi] */
+            /** launch a first child coroutine for this [Multi] */
             consumeEach {
                 send(it)
             }
@@ -460,7 +472,9 @@ internal open class MultiImpl<T>(open val delegate: Publisher<T>,
                 /** Creates a [kotlinx.coroutines.experimental.channels.LinkedListChannel] */
                 channel = Channel(Channel.UNLIMITED)
                 // Converts a stream of elements received from the channel to the hot reactive publisher
-                send(MultiGroupedImpl(channel.asPublisher(coroutineContext).toMulti(initialScheduler), initialScheduler, key) as MultiGrouped<T, R>)
+                val multiGrouped = channel.asPublisher(coroutineContext).toMulti(initialScheduler)
+                multiGrouped.key = Multi.Key(key)
+                send(multiGrouped)
                 channelMap[key] = channel // adds to Map
             }
 

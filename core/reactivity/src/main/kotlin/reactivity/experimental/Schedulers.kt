@@ -48,6 +48,6 @@ object Schedulers {
 
 class SchedulerImpl(override val context: CoroutineContext) : Scheduler
 
-interface Scheduler /*: Disposable*/ {
+interface Scheduler /*: DisposableHandle ???*/ {
     val context: CoroutineContext
 }

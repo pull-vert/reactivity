@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 
 class MultiFromIterableTest {
     @Test
-    fun `multi from Iterable inline subscription`() = runBlocking<Unit> {
+    fun `multi from Iterable inline subscription`() = runBlocking {
         var finally = false
         val source = listOf("0", "58").toMulti() // a list of Strings
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
@@ -20,7 +20,7 @@ class MultiFromIterableTest {
     }
 
     @Test
-    fun `multi from Iterable static subscription`() = runBlocking<Unit> {
+    fun `multi from Iterable static subscription`() = runBlocking {
         var finally = false
         val source = MultiBuilder.fromIterable(listOf("0", "58")) // a list of Strings
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight

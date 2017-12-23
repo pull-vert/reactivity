@@ -34,7 +34,7 @@ class SoloSubscribeTest {
     }
 
     @Test
-    fun `solo from value subscription with subscribe onNext function`() = runBlocking<Unit> {
+    fun `solo from value subscription with subscribe onNext function`() = runBlocking {
         var finally = false
         var onNext = false
         val han = 1.toSolo() // a fromValue of a number

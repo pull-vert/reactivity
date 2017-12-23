@@ -19,26 +19,14 @@ fun Subscriber<*>.errorInOnSubscribe(s: Subscriber<*>, e: Throwable) {
 
 private enum class EmptySubscription : Subscription {
     INSTANCE;
-
-    override fun cancel() {
-        // deliberately no op
-    }
-
-    override fun request(n: Long) {
-        // deliberately no op
-    }
+    override fun cancel() { } // deliberately no op
+    override fun request(n: Long) { } // deliberately no op
 }
 
 private enum class CancelledSubscription : Subscription {
     INSTANCE;
-
-    override fun cancel() {
-        // deliberately no op
-    }
-
-    override fun request(n: Long) {
-        // deliberately no op
-    }
+    override fun cancel() { } // deliberately no op
+    override fun request(n: Long) { } // deliberately no op
 }
 
 /**
@@ -64,9 +52,7 @@ fun Subscriber<*>.cancelledSubscription(): Subscription {
  * @param error the callback or operator error
  * @return mapped [Throwable]
  */
-fun Subscriber<*>.onOperatorError(error: Throwable): Throwable {
-    return onOperatorError(null, error, null)
-}
+fun Subscriber<*>.onOperatorError(error: Throwable) = onOperatorError(null, error, null)
 
 /**
  * Map an "operator" error given an operator parent [Subscription]. The
@@ -78,9 +64,7 @@ fun Subscriber<*>.onOperatorError(error: Throwable): Throwable {
  * @param error the callback or operator error
  * @return mapped [Throwable]
  */
-fun Subscriber<*>.onOperatorError(subscription: Subscription?, error: Throwable): Throwable {
-    return onOperatorError(subscription, error, null)
-}
+fun Subscriber<*>.onOperatorError(subscription: Subscription?, error: Throwable) = onOperatorError(subscription, error, null)
 
 /**
  * Map an "operator" error given an operator parent [Subscription]. The
@@ -107,8 +91,6 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?,
             t.addSuppressed(dataSignal)
         }
         //do not wrap original value to avoid strong references
-        /*else {
-            }*/
     }
     return t
 }
@@ -117,18 +99,14 @@ fun Subscriber<*>.onOperatorError(subscription: Subscription?,
  * An unexpected event is about to be dropped.
  *
  */
-fun Subscriber<*>.onNextDropped() {
-    throw Exceptions.failWithCancel()
-}
+fun Subscriber<*>.onNextDropped() { throw Exceptions.failWithCancel() }
 
 /**
  * An unexpected exception is about to be dropped.
  *
  * @param e the dropped exception
  */
-fun Subscriber<*>.onErrorDropped(e: Throwable) {
-   throw Exceptions.bubble(e)
-}
+fun Subscriber<*>.onErrorDropped(e: Throwable) { throw Exceptions.bubble(e) }
 
 /**
  * Check Subscription current state and cancel new Subscription if current is push,
@@ -144,6 +122,5 @@ fun Subscriber<*>.validateSubscription(current: Subscription?, next: Subscriptio
         //reportSubscriptionSet()
         return false
     }
-
     return true
 }

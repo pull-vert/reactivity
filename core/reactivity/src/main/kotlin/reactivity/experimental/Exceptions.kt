@@ -41,12 +41,11 @@ interface Exceptions {
          *
          * @param t the exception to evaluate
          */
-        fun throwIfFatal(t: Throwable) {
-            if (t is BubblingException) {
-                throw t
-            }
-            throwIfJvmFatal(t)
-        }
+        fun throwIfFatal(t: Throwable) =
+                when (t) {
+                    is BubblingException -> throw t
+                    else -> throwIfJvmFatal(t)
+                }
 
         /**
          * Throws a particular `Throwable` only if it belongs to a push of "fatal" error
@@ -57,14 +56,8 @@ interface Exceptions {
          * @param t the exception to evaluate
          */
         private fun throwIfJvmFatal(t: Throwable) {
-            if (t is VirtualMachineError) {
-                throw t
-            }
-            if (t is ThreadDeath) {
-                throw t
-            }
-            if (t is LinkageError) {
-                throw t
+            when (t) {
+                is VirtualMachineError, is ThreadDeath, is LinkageError -> throw t
             }
         }
 
@@ -92,9 +85,7 @@ interface Exceptions {
          * @param t the [Throwable] error to check
          * @return true if given [Throwable] is a callback not implemented exception.
          */
-        fun isErrorCallbackNotImplemented(t: Throwable): Boolean {
-            return t is ErrorCallbackNotImplemented
-        }
+        fun isErrorCallbackNotImplemented(t: Throwable) = t is ErrorCallbackNotImplemented
 
         /**
          * Return an [UnsupportedOperationException] indicating that the error callback
@@ -115,46 +106,21 @@ interface Exceptions {
  * An exception that is propagated downward through [org.reactivestreams.Subscriber.onError]
  */
 internal open class ReactiveException : RuntimeException {
-
     constructor(cause: Throwable) : super(cause)
-
     constructor(message: String) : super(message)
 
-    @Synchronized override fun fillInStackTrace(): Throwable {
-        return if (cause != null)
-            cause!!.fillInStackTrace()
-        else
-            super.fillInStackTrace()
-    }
-
-    companion object {
-
-        private const val serialVersionUID = 2491425227432776143L
-    }
+    @Synchronized
+    override fun fillInStackTrace(): Throwable
+            = cause?.fillInStackTrace() ?: super.fillInStackTrace()
 }
 
 internal open class BubblingException : ReactiveException {
-
     constructor(message: String) : super(message)
-
     constructor(cause: Throwable) : super(cause)
-
-    companion object {
-
-        private const val serialVersionUID = 2491425277432776142L
-    }
 }
 
 internal class ErrorCallbackNotImplemented(cause: Throwable) : UnsupportedOperationException(cause) {
-
-    @Synchronized override fun fillInStackTrace(): Throwable {
-        return this
-    }
-
-    companion object {
-
-        private const val serialVersionUID = 2491425227432776143L
-    }
+    @Synchronized override fun fillInStackTrace() = this
 }
 
 /**
@@ -162,9 +128,4 @@ internal class ErrorCallbackNotImplemented(cause: Throwable) : UnsupportedOperat
  * denying any additional event.
  *
  */
-internal class CancelException : BubblingException("The subscriber has denied dispatching") {
-    companion object {
-
-        private const val serialVersionUID = 2491425227432776144L
-    }
-}
+internal class CancelException : BubblingException("The subscriber has denied dispatching")

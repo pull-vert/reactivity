@@ -7,7 +7,7 @@ import org.reactivestreams.Publisher
 fun <T> PublisherCommons<Publisher<T>>.merge() = merge(initialScheduler)
 
 // TODO : Junit to test that !!
-fun <T> PublisherCommons<Publisher<T>>.merge(scheduler: Scheduler) = multi(scheduler) {
+fun <T> Publisher<Publisher<T>>.merge(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = multi(scheduler) {
     consumeEach { pub ->                 // for each publisher received on the source channel
         launch(coroutineContext) {       // launch a child coroutine
             pub.consumeEach { send(it) } // resend all element from this publisher

@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 
 class MultiFromStreamTest {
     @Test
-    fun `multi from Stream inline subscription`() = runBlocking<Unit> {
+    fun `multi from Stream inline subscription`() = runBlocking {
         var finally = false
         val source = IntStream.of(1, 2 ,7, 12).toMulti() // a list of Ints
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
