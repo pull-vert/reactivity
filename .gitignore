@@ -1,6 +1,8 @@
-.gradle
 .idea
+*.iml
+.gradle
+.gradletasknamecache
 build
 out
-*.iml
-*.bat
+target
+node_modules
