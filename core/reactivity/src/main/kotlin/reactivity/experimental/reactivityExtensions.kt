@@ -35,4 +35,4 @@ fun ShortArray.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = th
 fun <T> Array<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = multi(scheduler) {
     for (x in this@toMulti) send(x)
 }
-fun <T> Publisher<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER): Multi<T> = MultiImpl(this@toMulti, scheduler)
+fun <T> Publisher<T>.toMulti(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER, key: Multi.Key<*>? = null): Multi<T> = MultiImpl(this@toMulti, scheduler, key)
