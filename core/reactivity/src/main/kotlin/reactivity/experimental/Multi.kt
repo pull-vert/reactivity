@@ -12,6 +12,7 @@ import kotlinx.coroutines.experimental.reactive.publish
 import kotlinx.coroutines.experimental.selects.whileSelect
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscription
+import java.util.concurrent.TimeUnit
 
 /**
  * Creates cold reactive [Multi] that runs a given [block] in a coroutine.
@@ -166,11 +167,10 @@ interface Multi<T> : PublisherCommons<T> {
 
     /**
      * Returns a [Multi] that is published with [initialScheduler],
-     * the [delayError] option and the [prefetch] items
+     * the [delayError] option and prefetch the [prefetch] first items before sending them
      *
      * @param delayError if error should be delayed
-     * @param prefetch number of items to request. When obtained, request this number again and so on
-     * until all items are received
+     * @param prefetch number of items to request at first. When obtained, request all remaining items
      */
     fun publishOn(delayError: Boolean, prefetch: Int) = publishOn(initialScheduler, delayError, prefetch)
 
@@ -196,7 +196,22 @@ interface Multi<T> : PublisherCommons<T> {
     fun <R> map(mapper: (T) -> R): Multi<R>
 
     /**
-     * Returns a [Multi] that filters each received element, sending it
+     * Returns a [Multi] that delays each received element
+     *
+     * @param time the delay time
+     * @param unit the delay time unit
+     */
+    fun delay(time: Long, unit: TimeUnit): Multi<T>
+
+    /**
+     * Returns a [Multi] that performs the specified [action] for each received element.
+     *
+     * @param block the function
+     */
+    fun peek(action: (T) -> Unit): Multi<T>
+
+    /**
+     * Returns a [Multi] that filters received elements, sending it
      * only if [predicate] is satisfied
      *
      * @param predicate the filter predicate
@@ -267,7 +282,7 @@ interface Multi<T> : PublisherCommons<T> {
     class Key<R>(val value: R)
 }
 
-internal open class MultiImpl<T>(open val delegate: Publisher<T>,
+internal class MultiImpl<T>(val delegate: Publisher<T>,
                                  override val initialScheduler: Scheduler,
                                  override val key: Multi.Key<*>? = null)
     : Multi<T>, Publisher<T> by delegate {
@@ -360,15 +375,25 @@ internal open class MultiImpl<T>(open val delegate: Publisher<T>,
     override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int) = multi(scheduler, key) {
         val channel = PublisherPublishOn<T>(delayError, prefetch)
         this@MultiImpl.subscribe(channel)
+        // Prefetch provided number of items
+        val list = mutableListOf<T>()
         channel.use { chan ->
             var count = 0
             for (x in chan) {
+                list.add(x)
                 count++
-                send(x)
                 if (count == prefetch) {
-                    count = 0
-                    channel.subscription?.request(prefetch.toLong())
+                    channel.subscription?.request(Long.MAX_VALUE)
+                    break
                 }
+            }
+            // send prefetched items
+            for (x in list) {
+                send(x)
+            }
+            // continue sending all next items
+            for (x in chan) {
+                send(x)
             }
         }
     }
@@ -377,6 +402,22 @@ internal open class MultiImpl<T>(open val delegate: Publisher<T>,
         consumeEach {
             // consume the source stream
             send(mapper(it))     // map
+        }
+    }
+
+    override fun delay(time: Long, unit: TimeUnit) = multi(initialScheduler, key) {
+        consumeEach {
+            // consume the source stream
+            kotlinx.coroutines.experimental.delay(time, unit) // delay
+            send(it) // send
+        }
+    }
+
+    override fun peek(action: (T) -> Unit) = multi(initialScheduler, key) {
+        consumeEach {
+            // consume the source stream
+            action(it)
+            send(it)     // peek
         }
     }
 

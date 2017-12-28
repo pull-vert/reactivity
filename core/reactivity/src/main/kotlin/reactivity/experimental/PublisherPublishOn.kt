@@ -52,7 +52,7 @@ internal class PublisherPublishOn<T> internal constructor(val delayError: Boolea
     }
 
     override fun onError(t: Throwable) {
-        println("PublisherPublishOn onError" + t)
+        println("PublisherPublishOn onError " + t)
         close(cause = t)
     }
 
@@ -63,6 +63,7 @@ internal class PublisherPublishOn<T> internal constructor(val delayError: Boolea
 
     // Subscription overrides
     override fun close() {
+        println("PublisherPublishOn close")
         close(cause = null)
     }
 }
