@@ -33,7 +33,7 @@ fun <T> multi(
         key: Multi.Key<*>? = null,
         parent: Job? = null,
         block: suspend ProducerScope<T>.() -> Unit
-): Multi<T> = MultiImpl(publish(scheduler.context, parent, block), scheduler)
+): Multi<T> = MultiImpl(publish(scheduler.context, parent, block), scheduler, key)
 
 /**
  * Builder for [Multi], a multi values Reactive Stream [Publisher]
