@@ -1,6 +1,6 @@
 # Reactivity
 
-Reactive stream echosystem implementation in Kotlin whith suspending coroutines based on Kotlinx
+Reactive stream ecosystem implementation in Kotlin whith suspending coroutines based on Kotlinx
 
 ## Modules
 
