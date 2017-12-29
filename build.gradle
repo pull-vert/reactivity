@@ -21,28 +21,6 @@ buildscript {
     }
 }
 
-// --------------- pom configuration ---------------
-
-def pomConfig = {
-    licenses {
-        license {
-            name "The Apache Software License, Version 2.0"
-            url "http://www.apache.org/licenses/LICENSE-2.0.txt"
-            distribution "repo"
-        }
-    }
-    developers {
-        developer {
-            id "Reactivity"
-            name "Frederic Montariol"
-        }
-    }
-
-    scm {
-        url "https://github.com/pull-vert/reactivity"
-    }
-}
-
 // --------------- Configure sub-projects with Kotlin sources ---------------
 
 static def platformOf(project) {
@@ -70,6 +48,16 @@ subprojects {
     }
 
     kotlin.experimental.coroutines "enable"
+
+    if (platform == "js") {
+        tasks.withType(compileKotlin2Js.getClass()) {
+            kotlinOptions {
+                moduleKind = "umd"
+                sourceMap = true
+                metaInfo = true
+            }
+        }
+    }
 
     tasks.withType(Test) {
         testLogging {
@@ -106,10 +94,6 @@ subprojects {
             testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
         }
     }
-
-    if (platform == "js") {
-        apply from: rootProject.file('gradle/test-js.gradle')
-    }
 }
 
 // --------------- Configure sub-projects that use atomicFU ---------------
@@ -141,7 +125,7 @@ configure(subprojects.findAll { it.name.contains(withAtomicFU) && platformOf(it)
 }
 
 // --------------- Configure between subprojects dependencies ---------------
-configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8' && it.name != 'reactivity-common'}) {
+configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8' || it.name == 'reactivity' || it.name == 'reactivity-js' && it.name != 'reactivity-common'}) {
     def platform = platformOf(it)
     def reactivity = platformLib("reactivity", platform)
 
@@ -169,6 +153,26 @@ configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactiv
 subprojects {
     apply from: rootProject.file('gradle/dokka.gradle')
     apply from: rootProject.file('gradle/publish-bintray.gradle')
+}
+
+subprojects {
+    def platform = platformOf(it)
+    def reactivity = platformLib("reactivity", platform)
+
+    if (it.name != reactivity) {
+        dokka.dependsOn project(":$reactivity").dokka
+
+//        tasks.withType(dokka.getClass()) {
+//            externalDocumentationLink {
+//                url = new URL(core_docs_url)
+//                packageListUrl = new URL("file://$core_docs_file")
+//            }
+//        }
+    }
+
+    if (platform == "jvm") {
+        dokkaJavadoc.dependsOn project(":$reactivity").dokka
+    }
 }
 
 apply plugin: 'base'

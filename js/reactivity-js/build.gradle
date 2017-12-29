@@ -1,0 +1,6 @@
+apply from: rootProject.file('gradle/test-mocha-js.gradle')
+
+dependencies {
+    // https://github.com/Kotlin/kotlinx.coroutines/tree/master/js/kotlinx-coroutines-core-js
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$kotlinx_coroutines_version"
+}

@@ -1,22 +1,17 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.asCoroutineDispatcher
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
+import kotlinx.coroutines.experimental.newSingleThreadContext
 import java.util.concurrent.Executor
 import kotlin.coroutines.experimental.CoroutineContext
-import kotlin.coroutines.experimental.EmptyCoroutineContext
 
 // for Kotlin easier call
-/**
- * The default scheduler used for instantiation of Multi and Solo
- */
-val SCHEDULER_DEFAULT_DISPATCHER: Scheduler = SchedulerImpl(DefaultDispatcher)
-val SCHEDULER_EMPTY_CONTEXT: Scheduler = SchedulerImpl(EmptyCoroutineContext)
 val SCHEDULER_COMMON_POOL_DISPATCHER: Scheduler = SchedulerImpl(CommonPool)
 fun schedulerSingleThreadContext(name: String): Scheduler = SchedulerImpl(newSingleThreadContext(name))
 fun schedulerFixedThreadPoolContext(nThreads: Int, name: String): Scheduler = SchedulerImpl(newFixedThreadPoolContext(nThreads, name))
-val SCHEDULER_UNCONFINED_DISPATCHER: Scheduler = SchedulerImpl(Unconfined)
 fun schedulerFromExecutorDispatcher(exectutor: Executor): Scheduler = SchedulerImpl(exectutor.asCoroutineDispatcher())
-fun schedulerFromCoroutineContext(context: CoroutineContext): Scheduler = SchedulerImpl(context)
 
 // for Java static call
 object Schedulers {
@@ -44,10 +39,4 @@ object Schedulers {
 
     @JvmStatic
     fun fromCoroutineContext(context: CoroutineContext) = schedulerFromCoroutineContext(context)
-}
-
-class SchedulerImpl(override val context: CoroutineContext) : Scheduler
-
-interface Scheduler /*: DisposableHandle ???*/ {
-    val context: CoroutineContext
 }
