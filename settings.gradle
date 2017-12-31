@@ -11,7 +11,7 @@ include 'reactivity-extra-swing'
 include 'reactivity-extra-nio'
 // include 'reactivity-http2'
 
-include 'reactivity-js'
+//include 'reactivity-js'
 
 project(':reactivity-common').projectDir = file('common/reactivity-common')
 project(':reactivity').projectDir = file('core/reactivity')
@@ -20,4 +20,4 @@ project(':reactivity-extra-android').projectDir = file('core/extras/ui/reactivit
 project(':reactivity-extra-javafx').projectDir = file('core/extras/ui/reactivity-extra-javafx')
 project(':reactivity-extra-swing').projectDir = file('core/extras/ui/reactivity-extra-swing')
 project(':reactivity-extra-nio').projectDir = file('core/extras/nio/reactivity-extra-nio')
-project(':reactivity-js').projectDir = file('js/reactivity-js')
+//project(':reactivity-js').projectDir = file('js/reactivity-js')

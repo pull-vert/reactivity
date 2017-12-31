@@ -1,30 +1,6 @@
 package reactivity.experimental
 
 import kotlinx.atomicfu.atomic
-import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
-
-/**
- * This is the interface declaring the callback functions
- * related to each functions of [Subscriber] & [Subscription]
- * will be implemented in both [Multi] and [SoloPublisher]
- */
-interface WithCallbacks<T> {
-    fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): WithCallbacks<T>
-
-    fun doOnNext(onNext: (T) -> Unit): WithCallbacks<T>
-
-    fun doOnError(onError: (Throwable) -> Unit): WithCallbacks<T>
-
-    fun doOnComplete(onComplete: () -> Unit): WithCallbacks<T>
-
-    fun doOnCancel(onCancel: () -> Unit): WithCallbacks<T>
-
-    fun doOnRequest(onRequest: (Long) -> Unit): WithCallbacks<T>
-
-    fun doFinally(finally: () -> Unit): WithCallbacks<T>
-}
 
 internal class PublisherWithCallbacks<T> internal constructor(private val delegate: Publisher<T>) : Publisher<T> {
 

@@ -1,8 +1,5 @@
 package reactivity.experimental
 
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
-
 // Extensions for Subscriber
 
 /**

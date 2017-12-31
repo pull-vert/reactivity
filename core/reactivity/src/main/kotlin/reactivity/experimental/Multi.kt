@@ -1,5 +1,6 @@
 package reactivity.experimental
 
+import kotlinx.coroutines.experimental.DisposableHandle
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ProducerScope
@@ -10,9 +11,9 @@ import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.reactive.publish
 import kotlinx.coroutines.experimental.selects.whileSelect
-import org.reactivestreams.Publisher
-import org.reactivestreams.Subscription
 import java.util.concurrent.TimeUnit
+
+//actual typealias ProducerScope<E> = kotlinx.coroutines.experimental.channels.ProducerScope<in E>
 
 /**
  * Creates cold reactive [Multi] that runs a given [block] in a coroutine.
@@ -129,33 +130,35 @@ object MultiBuilder {
  *
  * @author Frédéric Montariol
  */
-interface Multi<T> : PublisherCommons<T> {
+actual interface Multi<T>: CommonPublisherCommons<T>, Publisher<T> {
+
+    actual fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): DisposableHandle
 
     /**
      * Key for identifiying common grouped elements, used by [Multi.groupBy] operator
      */
-    val key: Key<*>?
+    actual val key: Key<*>?
 
-    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
+    actual fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
 
-    override fun doOnNext(onNext: (T) -> Unit): Multi<T>
+    actual override fun doOnNext(onNext: (T) -> Unit): Multi<T>
 
-    override fun doOnError(onError: (Throwable) -> Unit): Multi<T>
+    actual override fun doOnError(onError: (Throwable) -> Unit): Multi<T>
 
-    override fun doOnComplete(onComplete: () -> Unit): Multi<T>
+    actual override fun doOnComplete(onComplete: () -> Unit): Multi<T>
 
-    override fun doOnCancel(onCancel: () -> Unit): Multi<T>
+    actual override fun doOnCancel(onCancel: () -> Unit): Multi<T>
 
-    override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
+    actual override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
 
-    override fun doFinally(finally: () -> Unit): Multi<T>
+    actual override fun doFinally(finally: () -> Unit): Multi<T>
 
     /**
      * Returns a [Multi] that is published with [initialScheduler] and the [delayError] option
      *
      * @param delayError if error should be delayed
      */
-    override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
+    actual override fun publishOn(delayError: Boolean): Multi<T>
 
     /**
      * Returns a [Multi] that is published with the provided [scheduler] and the [delayError] option
@@ -163,7 +166,7 @@ interface Multi<T> : PublisherCommons<T> {
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param delayError if error should be delayed
      */
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T>
+    actual override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T>
 
     /**
      * Returns a [Multi] that is published with [initialScheduler],
@@ -172,7 +175,7 @@ interface Multi<T> : PublisherCommons<T> {
      * @param delayError if error should be delayed
      * @param prefetch number of items to request at first. When obtained, request all remaining items
      */
-    fun publishOn(delayError: Boolean, prefetch: Int) = publishOn(initialScheduler, delayError, prefetch)
+    actual fun publishOn(delayError: Boolean, prefetch: Int): Multi<T>
 
     /**
      * Returns a [Multi] that is published with the provided [scheduler],
@@ -183,7 +186,7 @@ interface Multi<T> : PublisherCommons<T> {
      * @param prefetch number of items to request. When obtained, request this number again and so on
      * until all items are received
      */
-    fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
+    actual fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
 
     // Operators
 
@@ -193,7 +196,14 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param mapper the mapper function
      */
-    fun <R> map(mapper: (T) -> R): Multi<R>
+    actual fun <R> map(mapper: (T) -> R): Multi<R>
+
+    /**
+     * Returns a [Multi] that delays each received element
+     *
+     * @param time the delay time
+     */
+    actual fun delay(time: Int): Multi<T>
 
     /**
      * Returns a [Multi] that delays each received element
@@ -208,7 +218,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param block the function
      */
-    fun peek(action: (T) -> Unit): Multi<T>
+    actual fun peek(action: (T) -> Unit): Multi<T>
 
     /**
      * Returns a [Multi] that filters received elements, sending it
@@ -216,7 +226,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param predicate the filter predicate
      */
-    fun filter(predicate: (T) -> Boolean): Multi<T>
+    actual fun filter(predicate: (T) -> Boolean): Multi<T>
 
     /**
      * Returns a [Solo] containing the first received element that satisfies the given [predicate],
@@ -224,7 +234,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param predicate the filter predicate
      */
-    fun findFirst(predicate: (T) -> Boolean): Solo<T?>
+    actual fun findFirst(predicate: (T) -> Boolean): Solo<T?>
 
     /**
      * Returns a [Multi]<R> that use the [mapper] to transform each received element from [T]
@@ -232,7 +242,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param mapper the mapper function
      */
-    fun <R> flatMap(mapper: (T) -> Publisher<R>): Multi<R>
+    actual fun <R> flatMap(mapper: (T) -> Publisher<R>): Multi<R>
 
     /**
      * Returns a [Multi] that relay all the received elements from the source stream until the
@@ -240,7 +250,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param other the other publisher
      */
-    fun <U> takeUntil(other: Publisher<U>): Multi<T>
+    actual fun <U> takeUntil(other: Publisher<U>): Multi<T>
 
     /**
      * Returns a [Multi] that flattens the source streams with the parameter [Publisher] into
@@ -248,14 +258,14 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param others the other publishers
      */
-    fun mergeWith(vararg others: Publisher<T>): Multi<T>
+    actual fun mergeWith(vararg others: Publisher<T>): Multi<T>
 
     /**
      * Returns a [Multi] that will send the [n] first received elements from the source stream
      *
      * @param n number of items to send
      */
-    fun take(n: Long): Multi<T>
+    actual fun take(n: Long): Multi<T>
 
     /**
      * Returns a [Multi] that can contain several [Multi]
@@ -263,7 +273,7 @@ interface Multi<T> : PublisherCommons<T> {
      *
      * @param keyMapper a function that extracts the key for each item
      */
-    fun <R> groupBy(keyMapper: (T) -> R): Multi<out Multi<T>>
+    actual fun <R> groupBy(keyMapper: (T) -> R): Multi<out Multi<T>>
 
     // Combined Operators
 
@@ -274,18 +284,22 @@ interface Multi<T> : PublisherCommons<T> {
      * @param predicate the filter predicate
      * @param mapper the mapper function
      */
-    fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
+    actual fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
 
     /**
      * Key for identifiying common grouped elements of this [Multi]. [E] is key type.
      */
-    class Key<R>(val value: R)
+    actual class Key<R> actual constructor(val value: R)
 }
 
 internal class MultiImpl<T>(val delegate: Publisher<T>,
                                  override val initialScheduler: Scheduler,
                                  override val key: Multi.Key<*>? = null)
-    : Multi<T>, Publisher<T> by delegate {
+    : Multi<T>, WithLambdaImpl<T>, Publisher<T> by delegate {
+
+    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((org.reactivestreams.Subscription) -> Unit)?): DisposableHandle {
+        return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
+    }
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
@@ -364,6 +378,8 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
         return MultiImpl(publisherCallbacks, initialScheduler, key)
     }
 
+    override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
+
     override fun publishOn(scheduler: Scheduler, delayError: Boolean) = multi(scheduler, key) {
         val channel = PublisherPublishOn<T>(delayError, Int.MAX_VALUE)
         this@MultiImpl.subscribe(channel)
@@ -371,6 +387,8 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
             send(it)
         }
     }
+
+    override fun publishOn(delayError: Boolean, prefetch: Int) = publishOn(initialScheduler, delayError, prefetch)
 
     override fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int) = multi(scheduler, key) {
         val channel = PublisherPublishOn<T>(delayError, prefetch)
@@ -404,6 +422,8 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
             send(mapper(it))     // map
         }
     }
+
+    override fun delay(time: Int) = delay(time.toLong(), TimeUnit.MILLISECONDS)
 
     override fun delay(time: Long, unit: TimeUnit) = multi(initialScheduler, key) {
         consumeEach {

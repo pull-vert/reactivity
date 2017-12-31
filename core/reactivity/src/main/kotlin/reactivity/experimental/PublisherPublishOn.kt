@@ -2,18 +2,6 @@ package reactivity.experimental
 
 import kotlinx.coroutines.experimental.channels.LinkedListChannel
 import kotlinx.coroutines.experimental.channels.SubscriptionReceiveChannel
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
-
-/**
- * This is the interface declaring the publishOn functions
- * for executing the subscriber in other context than the publisher
- * will be implemented in both [Multi] and [Solo]
- */
-interface WithPublishOn {
-    fun publishOn(delayError: Boolean): WithPublishOn
-    fun publishOn(scheduler: Scheduler, delayError: Boolean): WithPublishOn
-}
 
 internal class PublisherPublishOn<T> internal constructor(val delayError: Boolean, val prefetch: Int) :
         LinkedListChannel<T>(), SubscriptionReceiveChannel<T>, Subscriber<T> {

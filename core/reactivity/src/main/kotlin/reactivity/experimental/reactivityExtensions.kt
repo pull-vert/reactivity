@@ -2,9 +2,10 @@ package reactivity.experimental
 
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.reactive.consumeEach
-import org.reactivestreams.Publisher
 
-fun <T> PublisherCommons<Publisher<T>>.merge() = merge(initialScheduler)
+fun <T> Multi<Publisher<T>>.merge() = merge(initialScheduler)
+
+fun <T> Solo<Publisher<T>>.merge() = merge(initialScheduler)
 
 // TODO : Junit to test that !!
 fun <T> Publisher<Publisher<T>>.merge(scheduler: Scheduler = SCHEDULER_DEFAULT_DISPATCHER) = multi(scheduler) {
