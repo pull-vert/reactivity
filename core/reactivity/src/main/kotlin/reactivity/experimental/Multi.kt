@@ -3,7 +3,6 @@ package reactivity.experimental
 import kotlinx.coroutines.experimental.DisposableHandle
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.channels.Channel
-import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.reactive.asPublisher
@@ -12,8 +11,6 @@ import kotlinx.coroutines.experimental.reactive.openSubscription
 import kotlinx.coroutines.experimental.reactive.publish
 import kotlinx.coroutines.experimental.selects.whileSelect
 import java.util.concurrent.TimeUnit
-
-//actual typealias ProducerScope<E> = kotlinx.coroutines.experimental.channels.ProducerScope<in E>
 
 /**
  * Creates cold reactive [Multi] that runs a given [block] in a coroutine.
@@ -29,7 +26,7 @@ import java.util.concurrent.TimeUnit
  * | Normal completion or `close` without cause   | `onComplete`
  * | Failure with exception or `close` with cause | `onError`
  */
-fun <T> multi(
+actual fun <T> multi(
         scheduler: Scheduler,
         key: Multi.Key<*>? = null,
         parent: Job? = null,

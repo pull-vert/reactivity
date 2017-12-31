@@ -36,11 +36,11 @@ class MultiCoroutineBuilderTest {
         }
         // print elements from the source AGAIN
         source.subscribe{x ->
-            Thread.sleep(500) // 500ms to process each item
+            Thread.sleep(50) // 50ms to process each item
             println("second consumer: Processed $x")
             count++
         }
-        delay(2000) // suspend the main thread for a few seconds
+        delay(200) // suspend the main thread for a few seconds
         assertEquals(6, count)
     }
 
