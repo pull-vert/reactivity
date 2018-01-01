@@ -45,7 +45,7 @@ fun Subscriber<*>.cancelledSubscription(): Subscription = CancelledSubscription
  * @param error the callback or operator error
  * @return mapped [Throwable]
  */
-fun Subscriber<*>.onOperatorError(error: Throwable) = onOperatorError(null, error, null)
+fun Subscriber<*>.onOperatorError(error: Throwable) = onOperatorError(null, error)
 
 /**
  * Map an "operator" error given an operator parent [Subscription]. The
@@ -57,36 +57,14 @@ fun Subscriber<*>.onOperatorError(error: Throwable) = onOperatorError(null, erro
  * @param error the callback or operator error
  * @return mapped [Throwable]
  */
-fun Subscriber<*>.onOperatorError(subscription: Subscription?, error: Throwable) = onOperatorError(subscription, error, null)
-
-/**
- * Map an "operator" error given an operator parent [Subscription]. The
- * result error will be passed via onError to the operator downstream.
- * [Subscription] will be cancelled after checking for fatal error via
- * [throwIfFatal]. Takes an additional signal, which
- * can be added as a suppressed exception if it is a [Throwable]
- *
- * @param subscription the linked operator parent [Subscription]
- * @param error the callback or operator error
- * @param dataSignal the value (onNext or onError) signal processed during failure
- * @return mapped [Throwable]
- */
-fun Subscriber<*>.onOperatorError(subscription: Subscription?,
-                                  error: Throwable,
-                                  dataSignal: Any?): Throwable {
-
+fun Subscriber<*>.onOperatorError(subscription: Subscription?, error: Throwable): Throwable {
     Exceptions.throwIfFatal(error)
     subscription?.cancel()
 
     val t = Exceptions.unwrap(error)
-    if (dataSignal != null) {
-        if (dataSignal !== t && dataSignal is Throwable) {
-            t.addSuppressed(dataSignal)
-        }
-        //do not wrap original value to avoid strong references
-    }
     return t
 }
+
 
 /**
  * An unexpected event is about to be dropped.
@@ -112,7 +90,7 @@ fun Subscriber<*>.onErrorDropped(e: Throwable) { throw Exceptions.bubble(e) }
 fun Subscriber<*>.validateSubscription(current: Subscription?, next: Subscription): Boolean {
     if (current != null) {
         next.cancel()
-//        reportSubscriptionSet()
+        //reportSubscriptionSet()
         return false
     }
     return true

@@ -7,7 +7,6 @@ internal class PublisherPublishOn<T> internal constructor(val delayError: Boolea
         LinkedListChannel<T>(), SubscriptionReceiveChannel<T>, Subscriber<T> {
 
     @Volatile
-    @JvmField
     var subscription: Subscription? = null
 
     override fun afterClose(cause: Throwable?) {

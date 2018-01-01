@@ -5,8 +5,6 @@ import kotlinx.coroutines.experimental.Unconfined
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 
-
-
 /**
  * The default scheduler used for instantiation of Multi and Solo
  */

@@ -28,35 +28,6 @@ fun <T> solo(
 ): Solo<T> = SoloImpl(publish(scheduler.context, parent, block), scheduler)
 
 /**
- * Builder for [Solo], a single (or empty) value Reactive Stream [Publisher]
- *
- * @author Frédéric Montariol
- */
-object SoloBuilder {
-    // protected Static factory methods to create a Solo
-
-    /**
-     * Creates a [Solo] from a [value]
-     *
-     * @return the [Solo]<T> created
-     *
-     * @param T the type of the input [value]
-     */
-    @JvmStatic
-    fun <T> fromValue(value: T) = value.toSolo()
-
-    /**
-     * Creates a [Solo] from a [value]
-     *
-     * @return the [Solo]<T> created
-     *
-     * @param T the type of the input [value]
-     */
-    @JvmStatic
-    fun <T> fromValue(scheduler: Scheduler, value: T) = value.toSolo(scheduler)
-}
-
-/**
  * Subscribes to this [Solo] and performs the specified action for the unique received element.
  */
 inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
@@ -106,7 +77,7 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
                           override val initialScheduler: Scheduler)
     : Solo<T>, WithLambdaImpl<T>, Publisher<T> by delegate {
 
-    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((org.reactivestreams.Subscription) -> Unit)?): DisposableHandle {
+    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): DisposableHandle {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
     }
 
