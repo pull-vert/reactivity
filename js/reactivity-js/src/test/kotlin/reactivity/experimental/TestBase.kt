@@ -17,7 +17,6 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.*
-import kotlin.js.Date
 import kotlin.math.roundToLong
 
 public actual open class TestBase actual constructor() {
