@@ -106,7 +106,7 @@ class MultiPublishOnTest {
         source.subscribe()
 
         delay(400) // suspend the main thread for a few seconds
-        assertTrue(time!! > 100)
+        assertTrue(time!! > 95)
         assertTrue(time!! < 200)
     }
 

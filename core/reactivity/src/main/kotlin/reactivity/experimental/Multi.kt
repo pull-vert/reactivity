@@ -127,7 +127,7 @@ object MultiBuilder {
  *
  * @author Frédéric Montariol
  */
-actual interface Multi<T>: CommonPublisherCommons<T>, Publisher<T> {
+actual interface Multi<T>: CommonPublisher<T>, Publisher<T> {
 
     actual fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): DisposableHandle
 

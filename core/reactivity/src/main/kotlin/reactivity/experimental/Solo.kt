@@ -69,7 +69,7 @@ inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
  *
  * @author Frédéric Montariol
  */
-actual interface Solo<T>: CommonPublisherCommons<T>, Publisher<T> {
+actual interface Solo<T>: CommonPublisher<T>, Publisher<T> {
 
     actual fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): DisposableHandle
 

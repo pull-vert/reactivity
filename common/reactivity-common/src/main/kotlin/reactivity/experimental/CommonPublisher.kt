@@ -7,6 +7,6 @@ expect interface ProducerScope<in T> {
 /**
  * Common functions for [Multi] and [Solo]
  */
-interface CommonPublisherCommons<T> : WithCallbacks<T>, WithPublishOn, WithLambdas<T> {
+interface CommonPublisher<T> : WithCallbacks<T>, WithPublishOn, WithLambdas<T> {
     val initialScheduler: Scheduler
 }

@@ -7,7 +7,7 @@ import kotlinx.coroutines.experimental.DisposableHandle
  *
  * @author Frédéric Montariol
  */
-expect interface Solo<T>: CommonPublisherCommons<T>, Publisher<T> {
+expect interface Solo<T>: CommonPublisher<T>, Publisher<T> {
 
     /**
      * Subscribe to this [Publisher], the Reactive Stream starts

@@ -30,7 +30,7 @@ expect fun <T> multi(
  *
  * @author Frédéric Montariol
  */
-expect interface Multi<T>: CommonPublisherCommons<T>, Publisher<T> {
+expect interface Multi<T>: CommonPublisher<T>, Publisher<T> {
 
     /**
      * Subscribe to this [Publisher], the Reactive Stream starts
