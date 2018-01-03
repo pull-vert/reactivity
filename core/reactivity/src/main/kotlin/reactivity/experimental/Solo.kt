@@ -21,7 +21,7 @@ import kotlinx.coroutines.experimental.reactive.publish
  * | Failure with exception or `close` with cause | `onError`
  */
 // TODO provide a custom ProducerScope impl that checks send is only called once, and throws exception otherwise !
-fun <T> solo(
+actual fun <T> solo(
         scheduler: Scheduler,
         parent: Job? = null,
         block: suspend ProducerScope<T>.() -> Unit

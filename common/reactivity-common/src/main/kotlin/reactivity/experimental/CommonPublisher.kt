@@ -1,8 +1,10 @@
 package reactivity.experimental
 
-expect interface ProducerScope<in T> {
+expect public interface ProducerScope<in T> {
     public suspend fun send(element: T)
 }
+
+expect public inline suspend fun <T> Publisher<T>.consumeEach(action: (T) -> Unit)
 
 /**
  * Common functions for [Multi] and [Solo]

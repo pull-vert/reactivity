@@ -7,7 +7,7 @@ import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class MultiCoroutineBuilderTest {
+class CommonMultiCoroutineBuilderTest {
 
     @Test
     fun `multi builder 2 consumers 1 slow consumer`() = runBlocking {

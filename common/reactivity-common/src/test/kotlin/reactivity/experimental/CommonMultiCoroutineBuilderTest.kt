@@ -4,7 +4,7 @@ import kotlinx.coroutines.experimental.delay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class MultiCoroutineBuilderTest: TestBase() {
+class CommonMultiCoroutineBuilderTest : TestBase() {
 
     @Test
     fun `multi builder 2 consumers`() = runTest {

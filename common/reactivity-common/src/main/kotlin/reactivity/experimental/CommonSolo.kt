@@ -1,6 +1,28 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.DisposableHandle
+import kotlinx.coroutines.experimental.Job
+
+/**
+ * Creates cold reactive [Solo] that runs a given [block] in a coroutine.
+ * Every time the returned publisher is subscribed, it starts a new coroutine in the specified [scheduler].
+ * Coroutine emits items with `produce`. Unsubscribing cancels running coroutine.
+ *
+ * Invocation of `produce` is suspended appropriately when subscribers apply back-pressure and to ensure that
+ * `onNext` is not invoked concurrently.
+ *
+ * | **Coroutine action**                         | **Signal to subscriber**
+ * | -------------------------------------------- | ------------------------
+ * | `value in end of coroutine is not null`      | `onNext`
+ * | Normal completion or `close` without cause   | `onComplete`
+ * | Failure with exception or `close` with cause | `onError`
+ */
+@Suppress("EXPECTED_DECLARATION_WITH_DEFAULT_PARAMETER")
+expect fun <T> solo(
+        scheduler: Scheduler,
+        parent: Job? = null,
+        block: suspend ProducerScope<T>.() -> Unit
+): Solo<T>
 
 /**
  * Single (or empty) value Reactive Stream [Publisher]
