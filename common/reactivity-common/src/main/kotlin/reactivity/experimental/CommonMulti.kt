@@ -116,7 +116,7 @@ expect interface Multi<T>: CommonPublisher<T>, Publisher<T> {
     /**
      * Returns a [Multi] that performs the specified [action] for each received element.
      *
-     * @param block the function
+     * @param action the function
      */
     fun peek(action: (T) -> Unit): Multi<T>
 
@@ -187,7 +187,7 @@ expect interface Multi<T>: CommonPublisher<T>, Publisher<T> {
     fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
 
     /**
-     * Key for identifiying common grouped elements of this [Multi]. [E] is key type.
+     * Key for identifiying common grouped elements of this [Multi]. [R] is key type.
      */
-    class Key<R>(value: R)
+    class Key<out R>(value: R)
 }

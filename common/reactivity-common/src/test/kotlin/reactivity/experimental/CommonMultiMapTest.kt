@@ -1,18 +1,16 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.reactive.consumeEach
-import kotlinx.coroutines.experimental.runBlocking
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class MultiMapTest {
+class CommonMultiMapTest: TestBase() {
     @Test
-    fun `multi from range map simple`() = runBlocking {
+    fun `multi from range map simple`() = runTest {
         var result = 0
-        val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
+        val source = (1..5).toMulti(schedulerFromCoroutineContext(coroutineContext)) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
                 .map{ it + 1 }
@@ -32,13 +30,14 @@ class MultiMapTest {
         assertEquals(20, result)
     }
 
+    @Suppress("NAMED_ARGUMENTS_NOT_ALLOWED")
     @Test
-    fun `multi from iterable map with Exception cancellation`() = runBlocking {
+    fun `multi from iterable map with Exception cancellation`() = runTest {
         // create a publisher that produces number 1
         var finally = false
         var onError = false
         var onComplete = false
-        val source = (1..5).toMulti()
+        val source = (1..5).toMulti(schedulerFromCoroutineContext(coroutineContext))
                 .map { number ->
                     if (3 == number) throw Exception("vilain exception !!")
                     number
@@ -61,9 +60,9 @@ class MultiMapTest {
     }
 
     @Test
-    fun `multi builder map FixedThreadPoolContext`() = runBlocking {
+    fun `multi builder map`() = runTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(schedulerFromCoroutineContext(coroutineContext)) {
+        val source = multi(schedulerFromCoroutineContext(coroutineContext)) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item
@@ -74,17 +73,17 @@ class MultiMapTest {
         var time: Long? = null
         source.map { it * 2 }
                 .doOnSubscribe {
-                    start = System.currentTimeMillis()
+                    start = currentTimeMillis()
                     println("starting timer")
                 }
                 .doOnComplete {
-                    val end = System.currentTimeMillis()
+                    val end = currentTimeMillis()
                     time = end - start!!
                     println("Completed in $time ms")
-                }.consumeEach { println(it); delay(300) }
+                }.consumeEach { println(it); delay(50) }
 
-        delay(700) // suspend the main thread for a few time
-        assertTrue(time!! > 600)
-        assertTrue(time!! < 900)
+        delay(200) // suspend the main thread for a few time
+        assertTrue(time!! > 100)
+        assertTrue(time!! < 150)
     }
 }

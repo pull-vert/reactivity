@@ -213,7 +213,7 @@ actual interface Multi<T>: CommonPublisher<T>, Publisher<T> {
     /**
      * Returns a [Multi] that performs the specified [action] for each received element.
      *
-     * @param block the function
+     * @param action the function
      */
     actual fun peek(action: (T) -> Unit): Multi<T>
 
@@ -284,12 +284,12 @@ actual interface Multi<T>: CommonPublisher<T>, Publisher<T> {
     actual fun <R> fusedFilterMap(predicate: (T) -> Boolean, mapper: (T) -> R): Multi<R>
 
     /**
-     * Key for identifiying common grouped elements of this [Multi]. [E] is key type.
+     * Key for identifiying common grouped elements of this [Multi]. [R] is key type.
      */
-    actual class Key<R> actual constructor(val value: R)
+    actual class Key<out R> actual constructor(val value: R)
 }
 
-internal class MultiImpl<T>(val delegate: Publisher<T>,
+internal class MultiImpl<T>(private val delegate: Publisher<T>,
                                  override val initialScheduler: Scheduler,
                                  override val key: Multi.Key<*>? = null)
     : Multi<T>, WithLambdaImpl<T>, Publisher<T> by delegate {
@@ -300,7 +300,7 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onSubscribeBlock = onSubscribe
+            delegate.onSubscribeBlock = onSubscribe
             return this
         }
         // otherwise this is not a PublisherWithCallbacks
@@ -311,7 +311,7 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnNext(onNext: (T) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onNextBlock = onNext
+            delegate.onNextBlock = onNext
             return this
         }
         // otherwise this is not a PublisherWithCallbacks
@@ -322,7 +322,7 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnError(onError: (Throwable) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onErrorBlock = onError
+            delegate.onErrorBlock = onError
             return this
         }
         // otherwise this is not a PublisherWithCallbacks
@@ -333,7 +333,7 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnComplete(onComplete: () -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onCompleteBlock = onComplete
+            delegate.onCompleteBlock = onComplete
             return this
         }
         // otherwise this is not a PublisherWithCallbacks
@@ -344,7 +344,7 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnCancel(onCancel: () -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onCancelBlock = onCancel
+            delegate.onCancelBlock = onCancel
             return this
         }
         // otherwise this is not a PublisherWithCallbacks
@@ -355,7 +355,7 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
 
     override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).onRequestBlock = onRequest
+            delegate.onRequestBlock = onRequest
             return this
         }
         // otherwise this is not a PublisherWithCallbacks
@@ -366,7 +366,7 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
 
     override fun doFinally(finally: () -> Unit): Multi<T> {
         if (delegate is PublisherWithCallbacks) {
-            (delegate as PublisherWithCallbacks<T>).finallyBlock = finally
+            delegate.finallyBlock = finally
             return this
         }
         // otherwise this is not a PublisherWithCallbacks
@@ -414,6 +414,7 @@ internal class MultiImpl<T>(val delegate: Publisher<T>,
     }
 
     override fun <R> map(mapper: (T) -> R) = multi(initialScheduler, key) {
+        println("initial scheduler = ${initialScheduler.context}")
         consumeEach {
             // consume the source stream
             send(mapper(it))     // map
