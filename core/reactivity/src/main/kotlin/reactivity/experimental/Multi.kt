@@ -127,27 +127,16 @@ object MultiBuilder {
 actual interface Multi<T>: CommonMultiOperators<T>, Publisher<T> {
 
     actual fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): DisposableHandle
-
     actual fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Multi<T>
-
     actual override fun doOnNext(onNext: (T) -> Unit): Multi<T>
-
     actual override fun doOnError(onError: (Throwable) -> Unit): Multi<T>
-
     actual override fun doOnComplete(onComplete: () -> Unit): Multi<T>
-
     actual override fun doOnCancel(onCancel: () -> Unit): Multi<T>
-
     actual override fun doOnRequest(onRequest: (Long) -> Unit): Multi<T>
-
     actual override fun doFinally(finally: () -> Unit): Multi<T>
-
     actual override fun publishOn(delayError: Boolean): Multi<T>
-
     actual override fun publishOn(scheduler: Scheduler, delayError: Boolean): Multi<T>
-
     actual fun publishOn(delayError: Boolean, prefetch: Int): Multi<T>
-
     actual fun publishOn(scheduler: Scheduler, delayError: Boolean, prefetch: Int): Multi<T>
 
     // Operators
@@ -161,7 +150,6 @@ actual interface Multi<T>: CommonMultiOperators<T>, Publisher<T> {
     fun delay(time: Long, unit: TimeUnit): Multi<T>
 
     actual fun <U> takeUntil(other: Publisher<U>): Multi<T>
-
     actual class Key<out R> actual constructor(val value: R)
 }
 
