@@ -1,13 +1,11 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.reactive.openSubscription
-import kotlinx.coroutines.experimental.runBlocking
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class SoloFromValueTest {
+class SoloFromValueTest: TestBase() {
     @Test
-    fun `solo from value 2 consumers`() = runBlocking {
+    fun `solo from value 2 consumers`() = runTest {
         // create a publisher that produces number 1
         val han = 1.toSolo()
         // print element from the source
@@ -29,7 +27,7 @@ class SoloFromValueTest {
     }
 
     @Test
-    fun `solo from value with cancellation`() = runBlocking {
+    fun `solo from value with cancellation`() = runTest {
         // create a publisher that produces number 1
         val han = 1.toSolo()
         // print element from the source

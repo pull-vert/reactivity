@@ -12,6 +12,4 @@ expect interface Subscriber<T> {
     fun onComplete()
 }
 
-expect interface Publisher<T> {
-    fun subscribe(s: Subscriber<in T>)
-}
+expect interface Publisher<T>

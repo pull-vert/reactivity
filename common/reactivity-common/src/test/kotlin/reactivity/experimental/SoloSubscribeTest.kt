@@ -1,16 +1,16 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SoloSubscribeTest {
+class SoloSubscribeTest: TestBase() {
 
+    @Suppress("NAMED_ARGUMENTS_NOT_ALLOWED")
     @Test
-    fun `solo from value with Exception cancellation`() = runBlocking {
+    fun `solo from value with Exception cancellation`() = runTest {
         var finally = false
         var onError = false
         var onComplete = false
@@ -34,7 +34,7 @@ class SoloSubscribeTest {
     }
 
     @Test
-    fun `solo from value subscription with subscribe onNext function`() = runBlocking {
+    fun `solo from value subscription with subscribe onNext function`() = runTest {
         var finally = false
         var onNext = false
         val han = 1.toSolo() // a fromValue of a number

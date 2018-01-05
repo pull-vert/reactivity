@@ -59,7 +59,7 @@ object SoloBuilder {
 /**
  * Subscribes to this [Solo] and performs the specified action for the unique received element.
  */
-inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
+actual inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
     action.invoke(awaitSingle())
 }
 

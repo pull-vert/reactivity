@@ -24,6 +24,8 @@ expect fun <T> solo(
         block: suspend ProducerScope<T>.() -> Unit
 ): Solo<T>
 
+expect inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit)
+
 /**
  * Single (or empty) value Reactive Stream [Publisher]
  *
