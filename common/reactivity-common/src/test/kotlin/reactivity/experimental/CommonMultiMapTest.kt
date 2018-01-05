@@ -10,7 +10,7 @@ class CommonMultiMapTest: TestBase() {
     @Test
     fun `multi from range map simple`() = runTest {
         var result = 0
-        val source = (1..5).toMulti(schedulerFromCoroutineContext(coroutineContext)) // a fromRange of five numbers
+        val source = (1..5).toMulti(coroutineContext.toScheduler()) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { println("Finally") }         // ... into what's going on
                 .map{ it + 1 }
@@ -37,7 +37,7 @@ class CommonMultiMapTest: TestBase() {
         var finally = false
         var onError = false
         var onComplete = false
-        val source = (1..5).toMulti(schedulerFromCoroutineContext(coroutineContext))
+        val source = (1..5).toMulti(coroutineContext.toScheduler())
                 .map { number ->
                     if (3 == number) throw Exception("vilain exception !!")
                     number
@@ -62,7 +62,7 @@ class CommonMultiMapTest: TestBase() {
     @Test
     fun `multi builder map`() = runTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        val source = multi(schedulerFromCoroutineContext(coroutineContext)) {
+        val source = multi(coroutineContext.toScheduler()) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item

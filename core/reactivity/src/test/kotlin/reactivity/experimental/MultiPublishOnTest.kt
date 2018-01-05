@@ -9,7 +9,7 @@ class MultiPublishOnTest {
     @Test
     fun `multi builder publishOn emptyThreadContext`() = runBlocking {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(schedulerFromCoroutineContext(coroutineContext)) {
+        var source = multi(coroutineContext.toScheduler()) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item
@@ -43,7 +43,7 @@ class MultiPublishOnTest {
     @Test
     fun `multi builder publishOn CommonPool`() = runBlocking {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
-        var source = multi(schedulerFromCoroutineContext(coroutineContext)) {
+        var source = multi(coroutineContext.toScheduler()) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item

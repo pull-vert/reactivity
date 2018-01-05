@@ -20,7 +20,7 @@ class CommonMultiFromArrayTest : TestBase() {
     @Test
     fun `multi from IntArray inline subscription`() = runTest {
         var finally = false
-        val source = intArrayOf(1, 89, 4567).toMulti(schedulerFromCoroutineContext(coroutineContext)) // an array of Int
+        val source = intArrayOf(1, 89, 4567).toMulti(coroutineContext.toScheduler()) // an array of Int
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
                 .doFinally { finally = true; println("Finally") } // ... into what's going on
         // iterate over the source fully

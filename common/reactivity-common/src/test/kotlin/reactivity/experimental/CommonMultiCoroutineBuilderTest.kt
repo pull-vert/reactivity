@@ -11,7 +11,7 @@ class CommonMultiCoroutineBuilderTest : TestBase() {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?
-        val source = multi(schedulerFromCoroutineContext(coroutineContext)) {
+        val source = multi(coroutineContext.toScheduler()) {
             for (x in 1..3) {
                 send(x) // this is a suspending function
                 println("Sent $x") // print after successfully sent item

@@ -13,6 +13,11 @@ val SCHEDULER_EMPTY_CONTEXT: Scheduler = SchedulerImpl(EmptyCoroutineContext)
 val SCHEDULER_UNCONFINED_DISPATCHER: Scheduler = SchedulerImpl(Unconfined)
 fun schedulerFromCoroutineContext(context: CoroutineContext): Scheduler = SchedulerImpl(context)
 
+/**
+ * Extension function of [CoroutineContext] to create a [Scheduler]
+ */
+fun CoroutineContext.toScheduler(): Scheduler = SchedulerImpl(this@toScheduler)
+
 class SchedulerImpl(override val context: CoroutineContext) : Scheduler
 
 interface Scheduler /*: DisposableHandle ???*/ {
