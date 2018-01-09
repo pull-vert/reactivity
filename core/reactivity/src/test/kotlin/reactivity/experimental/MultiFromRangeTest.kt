@@ -3,14 +3,13 @@ package reactivity.experimental
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.openSubscription
-import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class MultiFromRangeTest {
+class MultiFromRangeTest: TestBase() {
     @Test
-    fun `multi from range 2 consumers`() = runBlocking {
+    fun `multi from range 2 consumers`() = runTest {
         // create a publisher that produces numbers from 1 to 3
         val source = MultiBuilder.fromRange(1, 3)
         // print elements from the source
@@ -32,7 +31,7 @@ class MultiFromRangeTest {
     }
 
     @Test
-    fun `multi from range subscription with cancellation`() = runBlocking {
+    fun `multi from range subscription with cancellation`() = runTest {
         var finally = false
         // create a publisher that produces numbers from 1 to 5
         val source = MultiBuilder.fromRange(1, 5)
@@ -52,7 +51,7 @@ class MultiFromRangeTest {
     }
 
     @Test
-    fun `multi from range subscription without cancellation`() = runBlocking {
+    fun `multi from range subscription without cancellation`() = runTest {
         var finally = false
         val source = MultiBuilder.fromRange(1, 5) // a fromRange of five numbers
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight
@@ -61,7 +60,7 @@ class MultiFromRangeTest {
         source.consumeEach { println(it) }
         /* Notice, how "Finally" is printed before the last element "5".
         It happens because our main function in this example is a coroutine that
-        we start with runBlocking coroutine builder. Our main coroutine receives on
+        we start with runTest coroutine builder. Our main coroutine receives on
         the channel using source.consumeEach { ... } expression.
         The main coroutine is suspended while it waits for the source to emit an item.
         When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,
@@ -72,7 +71,7 @@ class MultiFromRangeTest {
     }
 
     @Test
-    fun `multi from range subscription without cancellation, and Common pool scheduler`() = runBlocking {
+    fun `multi from range subscription without cancellation, and Common pool scheduler`() = runTest {
         var finally = false
         val source = MultiBuilder.fromRange(SCHEDULER_COMMON_POOL_DISPATCHER,
                 1, 5) // a fromRange of five numbers
@@ -82,7 +81,7 @@ class MultiFromRangeTest {
         source.consumeEach { println(it) }
         /* Notice, how "Finally" is printed before the last element "5".
         It happens because our main function in this example is a coroutine that
-        we start with runBlocking coroutine builder. Our main coroutine receives on
+        we start with runTest coroutine builder. Our main coroutine receives on
         the channel using source.consumeEach { ... } expression.
         The main coroutine is suspended while it waits for the source to emit an item.
         When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,

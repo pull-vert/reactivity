@@ -2,14 +2,14 @@ package reactivity.experimental.javafx
 
 import javafx.application.Platform
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
+import reactivity.experimental.TestBase
 import reactivity.experimental.multi
 import kotlin.test.assertEquals
 
-class SchedulerJavaFxTest {
+class SchedulerJavaFxTest: TestBase() {
     @Test
-    fun `multi builder JavaFx context`() = runBlocking {
+    fun `multi builder JavaFx context`() = runTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?

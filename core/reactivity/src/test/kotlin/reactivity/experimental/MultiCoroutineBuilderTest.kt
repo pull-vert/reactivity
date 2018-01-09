@@ -1,14 +1,13 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class MultiCoroutineBuilderTest {
+class MultiCoroutineBuilderTest: TestBase() {
 
     @Test
-    fun `multi builder 2 consumers 1 slow consumer`() = runBlocking {
+    fun `multi builder 2 consumers 1 slow consumer`() = runTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?

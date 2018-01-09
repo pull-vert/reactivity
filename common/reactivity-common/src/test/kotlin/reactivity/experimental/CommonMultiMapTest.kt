@@ -21,7 +21,7 @@ class CommonMultiMapTest: TestBase() {
         }
         /* Notice, how "Finally" is printed before the last element "5".
         It happens because our main function in this example is a coroutine that
-        we start with runBlocking coroutine builder. Our main coroutine receives on
+        we start with runTest coroutine builder. Our main coroutine receives on
         the channel using source.consumeEach { ... } expression.
         The main coroutine is suspended while it waits for the source to emit an item.
         When the last item is emitted by Multi.fromRange(1, 5) it resumes the main coroutine,

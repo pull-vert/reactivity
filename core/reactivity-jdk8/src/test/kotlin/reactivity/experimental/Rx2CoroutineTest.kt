@@ -1,17 +1,15 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import kotlinx.coroutines.experimental.rx2.rxFlowable
 import org.junit.Ignore
 import org.junit.Test
-import kotlin.test.assertEquals
 
-class Rx2CoroutineTest {
+class Rx2CoroutineTest: TestBase() {
 
     @Ignore
     @Test
-    fun `observable builder with backpressure`() = runBlocking {
+    fun `observable builder with backpressure`() = runTest {
         // coroutine -- fast producer of elements in the context of the main thread
         val source = rxFlowable(coroutineContext) {
             for (x in 1..3) {

@@ -137,7 +137,7 @@ configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactiv
         dependencies {
             compile project(":$reactivity")
             //the only way IDEA can resolve test classes
-//            testCompile project(":reactivity").sourceSets.test.output
+            testCompile project(":$reactivity").sourceSets.test.output
         }
     }
 }

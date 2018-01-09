@@ -1,13 +1,12 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
 import kotlin.test.assertTrue
 
-class MultiFromIterableTest {
+class MultiFromIterableTest: TestBase() {
     @Test
-    fun `multi from Iterable with MultiBuilder`() = runBlocking {
+    fun `multi from Iterable with MultiBuilder`() = runTest {
         var finally = false
         val source = MultiBuilder.fromIterable(listOf("0", "58")) // a list of Strings
                 .doOnSubscribe { println("OnSubscribe") } // provide some insight

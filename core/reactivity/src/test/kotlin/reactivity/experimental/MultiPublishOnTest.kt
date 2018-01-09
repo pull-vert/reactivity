@@ -1,13 +1,12 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
 import kotlin.test.assertTrue
 
-class MultiPublishOnTest {
+class MultiPublishOnTest: TestBase() {
     @Test
-    fun `multi builder publishOn emptyThreadContext`() = runBlocking {
+    fun `multi builder publishOn emptyThreadContext`() = runTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var source = multi(coroutineContext.toScheduler()) {
             for (x in 1..3) {
@@ -41,7 +40,7 @@ class MultiPublishOnTest {
     }
 
     @Test
-    fun `multi builder publishOn CommonPool`() = runBlocking {
+    fun `multi builder publishOn CommonPool`() = runTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var source = multi(coroutineContext.toScheduler()) {
             for (x in 1..3) {
