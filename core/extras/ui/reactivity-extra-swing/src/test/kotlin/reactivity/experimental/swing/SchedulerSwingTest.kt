@@ -1,15 +1,15 @@
 package reactivity.experimental.swing
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
+import reactivity.experimental.TestBase
 import reactivity.experimental.multi
 import javax.swing.SwingUtilities
 import kotlin.test.assertEquals
 
-class SchedulerSwingTest {
+class SchedulerSwingTest: TestBase() {
     @Test
-    fun `multi builder swing context`() = runBlocking {
+    fun `multi builder swing context`() = runTest {
         // coroutine -- fast producer of elements in the context of the main thread (= coroutineContext)
         var start: Long? = null
         var time: Long?

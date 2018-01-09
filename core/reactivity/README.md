@@ -1,2 +1,2 @@
-# Reactivity core
+# Reactivity core for Kotlin/JVM
 

@@ -1,12 +1,12 @@
 package kotlinx
 
 import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
+import reactivity.experimental.TestBase
 
-class DelayTest {
+class DelayTest: TestBase() {
     @Test
-    fun `delay test`() = runBlocking {
+    fun `delay test`() = runTest {
         println("Let's naively sleep for 1 second")
         delay(100L)
         println("We're still in Test EDT!")

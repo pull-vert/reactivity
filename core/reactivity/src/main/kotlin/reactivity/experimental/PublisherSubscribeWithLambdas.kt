@@ -3,9 +3,6 @@ package reactivity.experimental
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.experimental.DisposableHandle
-import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
 
 interface SubscribeWith<T> : Publisher<T> {
     /**
@@ -23,65 +20,29 @@ interface SubscribeWith<T> : Publisher<T> {
     }
 }
 
-/**
- * This is the interface declaring the callback functions
- * related to each functions of [Subscriber] & [Subscription]
- * will be implemented in both [Multi] and [SoloPublisher]
- */
-interface WithLambdas<T> : SubscribeWith<T> {
-    // Methods for Publisher with lambdas
-    /**
-     * Subscribe to this [Publisher], the Reactive Stream starts
-     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
-     */
-    fun subscribe(): DisposableHandle {
+actual interface WithLambdas<T>  {
+    actual fun subscribe(): DisposableHandle
+    actual fun subscribe(onNext: (T) -> Unit): DisposableHandle
+    actual fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): DisposableHandle
+    actual fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): DisposableHandle
+}
+
+interface WithLambdaImpl<T> : WithLambdas<T>, SubscribeWith<T> {
+    override fun subscribe(): DisposableHandle {
         return subscribeWith(SubscriberLambda())
     }
-
-    /**
-     * Subscribe to this [Publisher], the Reactive Stream starts
-     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
-     * @param onNext the function to execute for each data of the stream
-     */
-    fun subscribe(onNext: (T) -> Unit): DisposableHandle {
+    override fun subscribe(onNext: (T) -> Unit): DisposableHandle {
         return subscribeWith(SubscriberLambda(onNext))
     }
-
-    /**
-     * Subscribe to this [Publisher], the Reactive Stream starts
-     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
-     * @param onNext the function to execute for each data of the stream
-     * @param onError the function to execute if stream ends with an error
-     */
-    fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): DisposableHandle {
+    override fun subscribe(onNext: ((T) -> Unit)?, onError: (Throwable) -> Unit): DisposableHandle {
         return subscribeWith(SubscriberLambda(onNext, onError))
     }
-
-    /**
-     * Subscribe to this [Publisher], the Reactive Stream starts
-     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
-     * @param onNext the function to execute for each data of the stream
-     * @param onError the function to execute if the stream ends with an error
-     * @param onComplete the function to execute if stream ends successfully
-     */
-    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): DisposableHandle {
+    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?): DisposableHandle {
         return subscribeWith(SubscriberLambda(onNext, onError, onComplete))
-    }
-
-    /**
-     * Subscribe to this [Publisher], the Reactive Stream starts
-     * emitting items until [Subscriber.onComplete] or [Subscriber.onError]
-     * @param onNext the function to execute for each data of the stream
-     * @param onError the function to execute if the stream ends with an error
-     * @param onComplete the function to execute if stream ends successfully
-     * @param onSubscribe the function to execute every time the stream is subscribed
-     */
-    fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): DisposableHandle {
-        return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
     }
 }
 
-private class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
+internal class SubscriberLambda<T>(private val onNext: ((T) -> Unit)? = null,
                                   private val onError: ((Throwable) -> Unit)? = null,
                                   private val onComplete: (() -> Unit)? = null,
                                   private val onSubscribe: ((Subscription) -> Unit)? = null)

@@ -2,18 +2,6 @@ package reactivity.experimental
 
 import kotlinx.coroutines.experimental.channels.LinkedListChannel
 import kotlinx.coroutines.experimental.channels.SubscriptionReceiveChannel
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
-
-/**
- * This is the interface declaring the publishOn functions
- * for executing the subscriber in other context than the publisher
- * will be implemented in both [Multi] and [Solo]
- */
-interface WithPublishOn {
-    fun publishOn(delayError: Boolean): WithPublishOn
-    fun publishOn(scheduler: Scheduler, delayError: Boolean): WithPublishOn
-}
 
 internal class PublisherPublishOn<T> internal constructor(val delayError: Boolean, val prefetch: Int) :
         LinkedListChannel<T>(), SubscriptionReceiveChannel<T>, Subscriber<T> {
@@ -39,7 +27,7 @@ internal class PublisherPublishOn<T> internal constructor(val delayError: Boolea
     private fun initialRequest() {
         println("PublisherPublishOn initialRequest " + prefetch)
         // In this function we need that the subscription is not null, so use of !!
-        if (prefetch == Integer.MAX_VALUE) {
+        if (prefetch == Int.MAX_VALUE) {
             subscription!!.request(Long.MAX_VALUE)
         } else {
             subscription!!.request(prefetch.toLong())

@@ -1,8 +1,5 @@
 package reactivity.experimental
 
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
-
 // Extensions for Subscriber
 
 /**
@@ -13,18 +10,16 @@ import org.reactivestreams.Subscription
  * @param e the actual error
  */
 fun Subscriber<*>.errorInOnSubscribe(s: Subscriber<*>, e: Throwable) {
-    s.onSubscribe(EmptySubscription.INSTANCE)
+    s.onSubscribe(EmptySubscription)
     s.onError(e)
 }
 
-private enum class EmptySubscription : Subscription {
-    INSTANCE;
+private object EmptySubscription : Subscription {
     override fun cancel() { } // deliberately no op
     override fun request(n: Long) { } // deliberately no op
 }
 
-private enum class CancelledSubscription : Subscription {
-    INSTANCE;
+private object CancelledSubscription : Subscription {
     override fun cancel() { } // deliberately no op
     override fun request(n: Long) { } // deliberately no op
 }
@@ -39,9 +34,7 @@ private enum class CancelledSubscription : Subscription {
  * @return a singleton noop [Subscription] to be used as an inner representation
  * of the cancelled state
  */
-fun Subscriber<*>.cancelledSubscription(): Subscription {
-    return CancelledSubscription.INSTANCE
-}
+fun Subscriber<*>.cancelledSubscription(): Subscription = CancelledSubscription
 
 /**
  * Map an "operator" error. The
@@ -119,7 +112,7 @@ fun Subscriber<*>.onErrorDropped(e: Throwable) { throw Exceptions.bubble(e) }
 fun Subscriber<*>.validateSubscription(current: Subscription?, next: Subscription): Boolean {
     if (current != null) {
         next.cancel()
-        //reportSubscriptionSet()
+//        reportSubscriptionSet()
         return false
     }
     return true

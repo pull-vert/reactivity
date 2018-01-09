@@ -1,12 +1,10 @@
 package reactivity.experimental
 
+import kotlinx.coroutines.experimental.DisposableHandle
 import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.channels.ProducerScope
 import kotlinx.coroutines.experimental.channels.consumeEach
 import kotlinx.coroutines.experimental.reactive.awaitSingle
 import kotlinx.coroutines.experimental.reactive.publish
-import org.reactivestreams.Publisher
-import org.reactivestreams.Subscription
 
 /**
  * Creates cold reactive [Solo] that runs a given [block] in a coroutine.
@@ -23,7 +21,7 @@ import org.reactivestreams.Subscription
  * | Failure with exception or `close` with cause | `onError`
  */
 // TODO provide a custom ProducerScope impl that checks send is only called once, and throws exception otherwise !
-fun <T> solo(
+actual fun <T> solo(
         scheduler: Scheduler,
         parent: Job? = null,
         block: suspend ProducerScope<T>.() -> Unit
@@ -61,7 +59,7 @@ object SoloBuilder {
 /**
  * Subscribes to this [Solo] and performs the specified action for the unique received element.
  */
-inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
+actual inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
     action.invoke(awaitSingle())
 }
 
@@ -70,28 +68,30 @@ inline suspend fun <T> Solo<T>.consumeUnique(action: (T) -> Unit) {
  *
  * @author Frédéric Montariol
  */
-interface Solo<T> : PublisherCommons<T> {
+actual interface Solo<T>: CommonPublisher<T>, Publisher<T> {
 
-    override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T>
+    actual fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((Subscription) -> Unit)?): DisposableHandle
 
-    override fun doOnNext(onNext: (T) -> Unit): Solo<T>
+    actual fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T>
 
-    override fun doOnError(onError: (Throwable) -> Unit): Solo<T>
+    actual override fun doOnNext(onNext: (T) -> Unit): Solo<T>
 
-    override fun doOnComplete(onComplete: () -> Unit): Solo<T>
+    actual override fun doOnError(onError: (Throwable) -> Unit): Solo<T>
 
-    override fun doOnCancel(onCancel: () -> Unit): Solo<T>
+    actual override fun doOnComplete(onComplete: () -> Unit): Solo<T>
 
-    override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T>
+    actual override fun doOnCancel(onCancel: () -> Unit): Solo<T>
 
-    override fun doFinally(finally: () -> Unit): Solo<T>
+    actual override fun doOnRequest(onRequest: (Long) -> Unit): Solo<T>
+
+    actual override fun doFinally(finally: () -> Unit): Solo<T>
 
     /**
      * Returns a [Solo] that is published with [initialScheduler] and the [delayError] option
      *
      * @param delayError if error should be delayed
      */
-    override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
+    actual override fun publishOn(delayError: Boolean): Solo<T>
 
     /**
      * Returns a [Solo] that is published with the provided [scheduler] and the [delayError] option
@@ -99,12 +99,16 @@ interface Solo<T> : PublisherCommons<T> {
      * @param scheduler the scheduler containing the coroutine context to execute this coroutine in
      * @param delayError if error should be delayed
      */
-    override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
+    actual override fun publishOn(scheduler: Scheduler, delayError: Boolean): Solo<T>
 }
 
 internal class SoloImpl<T>(val delegate: Publisher<T>,
                           override val initialScheduler: Scheduler)
-    : Solo<T>, Publisher<T> by delegate {
+    : Solo<T>, WithLambdaImpl<T>, Publisher<T> by delegate {
+
+    override fun subscribe(onNext: ((T) -> Unit)?, onError: ((Throwable) -> Unit)?, onComplete: (() -> Unit)?, onSubscribe: ((org.reactivestreams.Subscription) -> Unit)?): DisposableHandle {
+        return subscribeWith(SubscriberLambda(onNext, onError, onComplete, onSubscribe))
+    }
 
     override fun doOnSubscribe(onSubscribe: (Subscription) -> Unit): Solo<T> {
         if (delegate is PublisherWithCallbacks) {
@@ -182,6 +186,8 @@ internal class SoloImpl<T>(val delegate: Publisher<T>,
         publisherCallbacks.finallyBlock = finally
         return SoloImpl(publisherCallbacks, initialScheduler)
     }
+
+    override fun publishOn(delayError: Boolean) = publishOn(initialScheduler, delayError)
 
     override fun publishOn(scheduler: Scheduler, delayError: Boolean) = solo(scheduler) {
         val channel = PublisherPublishOn<T>(delayError, Int.MAX_VALUE)
