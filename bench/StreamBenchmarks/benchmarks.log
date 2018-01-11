@@ -1,0 +1,31 @@
+Processor: Intel(R) Core(TM) i7-6700K CPU @ 4.00GHz
+
+Benchmark                                                             Mode  Cnt     Score     Error  Units
+RangeFilterSumBenchmark.testBaselineLoop                              avgt   20     0.686 ±   0.001  ms/op
+RangeFilterSumBenchmark.testChannelPipeline                           avgt   20   869.335 ± 126.725  ms/op
+RangeFilterSumBenchmark.testChannelPipelineUnconfined                 avgt   20   247.293 ±   5.703  ms/op
+RangeFilterSumBenchmark.testFlowable                                  avgt   20     2.583 ±   0.020  ms/op
+RangeFilterSumBenchmark.testFlowableFromCoroutinePublish              avgt   20    21.600 ±   0.121  ms/op
+RangeFilterSumBenchmark.testFlowableFromCoroutinePublishUnconfined    avgt   20    22.256 ±   0.459  ms/op
+RangeFilterSumBenchmark.testFlowableThread                            avgt   20     3.336 ±   0.061  ms/op
+RangeFilterSumBenchmark.testFlowableWithCoroutineFilter               avgt   20   220.481 ±   1.098  ms/op
+RangeFilterSumBenchmark.testFlux                                      avgt   20     3.368 ±   1.594  ms/op
+RangeFilterSumBenchmark.testFluxFromCoroutinePublish                  avgt   20    18.738 ±   0.149  ms/op
+RangeFilterSumBenchmark.testFluxFromCoroutinePublishUnconfined        avgt   20    19.379 ±   0.486  ms/op
+RangeFilterSumBenchmark.testFluxThread                                avgt   20     4.820 ±   0.010  ms/op
+RangeFilterSumBenchmark.testFluxWithCoroutineFilter                   avgt   20   231.278 ±   0.919  ms/op
+RangeFilterSumBenchmark.testJavaStream                                avgt   20     4.679 ±   0.007  ms/op
+RangeFilterSumBenchmark.testObservable                                avgt   20     2.983 ±   0.214  ms/op
+RangeFilterSumBenchmark.testObservableFromCoroutinePublish            avgt   20    18.941 ±   0.212  ms/op
+RangeFilterSumBenchmark.testObservableFromCoroutinePublishUnconfined  avgt   20    19.093 ±   0.484  ms/op
+RangeFilterSumBenchmark.testObservableThread                          avgt   20     3.831 ±   0.011  ms/op
+RangeFilterSumBenchmark.testObservableWithCoroutineFilter             avgt   20   110.639 ±   9.569  ms/op
+RangeFilterSumBenchmark.testSequenceBuild                             avgt   20     8.042 ±   0.155  ms/op
+RangeFilterSumBenchmark.testSequenceGenerate                          avgt   20     5.376 ±   0.016  ms/op
+RangeFilterSumBenchmark.testSequenceIntRange                          avgt   20     3.218 ±   0.009  ms/op
+RangeFilterSumBenchmark.testSource                                    avgt   20    12.479 ±   0.021  ms/op
+RangeFilterSumBenchmark.testSourceInline                              avgt   20    16.342 ±   0.041  ms/op
+RangeFilterSumBenchmark.testSourceInlineDeep                          avgt   20     3.785 ±   0.006  ms/op
+RangeFilterSumBenchmark.testSourceThread                              avgt   20  3153.954 ± 445.991  ms/op
+RangeFilterSumBenchmark.testSourceThreadBuffer128                     avgt   20   222.969 ±   4.280  ms/op
+RangeFilterSumBenchmark.testSrcManBase                                avgt   20     3.159 ±   0.005  ms/op

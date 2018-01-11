@@ -1,10 +1,6 @@
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinx_coroutines_version"
-
-    // TODO remove when dev is done, used only for accessing code
-    testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:$kotlinx_coroutines_version"
-    testCompile "io.projectreactor:reactor-core:3.1.1.RELEASE"
 }
 
 sourceCompatibility = 1.8
