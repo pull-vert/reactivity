@@ -16,12 +16,13 @@ import kotlinx.coroutines.experimental.runBlocking
 import kotlinx.coroutines.experimental.rx2.consumeEach
 import kotlinx.coroutines.experimental.rx2.rxFlowable
 import kotlinx.coroutines.experimental.rx2.rxObservable
-import org.openjdk.jmh.annotations.*
+import org.openjdk.jmh.annotations.Benchmark
 import reactor.core.publisher.Flux
 import source.*
 import sourceInline.*
 import srcmanbase.*
-import java.util.concurrent.TimeUnit
+import java.util.stream.Collectors
+import java.util.stream.Stream
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.buildSequence
 
@@ -77,11 +78,6 @@ data class IntBox(var v: Int)
 
 const val N = 1_000_000
 
-@Fork(2, jvmArgsAppend = ["-Dkotlinx.coroutines.debug=off"])
-@Warmup(iterations = 5)
-@Measurement(iterations = 10)
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
 open class RangeFilterSumBenchmark {
     @Benchmark
     fun testBaselineLoop(): Int {
@@ -93,13 +89,13 @@ open class RangeFilterSumBenchmark {
         return sum
     }
 
-//    @Benchmark
-//    fun testJavaStream(): Int =
-//        Stream
-//            .iterate(1) { it + 1 }
-//            .limit(N.toLong())
-//            .filter { it.isGood() }
-//            .collect(Collectors.summingInt { it })
+    @Benchmark
+    fun testJavaStream(): Int =
+        Stream
+            .iterate(1) { it + 1 }
+            .limit(N.toLong())
+            .filter { it.isGood() }
+            .collect(Collectors.summingInt { it })
 
     @Benchmark
     fun testSequenceIntRange(): Int =

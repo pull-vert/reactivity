@@ -1,0 +1,1553 @@
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testBaselineLoop
+
+# Run progress: 0,00% complete, ETA 00:14:00
+# Fork: 1 of 2
+# Warmup Iteration   1: 0,974 ms/op
+# Warmup Iteration   2: 0,966 ms/op
+# Warmup Iteration   3: 0,960 ms/op
+# Warmup Iteration   4: 0,960 ms/op
+# Warmup Iteration   5: 0,957 ms/op
+Iteration   1: 0,963 ms/op
+Iteration   2: 0,958 ms/op
+Iteration   3: 0,966 ms/op
+Iteration   4: 0,979 ms/op
+Iteration   5: 0,976 ms/op
+Iteration   6: 0,965 ms/op
+Iteration   7: 0,962 ms/op
+Iteration   8: 0,961 ms/op
+Iteration   9: 0,964 ms/op
+Iteration  10: 0,969 ms/op
+
+# Run progress: 1,79% complete, ETA 00:14:15
+# Fork: 2 of 2
+# Warmup Iteration   1: 0,978 ms/op
+# Warmup Iteration   2: 0,962 ms/op
+# Warmup Iteration   3: 0,959 ms/op
+# Warmup Iteration   4: 0,960 ms/op
+# Warmup Iteration   5: 0,976 ms/op
+Iteration   1: 0,959 ms/op
+Iteration   2: 0,959 ms/op
+Iteration   3: 0,961 ms/op
+Iteration   4: 0,964 ms/op
+Iteration   5: 0,961 ms/op
+Iteration   6: 0,960 ms/op
+Iteration   7: 0,959 ms/op
+Iteration   8: 0,962 ms/op
+Iteration   9: 0,962 ms/op
+Iteration  10: 1,049 ms/op
+
+
+Result "benchmark.BenchJava.testBaselineLoop":
+  0,968 ±(99.9%) 0,017 ms/op [Average]
+  (min, avg, max) = (0,958, 0,968, 1,049), stdev = 0,020
+  CI (99.9%): [0,951, 0,985] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testChannelPipeline
+
+# Run progress: 3,57% complete, ETA 00:13:57
+# Fork: 1 of 2
+# Warmup Iteration   1: 3213,313 ms/op
+# Warmup Iteration   2: 2927,872 ms/op
+# Warmup Iteration   3: 2917,223 ms/op
+# Warmup Iteration   4: 2852,470 ms/op
+# Warmup Iteration   5: 2916,211 ms/op
+Iteration   1: 2875,754 ms/op
+Iteration   2: 2873,576 ms/op
+Iteration   3: 2881,458 ms/op
+Iteration   4: 2880,275 ms/op
+Iteration   5: 2914,900 ms/op
+Iteration   6: 2912,396 ms/op
+Iteration   7: 2874,719 ms/op
+Iteration   8: 2891,478 ms/op
+Iteration   9: 2899,203 ms/op
+Iteration  10: 2888,540 ms/op
+
+# Run progress: 5,36% complete, ETA 00:22:08
+# Fork: 2 of 2
+# Warmup Iteration   1: 3125,042 ms/op
+# Warmup Iteration   2: 2894,253 ms/op
+# Warmup Iteration   3: 2898,532 ms/op
+# Warmup Iteration   4: 2865,505 ms/op
+# Warmup Iteration   5: 2888,866 ms/op
+Iteration   1: 2974,068 ms/op
+Iteration   2: 2952,140 ms/op
+Iteration   3: 2910,239 ms/op
+Iteration   4: 2864,693 ms/op
+Iteration   5: 2881,186 ms/op
+Iteration   6: 2871,843 ms/op
+Iteration   7: 2864,842 ms/op
+Iteration   8: 2898,669 ms/op
+Iteration   9: 2891,783 ms/op
+Iteration  10: 2875,470 ms/op
+
+
+Result "benchmark.BenchJava.testChannelPipeline":
+  2893,862 ±(99.9%) 24,476 ms/op [Average]
+  (min, avg, max) = (2864,693, 2893,862, 2974,068), stdev = 28,186
+  CI (99.9%): [2869,386, 2918,337] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testChannelPipelineUnconfined
+
+# Run progress: 7,14% complete, ETA 00:25:50
+# Fork: 1 of 2
+# Warmup Iteration   1: 556,841 ms/op
+# Warmup Iteration   2: 432,780 ms/op
+# Warmup Iteration   3: 409,164 ms/op
+# Warmup Iteration   4: 417,707 ms/op
+# Warmup Iteration   5: 408,790 ms/op
+Iteration   1: 408,537 ms/op
+Iteration   2: 418,936 ms/op
+Iteration   3: 414,048 ms/op
+Iteration   4: 413,026 ms/op
+Iteration   5: 413,037 ms/op
+Iteration   6: 415,210 ms/op
+Iteration   7: 410,200 ms/op
+Iteration   8: 411,308 ms/op
+Iteration   9: 413,206 ms/op
+Iteration  10: 415,689 ms/op
+
+# Run progress: 8,93% complete, ETA 00:23:30
+# Fork: 2 of 2
+# Warmup Iteration   1: 564,017 ms/op
+# Warmup Iteration   2: 422,845 ms/op
+# Warmup Iteration   3: 404,271 ms/op
+# Warmup Iteration   4: 411,614 ms/op
+# Warmup Iteration   5: 407,757 ms/op
+Iteration   1: 412,793 ms/op
+Iteration   2: 416,599 ms/op
+Iteration   3: 414,082 ms/op
+Iteration   4: 412,940 ms/op
+Iteration   5: 415,222 ms/op
+Iteration   6: 419,320 ms/op
+Iteration   7: 413,830 ms/op
+Iteration   8: 414,224 ms/op
+Iteration   9: 411,441 ms/op
+Iteration  10: 416,089 ms/op
+
+
+Result "benchmark.BenchJava.testChannelPipelineUnconfined":
+  413,987 ±(99.9%) 2,296 ms/op [Average]
+  (min, avg, max) = (408,537, 413,987, 419,320), stdev = 2,644
+  CI (99.9%): [411,691, 416,283] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFlowable
+
+# Run progress: 10,71% complete, ETA 00:21:51
+# Fork: 1 of 2
+# Warmup Iteration   1: 7,222 ms/op
+# Warmup Iteration   2: 5,892 ms/op
+# Warmup Iteration   3: 5,199 ms/op
+# Warmup Iteration   4: 5,267 ms/op
+# Warmup Iteration   5: 5,215 ms/op
+Iteration   1: 5,216 ms/op
+Iteration   2: 5,253 ms/op
+Iteration   3: 5,244 ms/op
+Iteration   4: 5,276 ms/op
+Iteration   5: 5,263 ms/op
+Iteration   6: 5,247 ms/op
+Iteration   7: 5,209 ms/op
+Iteration   8: 5,305 ms/op
+Iteration   9: 5,227 ms/op
+Iteration  10: 5,235 ms/op
+
+# Run progress: 12,50% complete, ETA 00:20:10
+# Fork: 2 of 2
+# Warmup Iteration   1: 7,268 ms/op
+# Warmup Iteration   2: 5,707 ms/op
+# Warmup Iteration   3: 5,196 ms/op
+# Warmup Iteration   4: 5,173 ms/op
+# Warmup Iteration   5: 5,193 ms/op
+Iteration   1: 5,217 ms/op
+Iteration   2: 5,206 ms/op
+Iteration   3: 5,206 ms/op
+Iteration   4: 5,334 ms/op
+Iteration   5: 5,172 ms/op
+Iteration   6: 5,189 ms/op
+Iteration   7: 5,233 ms/op
+Iteration   8: 5,267 ms/op
+Iteration   9: 5,183 ms/op
+Iteration  10: 5,304 ms/op
+
+
+Result "benchmark.BenchJava.testFlowable":
+  5,239 ±(99.9%) 0,037 ms/op [Average]
+  (min, avg, max) = (5,172, 5,239, 5,334), stdev = 0,043
+  CI (99.9%): [5,202, 5,277] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFlowableFromCoroutinePublish
+
+# Run progress: 14,29% complete, ETA 00:18:51
+# Fork: 1 of 2
+# Warmup Iteration   1: 44,021 ms/op
+# Warmup Iteration   2: 37,215 ms/op
+# Warmup Iteration   3: 35,291 ms/op
+# Warmup Iteration   4: 35,425 ms/op
+# Warmup Iteration   5: 35,085 ms/op
+Iteration   1: 35,112 ms/op
+Iteration   2: 35,139 ms/op
+Iteration   3: 35,559 ms/op
+Iteration   4: 35,097 ms/op
+Iteration   5: 35,278 ms/op
+Iteration   6: 35,014 ms/op
+Iteration   7: 35,294 ms/op
+Iteration   8: 34,952 ms/op
+Iteration   9: 35,406 ms/op
+Iteration  10: 35,256 ms/op
+
+# Run progress: 16,07% complete, ETA 00:17:46
+# Fork: 2 of 2
+# Warmup Iteration   1: 44,279 ms/op
+# Warmup Iteration   2: 37,251 ms/op
+# Warmup Iteration   3: 35,544 ms/op
+# Warmup Iteration   4: 35,153 ms/op
+# Warmup Iteration   5: 35,333 ms/op
+Iteration   1: 35,180 ms/op
+Iteration   2: 35,553 ms/op
+Iteration   3: 35,363 ms/op
+Iteration   4: 35,252 ms/op
+Iteration   5: 35,654 ms/op
+Iteration   6: 35,593 ms/op
+Iteration   7: 35,365 ms/op
+Iteration   8: 35,462 ms/op
+Iteration   9: 35,660 ms/op
+Iteration  10: 35,516 ms/op
+
+
+Result "benchmark.BenchJava.testFlowableFromCoroutinePublish":
+  35,335 ±(99.9%) 0,185 ms/op [Average]
+  (min, avg, max) = (34,952, 35,335, 35,660), stdev = 0,213
+  CI (99.9%): [35,150, 35,520] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFlowableFromCoroutinePublishUnconfined
+
+# Run progress: 17,86% complete, ETA 00:16:52
+# Fork: 1 of 2
+# Warmup Iteration   1: 47,628 ms/op
+# Warmup Iteration   2: 57,148 ms/op
+# Warmup Iteration   3: 53,044 ms/op
+# Warmup Iteration   4: 40,238 ms/op
+# Warmup Iteration   5: 36,765 ms/op
+Iteration   1: 37,519 ms/op
+Iteration   2: 36,749 ms/op
+Iteration   3: 36,872 ms/op
+Iteration   4: 35,137 ms/op
+Iteration   5: 36,907 ms/op
+Iteration   6: 36,290 ms/op
+Iteration   7: 36,804 ms/op
+Iteration   8: 37,348 ms/op
+Iteration   9: 35,426 ms/op
+Iteration  10: 35,845 ms/op
+
+# Run progress: 19,64% complete, ETA 00:16:05
+# Fork: 2 of 2
+# Warmup Iteration   1: 45,143 ms/op
+# Warmup Iteration   2: 37,980 ms/op
+# Warmup Iteration   3: 35,358 ms/op
+# Warmup Iteration   4: 35,638 ms/op
+# Warmup Iteration   5: 35,176 ms/op
+Iteration   1: 35,481 ms/op
+Iteration   2: 35,985 ms/op
+Iteration   3: 35,185 ms/op
+Iteration   4: 37,970 ms/op
+Iteration   5: 41,836 ms/op
+Iteration   6: 35,610 ms/op
+Iteration   7: 38,379 ms/op
+Iteration   8: 38,436 ms/op
+Iteration   9: 36,151 ms/op
+Iteration  10: 38,109 ms/op
+
+
+Result "benchmark.BenchJava.testFlowableFromCoroutinePublishUnconfined":
+  36,902 ±(99.9%) 1,365 ms/op [Average]
+  (min, avg, max) = (35,137, 36,902, 41,836), stdev = 1,571
+  CI (99.9%): [35,537, 38,266] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFlowableThread
+
+# Run progress: 21,43% complete, ETA 00:15:23
+# Fork: 1 of 2
+# Warmup Iteration   1: 9,678 ms/op
+# Warmup Iteration   2: 7,373 ms/op
+# Warmup Iteration   3: 6,772 ms/op
+# Warmup Iteration   4: 6,889 ms/op
+# Warmup Iteration   5: 6,832 ms/op
+Iteration   1: 8,837 ms/op
+Iteration   2: 7,165 ms/op
+Iteration   3: 17,256 ms/op
+Iteration   4: 16,493 ms/op
+Iteration   5: 32,025 ms/op
+Iteration   6: 22,040 ms/op
+Iteration   7: 20,213 ms/op
+Iteration   8: 12,278 ms/op
+Iteration   9: 11,162 ms/op
+Iteration  10: 11,265 ms/op
+
+# Run progress: 23,21% complete, ETA 00:14:46
+# Fork: 2 of 2
+# Warmup Iteration   1: 19,149 ms/op
+# Warmup Iteration   2: 9,128 ms/op
+# Warmup Iteration   3: 6,812 ms/op
+# Warmup Iteration   4: 7,099 ms/op
+# Warmup Iteration   5: 7,038 ms/op
+Iteration   1: 7,031 ms/op
+Iteration   2: 7,071 ms/op
+Iteration   3: 7,702 ms/op
+Iteration   4: 8,006 ms/op
+Iteration   5: 6,880 ms/op
+Iteration   6: 6,633 ms/op
+Iteration   7: 6,663 ms/op
+Iteration   8: 6,672 ms/op
+Iteration   9: 6,707 ms/op
+Iteration  10: 6,869 ms/op
+
+
+Result "benchmark.BenchJava.testFlowableThread":
+  11,448 ±(99.9%) 5,961 ms/op [Average]
+  (min, avg, max) = (6,633, 11,448, 32,025), stdev = 6,864
+  CI (99.9%): [5,488, 17,409] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFlowableWithCoroutineFilter
+
+# Run progress: 25,00% complete, ETA 00:14:11
+# Fork: 1 of 2
+# Warmup Iteration   1: 581,782 ms/op
+# Warmup Iteration   2: 398,263 ms/op
+# Warmup Iteration   3: 373,889 ms/op
+# Warmup Iteration   4: 367,596 ms/op
+# Warmup Iteration   5: 363,008 ms/op
+Iteration   1: 383,818 ms/op
+Iteration   2: 361,757 ms/op
+Iteration   3: 364,352 ms/op
+Iteration   4: 364,827 ms/op
+Iteration   5: 363,219 ms/op
+Iteration   6: 362,816 ms/op
+Iteration   7: 407,457 ms/op
+Iteration   8: 366,468 ms/op
+Iteration   9: 467,306 ms/op
+Iteration  10: 463,610 ms/op
+
+# Run progress: 26,79% complete, ETA 00:13:45
+# Fork: 2 of 2
+# Warmup Iteration   1: 543,473 ms/op
+# Warmup Iteration   2: 425,325 ms/op
+# Warmup Iteration   3: 394,426 ms/op
+# Warmup Iteration   4: 387,829 ms/op
+# Warmup Iteration   5: 368,986 ms/op
+Iteration   1: 386,232 ms/op
+Iteration   2: 365,630 ms/op
+Iteration   3: 391,417 ms/op
+Iteration   4: 366,960 ms/op
+Iteration   5: 372,550 ms/op
+Iteration   6: 374,249 ms/op
+Iteration   7: 368,200 ms/op
+Iteration   8: 368,480 ms/op
+Iteration   9: 368,117 ms/op
+Iteration  10: 364,375 ms/op
+
+
+Result "benchmark.BenchJava.testFlowableWithCoroutineFilter":
+  381,592 ±(99.9%) 26,868 ms/op [Average]
+  (min, avg, max) = (361,757, 381,592, 467,306), stdev = 30,942
+  CI (99.9%): [354,724, 408,460] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFlux
+
+# Run progress: 28,57% complete, ETA 00:13:18
+# Fork: 1 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFlux-jmh-worker-1) Using Console logging
+7,599 ms/op
+# Warmup Iteration   2: 5,678 ms/op
+# Warmup Iteration   3: 5,036 ms/op
+# Warmup Iteration   4: 5,017 ms/op
+# Warmup Iteration   5: 5,027 ms/op
+Iteration   1: 5,066 ms/op
+Iteration   2: 5,007 ms/op
+Iteration   3: 5,215 ms/op
+Iteration   4: 5,065 ms/op
+Iteration   5: 5,064 ms/op
+Iteration   6: 5,081 ms/op
+Iteration   7: 5,170 ms/op
+Iteration   8: 5,548 ms/op
+Iteration   9: 5,054 ms/op
+Iteration  10: 5,022 ms/op
+
+# Run progress: 30,36% complete, ETA 00:12:48
+# Fork: 2 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFlux-jmh-worker-1) Using Console logging
+7,373 ms/op
+# Warmup Iteration   2: 5,537 ms/op
+# Warmup Iteration   3: 5,025 ms/op
+# Warmup Iteration   4: 5,082 ms/op
+# Warmup Iteration   5: 4,986 ms/op
+Iteration   1: 5,006 ms/op
+Iteration   2: 5,026 ms/op
+Iteration   3: 4,987 ms/op
+Iteration   4: 5,078 ms/op
+Iteration   5: 5,066 ms/op
+Iteration   6: 5,181 ms/op
+Iteration   7: 5,103 ms/op
+Iteration   8: 5,038 ms/op
+Iteration   9: 5,036 ms/op
+Iteration  10: 5,144 ms/op
+
+
+Result "benchmark.BenchJava.testFlux":
+  5,098 ±(99.9%) 0,106 ms/op [Average]
+  (min, avg, max) = (4,987, 5,098, 5,548), stdev = 0,122
+  CI (99.9%): [4,992, 5,204] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFluxFromCoroutinePublish
+
+# Run progress: 32,14% complete, ETA 00:12:19
+# Fork: 1 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFluxFromCoroutinePublish-jmh-worker-1) Using Console logging
+46,614 ms/op
+# Warmup Iteration   2: 37,106 ms/op
+# Warmup Iteration   3: 35,125 ms/op
+# Warmup Iteration   4: 34,919 ms/op
+# Warmup Iteration   5: 35,079 ms/op
+Iteration   1: 34,876 ms/op
+Iteration   2: 35,151 ms/op
+Iteration   3: 34,916 ms/op
+Iteration   4: 35,153 ms/op
+Iteration   5: 35,026 ms/op
+Iteration   6: 35,048 ms/op
+Iteration   7: 34,868 ms/op
+Iteration   8: 35,187 ms/op
+Iteration   9: 35,364 ms/op
+Iteration  10: 35,116 ms/op
+
+# Run progress: 33,93% complete, ETA 00:11:53
+# Fork: 2 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFluxFromCoroutinePublish-jmh-worker-1) Using Console logging
+46,100 ms/op
+# Warmup Iteration   2: 38,611 ms/op
+# Warmup Iteration   3: 37,981 ms/op
+# Warmup Iteration   4: 36,602 ms/op
+# Warmup Iteration   5: 36,390 ms/op
+Iteration   1: 36,199 ms/op
+Iteration   2: 35,139 ms/op
+Iteration   3: 36,244 ms/op
+Iteration   4: 35,463 ms/op
+Iteration   5: 41,993 ms/op
+Iteration   6: 36,136 ms/op
+Iteration   7: 34,923 ms/op
+Iteration   8: 35,023 ms/op
+Iteration   9: 35,276 ms/op
+Iteration  10: 38,397 ms/op
+
+
+Result "benchmark.BenchJava.testFluxFromCoroutinePublish":
+  35,775 ±(99.9%) 1,454 ms/op [Average]
+  (min, avg, max) = (34,868, 35,775, 41,993), stdev = 1,675
+  CI (99.9%): [34,321, 37,229] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFluxFromCoroutinePublishUnconfined
+
+# Run progress: 35,71% complete, ETA 00:11:27
+# Fork: 1 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFluxFromCoroutinePublishUnconfined-jmh-worker-1) Using Console logging
+45,775 ms/op
+# Warmup Iteration   2: 37,281 ms/op
+# Warmup Iteration   3: 35,299 ms/op
+# Warmup Iteration   4: 35,204 ms/op
+# Warmup Iteration   5: 35,324 ms/op
+Iteration   1: 34,870 ms/op
+Iteration   2: 35,046 ms/op
+Iteration   3: 36,332 ms/op
+Iteration   4: 35,236 ms/op
+Iteration   5: 36,731 ms/op
+Iteration   6: 35,302 ms/op
+Iteration   7: 35,360 ms/op
+Iteration   8: 35,242 ms/op
+Iteration   9: 35,118 ms/op
+Iteration  10: 35,133 ms/op
+
+# Run progress: 37,50% complete, ETA 00:11:02
+# Fork: 2 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFluxFromCoroutinePublishUnconfined-jmh-worker-1) Using Console logging
+46,364 ms/op
+# Warmup Iteration   2: 37,342 ms/op
+# Warmup Iteration   3: 35,063 ms/op
+# Warmup Iteration   4: 35,282 ms/op
+# Warmup Iteration   5: 35,396 ms/op
+Iteration   1: 35,220 ms/op
+Iteration   2: 35,123 ms/op
+Iteration   3: 34,809 ms/op
+Iteration   4: 35,350 ms/op
+Iteration   5: 35,366 ms/op
+Iteration   6: 35,572 ms/op
+Iteration   7: 35,120 ms/op
+Iteration   8: 35,335 ms/op
+Iteration   9: 35,410 ms/op
+Iteration  10: 35,840 ms/op
+
+
+Result "benchmark.BenchJava.testFluxFromCoroutinePublishUnconfined":
+  35,376 ±(99.9%) 0,399 ms/op [Average]
+  (min, avg, max) = (34,809, 35,376, 36,731), stdev = 0,460
+  CI (99.9%): [34,976, 35,775] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFluxThread
+
+# Run progress: 39,29% complete, ETA 00:10:39
+# Fork: 1 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFluxThread-jmh-worker-1) Using Console logging
+13,604 ms/op
+# Warmup Iteration   2: 11,165 ms/op
+# Warmup Iteration   3: 9,702 ms/op
+# Warmup Iteration   4: 9,775 ms/op
+# Warmup Iteration   5: 9,607 ms/op
+Iteration   1: 9,767 ms/op
+Iteration   2: 9,597 ms/op
+Iteration   3: 9,650 ms/op
+Iteration   4: 9,721 ms/op
+Iteration   5: 9,791 ms/op
+Iteration   6: 9,738 ms/op
+Iteration   7: 9,769 ms/op
+Iteration   8: 9,622 ms/op
+Iteration   9: 9,672 ms/op
+Iteration  10: 9,662 ms/op
+
+# Run progress: 41,07% complete, ETA 00:10:15
+# Fork: 2 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFluxThread-jmh-worker-1) Using Console logging
+13,478 ms/op
+# Warmup Iteration   2: 10,976 ms/op
+# Warmup Iteration   3: 10,294 ms/op
+# Warmup Iteration   4: 9,734 ms/op
+# Warmup Iteration   5: 9,714 ms/op
+Iteration   1: 9,556 ms/op
+Iteration   2: 9,790 ms/op
+Iteration   3: 9,790 ms/op
+Iteration   4: 9,756 ms/op
+Iteration   5: 9,730 ms/op
+Iteration   6: 9,749 ms/op
+Iteration   7: 9,747 ms/op
+Iteration   8: 9,875 ms/op
+Iteration   9: 9,837 ms/op
+Iteration  10: 9,662 ms/op
+
+
+Result "benchmark.BenchJava.testFluxThread":
+  9,724 ±(99.9%) 0,071 ms/op [Average]
+  (min, avg, max) = (9,556, 9,724, 9,875), stdev = 0,081
+  CI (99.9%): [9,653, 9,795] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testFluxWithCoroutineFilter
+
+# Run progress: 42,86% complete, ETA 00:09:53
+# Fork: 1 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFluxWithCoroutineFilter-jmh-worker-1) Using Console logging
+575,398 ms/op
+# Warmup Iteration   2: 404,709 ms/op
+# Warmup Iteration   3: 382,260 ms/op
+# Warmup Iteration   4: 377,320 ms/op
+# Warmup Iteration   5: 380,687 ms/op
+Iteration   1: 380,451 ms/op
+Iteration   2: 383,201 ms/op
+Iteration   3: 384,827 ms/op
+Iteration   4: 384,074 ms/op
+Iteration   5: 441,456 ms/op
+Iteration   6: 389,644 ms/op
+Iteration   7: 386,690 ms/op
+Iteration   8: 388,755 ms/op
+Iteration   9: 384,771 ms/op
+Iteration  10: 382,076 ms/op
+
+# Run progress: 44,64% complete, ETA 00:09:33
+# Fork: 2 of 2
+# Warmup Iteration   1: [DEBUG] (benchmark.BenchJava.testFluxWithCoroutineFilter-jmh-worker-1) Using Console logging
+602,954 ms/op
+# Warmup Iteration   2: 418,591 ms/op
+# Warmup Iteration   3: 402,063 ms/op
+# Warmup Iteration   4: 395,716 ms/op
+# Warmup Iteration   5: 395,326 ms/op
+Iteration   1: 393,867 ms/op
+Iteration   2: 396,065 ms/op
+Iteration   3: 393,941 ms/op
+Iteration   4: 398,729 ms/op
+Iteration   5: 400,338 ms/op
+Iteration   6: 389,506 ms/op
+Iteration   7: 394,670 ms/op
+Iteration   8: 394,301 ms/op
+Iteration   9: 398,687 ms/op
+Iteration  10: 403,160 ms/op
+
+
+Result "benchmark.BenchJava.testFluxWithCoroutineFilter":
+  393,461 ±(99.9%) 11,357 ms/op [Average]
+  (min, avg, max) = (380,451, 393,461, 441,456), stdev = 13,078
+  CI (99.9%): [382,104, 404,817] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testJavaStream
+
+# Run progress: 46,43% complete, ETA 00:09:15
+# Fork: 1 of 2
+# Warmup Iteration   1: 11,295 ms/op
+# Warmup Iteration   2: 10,120 ms/op
+# Warmup Iteration   3: 9,119 ms/op
+# Warmup Iteration   4: 9,116 ms/op
+# Warmup Iteration   5: 9,094 ms/op
+Iteration   1: 9,125 ms/op
+Iteration   2: 9,105 ms/op
+Iteration   3: 9,129 ms/op
+Iteration   4: 9,289 ms/op
+Iteration   5: 9,216 ms/op
+Iteration   6: 9,131 ms/op
+Iteration   7: 9,195 ms/op
+Iteration   8: 9,268 ms/op
+Iteration   9: 9,221 ms/op
+Iteration  10: 9,296 ms/op
+
+# Run progress: 48,21% complete, ETA 00:08:53
+# Fork: 2 of 2
+# Warmup Iteration   1: 10,668 ms/op
+# Warmup Iteration   2: 9,476 ms/op
+# Warmup Iteration   3: 8,573 ms/op
+# Warmup Iteration   4: 8,666 ms/op
+# Warmup Iteration   5: 8,678 ms/op
+Iteration   1: 8,683 ms/op
+Iteration   2: 8,940 ms/op
+Iteration   3: 8,640 ms/op
+Iteration   4: 8,634 ms/op
+Iteration   5: 8,724 ms/op
+Iteration   6: 8,831 ms/op
+Iteration   7: 8,624 ms/op
+Iteration   8: 8,676 ms/op
+Iteration   9: 8,757 ms/op
+Iteration  10: 8,696 ms/op
+
+
+Result "benchmark.BenchJava.testJavaStream":
+  8,959 ±(99.9%) 0,225 ms/op [Average]
+  (min, avg, max) = (8,624, 8,959, 9,296), stdev = 0,259
+  CI (99.9%): [8,734, 9,184] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testObservable
+
+# Run progress: 50,00% complete, ETA 00:08:32
+# Fork: 1 of 2
+# Warmup Iteration   1: 7,291 ms/op
+# Warmup Iteration   2: 5,312 ms/op
+# Warmup Iteration   3: 4,879 ms/op
+# Warmup Iteration   4: 4,880 ms/op
+# Warmup Iteration   5: 4,875 ms/op
+Iteration   1: 4,953 ms/op
+Iteration   2: 4,869 ms/op
+Iteration   3: 4,898 ms/op
+Iteration   4: 4,894 ms/op
+Iteration   5: 4,913 ms/op
+Iteration   6: 4,889 ms/op
+Iteration   7: 4,893 ms/op
+Iteration   8: 4,890 ms/op
+Iteration   9: 5,866 ms/op
+Iteration  10: 7,464 ms/op
+
+# Run progress: 51,79% complete, ETA 00:08:11
+# Fork: 2 of 2
+# Warmup Iteration   1: 6,711 ms/op
+# Warmup Iteration   2: 5,300 ms/op
+# Warmup Iteration   3: 4,849 ms/op
+# Warmup Iteration   4: 4,803 ms/op
+# Warmup Iteration   5: 4,891 ms/op
+Iteration   1: 4,875 ms/op
+Iteration   2: 4,883 ms/op
+Iteration   3: 4,892 ms/op
+Iteration   4: 4,877 ms/op
+Iteration   5: 4,875 ms/op
+Iteration   6: 4,857 ms/op
+Iteration   7: 4,856 ms/op
+Iteration   8: 4,884 ms/op
+Iteration   9: 5,406 ms/op
+Iteration  10: 7,442 ms/op
+
+
+Result "benchmark.BenchJava.testObservable":
+  5,219 ±(99.9%) 0,696 ms/op [Average]
+  (min, avg, max) = (4,856, 5,219, 7,464), stdev = 0,801
+  CI (99.9%): [4,523, 5,915] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testObservableFromCoroutinePublish
+
+# Run progress: 53,57% complete, ETA 00:07:51
+# Fork: 1 of 2
+# Warmup Iteration   1: 42,607 ms/op
+# Warmup Iteration   2: 36,416 ms/op
+# Warmup Iteration   3: 34,281 ms/op
+# Warmup Iteration   4: 34,225 ms/op
+# Warmup Iteration   5: 34,267 ms/op
+Iteration   1: 34,430 ms/op
+Iteration   2: 34,187 ms/op
+Iteration   3: 33,963 ms/op
+Iteration   4: 34,045 ms/op
+Iteration   5: 35,657 ms/op
+Iteration   6: 34,584 ms/op
+Iteration   7: 34,373 ms/op
+Iteration   8: 34,457 ms/op
+Iteration   9: 34,160 ms/op
+Iteration  10: 34,584 ms/op
+
+# Run progress: 55,36% complete, ETA 00:07:31
+# Fork: 2 of 2
+# Warmup Iteration   1: 43,727 ms/op
+# Warmup Iteration   2: 37,205 ms/op
+# Warmup Iteration   3: 34,418 ms/op
+# Warmup Iteration   4: 34,771 ms/op
+# Warmup Iteration   5: 34,562 ms/op
+Iteration   1: 34,487 ms/op
+Iteration   2: 34,243 ms/op
+Iteration   3: 34,158 ms/op
+Iteration   4: 34,504 ms/op
+Iteration   5: 34,319 ms/op
+Iteration   6: 34,397 ms/op
+Iteration   7: 34,855 ms/op
+Iteration   8: 34,135 ms/op
+Iteration   9: 34,240 ms/op
+Iteration  10: 34,344 ms/op
+
+
+Result "benchmark.BenchJava.testObservableFromCoroutinePublish":
+  34,406 ±(99.9%) 0,314 ms/op [Average]
+  (min, avg, max) = (33,963, 34,406, 35,657), stdev = 0,362
+  CI (99.9%): [34,092, 34,720] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testObservableFromCoroutinePublishUnconfined
+
+# Run progress: 57,14% complete, ETA 00:07:11
+# Fork: 1 of 2
+# Warmup Iteration   1: 43,123 ms/op
+# Warmup Iteration   2: 36,236 ms/op
+# Warmup Iteration   3: 34,215 ms/op
+# Warmup Iteration   4: 34,177 ms/op
+# Warmup Iteration   5: 34,861 ms/op
+Iteration   1: 34,329 ms/op
+Iteration   2: 34,146 ms/op
+Iteration   3: 34,272 ms/op
+Iteration   4: 34,434 ms/op
+Iteration   5: 34,424 ms/op
+Iteration   6: 34,356 ms/op
+Iteration   7: 34,439 ms/op
+Iteration   8: 34,676 ms/op
+Iteration   9: 34,459 ms/op
+Iteration  10: 34,743 ms/op
+
+# Run progress: 58,93% complete, ETA 00:06:51
+# Fork: 2 of 2
+# Warmup Iteration   1: 43,022 ms/op
+# Warmup Iteration   2: 36,550 ms/op
+# Warmup Iteration   3: 34,431 ms/op
+# Warmup Iteration   4: 34,581 ms/op
+# Warmup Iteration   5: 35,282 ms/op
+Iteration   1: 35,036 ms/op
+Iteration   2: 34,459 ms/op
+Iteration   3: 34,423 ms/op
+Iteration   4: 34,725 ms/op
+Iteration   5: 34,557 ms/op
+Iteration   6: 34,782 ms/op
+Iteration   7: 34,736 ms/op
+Iteration   8: 34,316 ms/op
+Iteration   9: 34,462 ms/op
+Iteration  10: 35,020 ms/op
+
+
+Result "benchmark.BenchJava.testObservableFromCoroutinePublishUnconfined":
+  34,540 ±(99.9%) 0,208 ms/op [Average]
+  (min, avg, max) = (34,146, 34,540, 35,036), stdev = 0,240
+  CI (99.9%): [34,332, 34,748] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testObservableThread
+
+# Run progress: 60,71% complete, ETA 00:06:32
+# Fork: 1 of 2
+# Warmup Iteration   1: 11,125 ms/op
+# Warmup Iteration   2: 8,597 ms/op
+# Warmup Iteration   3: 7,703 ms/op
+# Warmup Iteration   4: 7,749 ms/op
+# Warmup Iteration   5: 7,708 ms/op
+Iteration   1: 7,667 ms/op
+Iteration   2: 7,639 ms/op
+Iteration   3: 7,635 ms/op
+Iteration   4: 7,686 ms/op
+Iteration   5: 7,670 ms/op
+Iteration   6: 7,699 ms/op
+Iteration   7: 7,624 ms/op
+Iteration   8: 7,707 ms/op
+Iteration   9: 7,650 ms/op
+Iteration  10: 7,689 ms/op
+
+# Run progress: 62,50% complete, ETA 00:06:13
+# Fork: 2 of 2
+# Warmup Iteration   1: 11,367 ms/op
+# Warmup Iteration   2: 8,373 ms/op
+# Warmup Iteration   3: 7,607 ms/op
+# Warmup Iteration   4: 7,720 ms/op
+# Warmup Iteration   5: 7,629 ms/op
+Iteration   1: 7,700 ms/op
+Iteration   2: 7,680 ms/op
+Iteration   3: 7,791 ms/op
+Iteration   4: 8,356 ms/op
+Iteration   5: 8,915 ms/op
+Iteration   6: 8,954 ms/op
+Iteration   7: 8,708 ms/op
+Iteration   8: 7,646 ms/op
+Iteration   9: 7,659 ms/op
+Iteration  10: 7,625 ms/op
+
+
+Result "benchmark.BenchJava.testObservableThread":
+  7,885 ±(99.9%) 0,391 ms/op [Average]
+  (min, avg, max) = (7,624, 7,885, 8,954), stdev = 0,450
+  CI (99.9%): [7,494, 8,276] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testObservableWithCoroutineFilter
+
+# Run progress: 64,29% complete, ETA 00:05:54
+# Fork: 1 of 2
+# Warmup Iteration   1: 682,318 ms/op
+# Warmup Iteration   2: 415,700 ms/op
+# Warmup Iteration   3: 260,318 ms/op
+# Warmup Iteration   4: 208,229 ms/op
+# Warmup Iteration   5: 223,177 ms/op
+Iteration   1: 210,296 ms/op
+Iteration   2: 183,542 ms/op
+Iteration   3: 196,584 ms/op
+Iteration   4: 182,392 ms/op
+Iteration   5: 213,418 ms/op
+Iteration   6: 214,974 ms/op
+Iteration   7: 182,613 ms/op
+Iteration   8: 187,739 ms/op
+Iteration   9: 193,986 ms/op
+Iteration  10: 180,207 ms/op
+
+# Run progress: 66,07% complete, ETA 00:05:36
+# Fork: 2 of 2
+# Warmup Iteration   1: 673,622 ms/op
+# Warmup Iteration   2: 402,674 ms/op
+# Warmup Iteration   3: 248,277 ms/op
+# Warmup Iteration   4: 230,680 ms/op
+# Warmup Iteration   5: 286,926 ms/op
+Iteration   1: 185,204 ms/op
+Iteration   2: 186,204 ms/op
+Iteration   3: 201,782 ms/op
+Iteration   4: 196,776 ms/op
+Iteration   5: 180,179 ms/op
+Iteration   6: 212,225 ms/op
+Iteration   7: 221,166 ms/op
+Iteration   8: 176,149 ms/op
+Iteration   9: 206,493 ms/op
+Iteration  10: 176,187 ms/op
+
+
+Result "benchmark.BenchJava.testObservableWithCoroutineFilter":
+  194,406 ±(99.9%) 12,519 ms/op [Average]
+  (min, avg, max) = (176,149, 194,406, 221,166), stdev = 14,416
+  CI (99.9%): [181,887, 206,924] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSequenceBuild
+
+# Run progress: 67,86% complete, ETA 00:05:19
+# Fork: 1 of 2
+# Warmup Iteration   1: 19,150 ms/op
+# Warmup Iteration   2: 16,532 ms/op
+# Warmup Iteration   3: 15,995 ms/op
+# Warmup Iteration   4: 15,822 ms/op
+# Warmup Iteration   5: 15,954 ms/op
+Iteration   1: 15,715 ms/op
+Iteration   2: 15,713 ms/op
+Iteration   3: 18,929 ms/op
+Iteration   4: 22,300 ms/op
+Iteration   5: 20,141 ms/op
+Iteration   6: 16,784 ms/op
+Iteration   7: 16,303 ms/op
+Iteration   8: 16,567 ms/op
+Iteration   9: 16,595 ms/op
+Iteration  10: 16,586 ms/op
+
+# Run progress: 69,64% complete, ETA 00:05:00
+# Fork: 2 of 2
+# Warmup Iteration   1: 18,734 ms/op
+# Warmup Iteration   2: 16,151 ms/op
+# Warmup Iteration   3: 17,016 ms/op
+# Warmup Iteration   4: 15,729 ms/op
+# Warmup Iteration   5: 15,563 ms/op
+Iteration   1: 15,487 ms/op
+Iteration   2: 15,461 ms/op
+Iteration   3: 15,526 ms/op
+Iteration   4: 15,320 ms/op
+Iteration   5: 15,540 ms/op
+Iteration   6: 16,253 ms/op
+Iteration   7: 15,319 ms/op
+Iteration   8: 15,432 ms/op
+Iteration   9: 15,377 ms/op
+Iteration  10: 15,408 ms/op
+
+
+Result "benchmark.BenchJava.testSequenceBuild":
+  16,538 ±(99.9%) 1,601 ms/op [Average]
+  (min, avg, max) = (15,319, 16,538, 22,300), stdev = 1,843
+  CI (99.9%): [14,937, 18,139] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSequenceGenerate
+
+# Run progress: 71,43% complete, ETA 00:04:41
+# Fork: 1 of 2
+# Warmup Iteration   1: 18,993 ms/op
+# Warmup Iteration   2: 16,880 ms/op
+# Warmup Iteration   3: 15,469 ms/op
+# Warmup Iteration   4: 15,790 ms/op
+# Warmup Iteration   5: 15,669 ms/op
+Iteration   1: 15,606 ms/op
+Iteration   2: 15,746 ms/op
+Iteration   3: 15,986 ms/op
+Iteration   4: 15,812 ms/op
+Iteration   5: 16,023 ms/op
+Iteration   6: 16,095 ms/op
+Iteration   7: 16,273 ms/op
+Iteration   8: 16,184 ms/op
+Iteration   9: 16,149 ms/op
+Iteration  10: 16,039 ms/op
+
+# Run progress: 73,21% complete, ETA 00:04:23
+# Fork: 2 of 2
+# Warmup Iteration   1: 18,667 ms/op
+# Warmup Iteration   2: 16,761 ms/op
+# Warmup Iteration   3: 15,850 ms/op
+# Warmup Iteration   4: 15,625 ms/op
+# Warmup Iteration   5: 15,800 ms/op
+Iteration   1: 15,815 ms/op
+Iteration   2: 16,169 ms/op
+Iteration   3: 16,465 ms/op
+Iteration   4: 18,618 ms/op
+Iteration   5: 16,454 ms/op
+Iteration   6: 16,098 ms/op
+Iteration   7: 16,178 ms/op
+Iteration   8: 16,383 ms/op
+Iteration   9: 16,320 ms/op
+Iteration  10: 16,110 ms/op
+
+
+Result "benchmark.BenchJava.testSequenceGenerate":
+  16,226 ±(99.9%) 0,528 ms/op [Average]
+  (min, avg, max) = (15,606, 16,226, 18,618), stdev = 0,608
+  CI (99.9%): [15,699, 16,754] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSequenceIntRange
+
+# Run progress: 75,00% complete, ETA 00:04:05
+# Fork: 1 of 2
+# Warmup Iteration   1: 11,571 ms/op
+# Warmup Iteration   2: 8,964 ms/op
+# Warmup Iteration   3: 8,505 ms/op
+# Warmup Iteration   4: 8,410 ms/op
+# Warmup Iteration   5: 8,575 ms/op
+Iteration   1: 8,473 ms/op
+Iteration   2: 8,478 ms/op
+Iteration   3: 8,504 ms/op
+Iteration   4: 8,631 ms/op
+Iteration   5: 9,303 ms/op
+Iteration   6: 8,678 ms/op
+Iteration   7: 8,429 ms/op
+Iteration   8: 8,588 ms/op
+Iteration   9: 8,383 ms/op
+Iteration  10: 8,499 ms/op
+
+# Run progress: 76,79% complete, ETA 00:03:47
+# Fork: 2 of 2
+# Warmup Iteration   1: 11,788 ms/op
+# Warmup Iteration   2: 8,881 ms/op
+# Warmup Iteration   3: 8,440 ms/op
+# Warmup Iteration   4: 8,449 ms/op
+# Warmup Iteration   5: 8,715 ms/op
+Iteration   1: 8,779 ms/op
+Iteration   2: 8,496 ms/op
+Iteration   3: 8,629 ms/op
+Iteration   4: 8,341 ms/op
+Iteration   5: 8,522 ms/op
+Iteration   6: 8,491 ms/op
+Iteration   7: 8,455 ms/op
+Iteration   8: 8,622 ms/op
+Iteration   9: 8,416 ms/op
+Iteration  10: 8,406 ms/op
+
+
+Result "benchmark.BenchJava.testSequenceIntRange":
+  8,556 ±(99.9%) 0,179 ms/op [Average]
+  (min, avg, max) = (8,341, 8,556, 9,303), stdev = 0,207
+  CI (99.9%): [8,377, 8,736] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSource
+
+# Run progress: 78,57% complete, ETA 00:03:29
+# Fork: 1 of 2
+# Warmup Iteration   1: 35,974 ms/op
+# Warmup Iteration   2: 29,229 ms/op
+# Warmup Iteration   3: 26,438 ms/op
+# Warmup Iteration   4: 26,414 ms/op
+# Warmup Iteration   5: 26,329 ms/op
+Iteration   1: 26,869 ms/op
+Iteration   2: 27,158 ms/op
+Iteration   3: 26,762 ms/op
+Iteration   4: 27,580 ms/op
+Iteration   5: 27,425 ms/op
+Iteration   6: 27,861 ms/op
+Iteration   7: 27,624 ms/op
+Iteration   8: 27,497 ms/op
+Iteration   9: 26,962 ms/op
+Iteration  10: 26,865 ms/op
+
+# Run progress: 80,36% complete, ETA 00:03:11
+# Fork: 2 of 2
+# Warmup Iteration   1: 35,837 ms/op
+# Warmup Iteration   2: 29,209 ms/op
+# Warmup Iteration   3: 26,862 ms/op
+# Warmup Iteration   4: 26,912 ms/op
+# Warmup Iteration   5: 27,074 ms/op
+Iteration   1: 27,516 ms/op
+Iteration   2: 27,353 ms/op
+Iteration   3: 27,350 ms/op
+Iteration   4: 27,963 ms/op
+Iteration   5: 27,510 ms/op
+Iteration   6: 27,340 ms/op
+Iteration   7: 27,709 ms/op
+Iteration   8: 27,664 ms/op
+Iteration   9: 26,783 ms/op
+Iteration  10: 29,501 ms/op
+
+
+Result "benchmark.BenchJava.testSource":
+  27,465 ±(99.9%) 0,518 ms/op [Average]
+  (min, avg, max) = (26,762, 27,465, 29,501), stdev = 0,596
+  CI (99.9%): [26,947, 27,982] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSourceInline
+
+# Run progress: 82,14% complete, ETA 00:02:53
+# Fork: 1 of 2
+# Warmup Iteration   1: 54,767 ms/op
+# Warmup Iteration   2: 44,835 ms/op
+# Warmup Iteration   3: 41,829 ms/op
+# Warmup Iteration   4: 42,054 ms/op
+# Warmup Iteration   5: 41,410 ms/op
+Iteration   1: 41,421 ms/op
+Iteration   2: 40,310 ms/op
+Iteration   3: 40,118 ms/op
+Iteration   4: 40,418 ms/op
+Iteration   5: 40,375 ms/op
+Iteration   6: 41,022 ms/op
+Iteration   7: 41,093 ms/op
+Iteration   8: 40,753 ms/op
+Iteration   9: 40,983 ms/op
+Iteration  10: 40,685 ms/op
+
+# Run progress: 83,93% complete, ETA 00:02:36
+# Fork: 2 of 2
+# Warmup Iteration   1: 54,143 ms/op
+# Warmup Iteration   2: 44,313 ms/op
+# Warmup Iteration   3: 41,458 ms/op
+# Warmup Iteration   4: 41,133 ms/op
+# Warmup Iteration   5: 40,541 ms/op
+Iteration   1: 40,889 ms/op
+Iteration   2: 39,905 ms/op
+Iteration   3: 41,035 ms/op
+Iteration   4: 41,027 ms/op
+Iteration   5: 39,978 ms/op
+Iteration   6: 40,670 ms/op
+Iteration   7: 41,340 ms/op
+Iteration   8: 41,813 ms/op
+Iteration   9: 40,796 ms/op
+Iteration  10: 40,004 ms/op
+
+
+Result "benchmark.BenchJava.testSourceInline":
+  40,732 ±(99.9%) 0,449 ms/op [Average]
+  (min, avg, max) = (39,905, 40,732, 41,813), stdev = 0,517
+  CI (99.9%): [40,283, 41,180] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSourceInlineDeep
+
+# Run progress: 85,71% complete, ETA 00:02:18
+# Fork: 1 of 2
+# Warmup Iteration   1: 10,280 ms/op
+# Warmup Iteration   2: 8,375 ms/op
+# Warmup Iteration   3: 7,603 ms/op
+# Warmup Iteration   4: 7,670 ms/op
+# Warmup Iteration   5: 7,609 ms/op
+Iteration   1: 7,559 ms/op
+Iteration   2: 7,712 ms/op
+Iteration   3: 7,608 ms/op
+Iteration   4: 7,638 ms/op
+Iteration   5: 7,668 ms/op
+Iteration   6: 7,602 ms/op
+Iteration   7: 7,648 ms/op
+Iteration   8: 7,747 ms/op
+Iteration   9: 7,663 ms/op
+Iteration  10: 7,763 ms/op
+
+# Run progress: 87,50% complete, ETA 00:02:00
+# Fork: 2 of 2
+# Warmup Iteration   1: 10,357 ms/op
+# Warmup Iteration   2: 8,381 ms/op
+# Warmup Iteration   3: 7,643 ms/op
+# Warmup Iteration   4: 7,599 ms/op
+# Warmup Iteration   5: 7,548 ms/op
+Iteration   1: 7,619 ms/op
+Iteration   2: 7,727 ms/op
+Iteration   3: 7,791 ms/op
+Iteration   4: 7,794 ms/op
+Iteration   5: 7,815 ms/op
+Iteration   6: 7,757 ms/op
+Iteration   7: 7,634 ms/op
+Iteration   8: 7,567 ms/op
+Iteration   9: 7,669 ms/op
+Iteration  10: 7,723 ms/op
+
+
+Result "benchmark.BenchJava.testSourceInlineDeep":
+  7,685 ±(99.9%) 0,067 ms/op [Average]
+  (min, avg, max) = (7,559, 7,685, 7,815), stdev = 0,077
+  CI (99.9%): [7,618, 7,752] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSourceThread
+
+# Run progress: 89,29% complete, ETA 00:01:43
+# Fork: 1 of 2
+# Warmup Iteration   1: 10447,776 ms/op
+# Warmup Iteration   2: 10203,841 ms/op
+# Warmup Iteration   3: 10097,293 ms/op
+# Warmup Iteration   4: 10123,997 ms/op
+# Warmup Iteration   5: 10222,223 ms/op
+Iteration   1: 10189,937 ms/op
+Iteration   2: 10563,646 ms/op
+Iteration   3: 10300,676 ms/op
+Iteration   4: 10171,134 ms/op
+Iteration   5: 10107,704 ms/op
+Iteration   6: 10243,565 ms/op
+Iteration   7: 10207,076 ms/op
+Iteration   8: 10271,503 ms/op
+Iteration   9: 10236,929 ms/op
+Iteration  10: 10178,367 ms/op
+
+# Run progress: 91,07% complete, ETA 00:01:39
+# Fork: 2 of 2
+# Warmup Iteration   1: 10469,191 ms/op
+# Warmup Iteration   2: 10770,686 ms/op
+# Warmup Iteration   3: 10312,812 ms/op
+# Warmup Iteration   4: 10143,904 ms/op
+# Warmup Iteration   5: 10316,883 ms/op
+Iteration   1: 10289,749 ms/op
+Iteration   2: 10503,636 ms/op
+Iteration   3: 10459,731 ms/op
+Iteration   4: 10334,688 ms/op
+Iteration   5: 10211,986 ms/op
+Iteration   6: 10138,213 ms/op
+Iteration   7: 10187,714 ms/op
+Iteration   8: 10390,525 ms/op
+Iteration   9: 10610,335 ms/op
+Iteration  10: 10842,980 ms/op
+
+
+Result "benchmark.BenchJava.testSourceThread":
+  10322,005 ±(99.9%) 163,195 ms/op [Average]
+  (min, avg, max) = (10107,704, 10322,005, 10842,980), stdev = 187,936
+  CI (99.9%): [10158,810, 10485,200] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSourceThreadBuffer128
+
+# Run progress: 92,86% complete, ETA 00:01:30
+# Fork: 1 of 2
+# Warmup Iteration   1: 703,224 ms/op
+# Warmup Iteration   2: 562,871 ms/op
+# Warmup Iteration   3: 551,591 ms/op
+# Warmup Iteration   4: 545,436 ms/op
+# Warmup Iteration   5: 580,392 ms/op
+Iteration   1: 595,270 ms/op
+Iteration   2: 565,544 ms/op
+Iteration   3: 602,863 ms/op
+Iteration   4: 599,653 ms/op
+Iteration   5: 590,146 ms/op
+Iteration   6: 568,794 ms/op
+Iteration   7: 570,032 ms/op
+Iteration   8: 577,394 ms/op
+Iteration   9: 581,634 ms/op
+Iteration  10: 634,657 ms/op
+
+# Run progress: 94,64% complete, ETA 00:01:07
+# Fork: 2 of 2
+# Warmup Iteration   1: 683,134 ms/op
+# Warmup Iteration   2: 555,038 ms/op
+# Warmup Iteration   3: 526,250 ms/op
+# Warmup Iteration   4: 539,927 ms/op
+# Warmup Iteration   5: 538,095 ms/op
+Iteration   1: 532,363 ms/op
+Iteration   2: 575,956 ms/op
+Iteration   3: 558,669 ms/op
+Iteration   4: 534,458 ms/op
+Iteration   5: 544,468 ms/op
+Iteration   6: 534,941 ms/op
+Iteration   7: 546,325 ms/op
+Iteration   8: 572,647 ms/op
+Iteration   9: 546,181 ms/op
+Iteration  10: 561,250 ms/op
+
+
+Result "benchmark.BenchJava.testSourceThreadBuffer128":
+  569,662 ±(99.9%) 23,000 ms/op [Average]
+  (min, avg, max) = (532,363, 569,662, 634,657), stdev = 26,487
+  CI (99.9%): [546,662, 592,662] (assumes normal distribution)
+
+
+# JMH version: 1.19
+# VM version: JDK 1.8.0_112, VM 25.112-b15
+# VM invoker: C:\dev\jdk\jdk1.8.0_112\jre\bin\java.exe
+# VM options: -Dfile.encoding=windows-1252 -Duser.country=FR -Duser.language=fr -Duser.variant -Dkotlinx.coroutines.debug=off
+# Warmup: 5 iterations, 1 s each
+# Measurement: 10 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.BenchJava.testSrcManBase
+
+# Run progress: 96,43% complete, ETA 00:00:44
+# Fork: 1 of 2
+# Warmup Iteration   1: 8,773 ms/op
+# Warmup Iteration   2: 7,517 ms/op
+# Warmup Iteration   3: 6,866 ms/op
+# Warmup Iteration   4: 7,038 ms/op
+# Warmup Iteration   5: 6,992 ms/op
+Iteration   1: 6,904 ms/op
+Iteration   2: 6,974 ms/op
+Iteration   3: 6,925 ms/op
+Iteration   4: 6,933 ms/op
+Iteration   5: 6,901 ms/op
+Iteration   6: 6,927 ms/op
+Iteration   7: 7,323 ms/op
+Iteration   8: 9,369 ms/op
+Iteration   9: 11,207 ms/op
+Iteration  10: 7,445 ms/op
+
+# Run progress: 98,21% complete, ETA 00:00:22
+# Fork: 2 of 2
+# Warmup Iteration   1: 8,775 ms/op
+# Warmup Iteration   2: 7,498 ms/op
+# Warmup Iteration   3: 7,263 ms/op
+# Warmup Iteration   4: 7,497 ms/op
+# Warmup Iteration   5: 7,021 ms/op
+Iteration   1: 6,957 ms/op
+Iteration   2: 7,054 ms/op
+Iteration   3: 7,113 ms/op
+Iteration   4: 8,612 ms/op
+Iteration   5: 11,002 ms/op
+Iteration   6: 10,497 ms/op
+Iteration   7: 13,959 ms/op
+Iteration   8: 11,799 ms/op
+Iteration   9: 11,298 ms/op
+Iteration  10: 8,248 ms/op
+
+
+Result "benchmark.BenchJava.testSrcManBase":
+  8,672 ±(99.9%) 1,891 ms/op [Average]
+  (min, avg, max) = (6,901, 8,672, 13,959), stdev = 2,177
+  CI (99.9%): [6,782, 10,563] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:20:39
+
+Benchmark                                               Mode  Cnt      Score     Error  Units
+BenchJava.testBaselineLoop                              avgt   20      0,968 ±   0,017  ms/op
+BenchJava.testChannelPipeline                           avgt   20   2893,862 ±  24,476  ms/op
+BenchJava.testChannelPipelineUnconfined                 avgt   20    413,987 ±   2,296  ms/op
+BenchJava.testFlowable                                  avgt   20      5,239 ±   0,037  ms/op
+BenchJava.testFlowableFromCoroutinePublish              avgt   20     35,335 ±   0,185  ms/op
+BenchJava.testFlowableFromCoroutinePublishUnconfined    avgt   20     36,902 ±   1,365  ms/op
+BenchJava.testFlowableThread                            avgt   20     11,448 ±   5,961  ms/op
+BenchJava.testFlowableWithCoroutineFilter               avgt   20    381,592 ±  26,868  ms/op
+BenchJava.testFlux                                      avgt   20      5,098 ±   0,106  ms/op
+BenchJava.testFluxFromCoroutinePublish                  avgt   20     35,775 ±   1,454  ms/op
+BenchJava.testFluxFromCoroutinePublishUnconfined        avgt   20     35,376 ±   0,399  ms/op
+BenchJava.testFluxThread                                avgt   20      9,724 ±   0,071  ms/op
+BenchJava.testFluxWithCoroutineFilter                   avgt   20    393,461 ±  11,357  ms/op
+BenchJava.testJavaStream                                avgt   20      8,959 ±   0,225  ms/op
+BenchJava.testObservable                                avgt   20      5,219 ±   0,696  ms/op
+BenchJava.testObservableFromCoroutinePublish            avgt   20     34,406 ±   0,314  ms/op
+BenchJava.testObservableFromCoroutinePublishUnconfined  avgt   20     34,540 ±   0,208  ms/op
+BenchJava.testObservableThread                          avgt   20      7,885 ±   0,391  ms/op
+BenchJava.testObservableWithCoroutineFilter             avgt   20    194,406 ±  12,519  ms/op
+BenchJava.testSequenceBuild                             avgt   20     16,538 ±   1,601  ms/op
+BenchJava.testSequenceGenerate                          avgt   20     16,226 ±   0,528  ms/op
+BenchJava.testSequenceIntRange                          avgt   20      8,556 ±   0,179  ms/op
+BenchJava.testSource                                    avgt   20     27,465 ±   0,518  ms/op
+BenchJava.testSourceInline                              avgt   20     40,732 ±   0,449  ms/op
+BenchJava.testSourceInlineDeep                          avgt   20      7,685 ±   0,067  ms/op
+BenchJava.testSourceThread                              avgt   20  10322,005 ± 163,195  ms/op
+BenchJava.testSourceThreadBuffer128                     avgt   20    569,662 ±  23,000  ms/op
+BenchJava.testSrcManBase                                avgt   20      8,672 ±   1,891  ms/op
