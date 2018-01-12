@@ -298,4 +298,6 @@ expect interface Multi<T>: CommonMultiOperators<T>, Publisher<T> {
      * Key for identifiying common grouped elements of this [Multi]. [R] is key type.
      */
     class Key<out R>(value: R)
+
+    suspend fun <R> fold(initial: R, operation: suspend (acc: R, T) -> R): R
 }

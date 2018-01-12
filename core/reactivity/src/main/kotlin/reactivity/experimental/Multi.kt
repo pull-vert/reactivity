@@ -151,6 +151,8 @@ actual interface Multi<T>: CommonMultiOperators<T>, Publisher<T> {
 
     actual fun <U> takeUntil(other: Publisher<U>): Multi<T>
     actual class Key<out R> actual constructor(val value: R)
+
+    actual suspend fun <R> fold(initial: R, operation: suspend (acc: R, T) -> R): R
 }
 
 internal class MultiImpl<T>(private val delegate: Publisher<T>,
@@ -296,5 +298,13 @@ internal class MultiImpl<T>(private val delegate: Publisher<T>,
                 }
             }
         }
+    }
+
+    override suspend fun <R> fold(initial: R, operation: suspend (acc: R, T) -> R): R {
+        var acc = initial
+        consumeEach {
+                acc = operation(acc, it)
+            }
+        return acc
     }
 }
