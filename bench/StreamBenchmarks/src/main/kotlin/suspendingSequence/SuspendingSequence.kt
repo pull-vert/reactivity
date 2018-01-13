@@ -1,9 +1,6 @@
-package suspendedSequence
+package suspendingSequence
 
 import kotlin.coroutines.experimental.*
-import kotlin.coroutines.experimental.intrinsics.createCoroutineUnchecked
-import kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn
-import kotlin.coroutines.experimental.intrinsics.COROUTINE_SUSPENDED
 
 interface SuspendingSequenceBuilder<in T> {
     suspend fun yield(value: T)
@@ -31,7 +28,7 @@ fun <T> suspendingIterator(
         block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingIterator<T> =
         SuspendingIteratorCoroutine<T>(context).apply {
-            nextStep = block.createCoroutineUnchecked(receiver = this, completion = this)
+            nextStep = block.createCoroutine(receiver = this, completion = this)
         }
 
 class SuspendingIteratorCoroutine<T>(
@@ -107,12 +104,9 @@ class SuspendingIteratorCoroutine<T>(
     }
 
     // Generator implementation
-    override suspend fun yield(value: T): Unit {
+    override suspend fun yield(value: T): Unit = suspendCoroutine { c ->
         nextValue = value
-        return suspendCoroutineOrReturn { cont ->
-            nextStep = cont
-            resumeIterator(true)
-            COROUTINE_SUSPENDED
-        }
+        nextStep = c
+        resumeIterator(true)
     }
 }

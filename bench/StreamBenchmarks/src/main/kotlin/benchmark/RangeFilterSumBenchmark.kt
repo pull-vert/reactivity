@@ -2,12 +2,8 @@ package benchmark
 
 import io.reactivex.Flowable
 import io.reactivex.Observable
-import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.experimental.DefaultDispatcher
-import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.channels.Channel
-import kotlinx.coroutines.experimental.channels.filter
-import kotlinx.coroutines.experimental.channels.fold
 import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.publish
@@ -17,29 +13,28 @@ import kotlinx.coroutines.experimental.rx2.consumeEach
 import kotlinx.coroutines.experimental.rx2.rxFlowable
 import kotlinx.coroutines.experimental.rx2.rxObservable
 import org.openjdk.jmh.annotations.Benchmark
-import reactivity.experimental.MultiBuilder
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
-import source.*
 import sourceInline.*
 import srcmanbase.*
-import java.util.stream.Collectors
-import java.util.stream.Stream
+import suspendingSequence.SuspendingSequence
+import suspendingSequence.suspendingSequence
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.buildSequence
 
 fun Int.isGood() = this % 4 == 0
 
 fun Channel.Factory.range(start: Int, count: Int, context: CoroutineContext = DefaultDispatcher) =
-    produce<Int>(context) {
-        for (i in start until (start + count))
-            send(i)
-    }
+        produce<Int>(context) {
+            for (i in start until (start + count))
+                send(i)
+        }
 
 fun publishRange(start: Int, count: Int, context: CoroutineContext = DefaultDispatcher) =
-    publish<Int>(context) {
-        for (i in start until (start + count))
-            send(i)
-    }
+        publish<Int>(context) {
+            for (i in start until (start + count))
+                send(i)
+        }
 
 fun sequenceGenerateRange(start: Int, count: Int): Sequence<Int> {
     var cur = start
@@ -75,35 +70,69 @@ fun <T> Flux<T>.coroutineFilter(predicate: (T) -> Boolean) = flux {
     }
 }
 
+fun <E> Publisher<E>.filter(predicate: suspend (E) -> Boolean) = publish<E> {
+    consumeEach {
+        if (predicate(it)) send(it)
+    }
+}
+
+suspend fun <E, R> Publisher<E>.fold(initial: R, operation: suspend (acc: R, E) -> R): R {
+    var acc = initial
+    consumeEach {
+        acc = operation(acc, it)
+    }
+    return acc
+}
+
+fun suspendingSequenceRange(start: Int, count: Int, context: CoroutineContext = DefaultDispatcher) =
+        suspendingSequence<Int>(context) {
+            for (i in start until (start + count))
+                yield(i)
+        }
+
+fun <E> SuspendingSequence<E>.filter(predicate: suspend (E) -> Boolean) = suspendingSequence<E> {
+    for (value in this@filter) {
+        if (predicate(value)) yield(value)
+    }
+}
+
+suspend fun <E, R> SuspendingSequence<E>.fold(initial: R, operation: suspend (acc: R, E) -> R): R {
+    var acc = initial
+    for (value in this@fold) {
+        acc = operation(acc, value)
+    }
+    return acc
+}
+
 data class IntBox(var v: Int)
 
 const val N = 1_000_000
 
 open class RangeFilterSumBenchmark {
-    @Benchmark
-    fun testBaselineLoop(): Int {
-        var sum = 0
-        for (i in 1..N) {
-            if (i.isGood())
-                sum += i
-        }
-        return sum
-    }
-
-    @Benchmark
-    fun testJavaStream(): Int =
-        Stream
-            .iterate(1) { it + 1 }
-            .limit(N.toLong())
-            .filter { it.isGood() }
-            .collect(Collectors.summingInt { it })
-
-    @Benchmark
-    fun testSequenceIntRange(): Int =
-        (1..N)
-            .filter { it.isGood() }
-            .fold(0, { a, b -> a + b })
-
+//    @Benchmark
+//    fun testBaselineLoop(): Int {
+//        var sum = 0
+//        for (i in 1..N) {
+//            if (i.isGood())
+//                sum += i
+//        }
+//        return sum
+//    }
+//
+//    @Benchmark
+//    fun testJavaStream(): Int =
+//        Stream
+//            .iterate(1) { it + 1 }
+//            .limit(N.toLong())
+//            .filter { it.isGood() }
+//            .collect(Collectors.summingInt { it })
+//
+//    @Benchmark
+//    fun testSequenceIntRange(): Int =
+//        (1..N)
+//            .filter { it.isGood() }
+//            .fold(0, { a, b -> a + b })
+//
 //    @Benchmark
 //    fun testSequenceGenerate(): Int =
 //        sequenceGenerateRange(1, N)
@@ -115,31 +144,31 @@ open class RangeFilterSumBenchmark {
 //        sequenceBuildRange(1, N)
 //            .filter { it.isGood() }
 //            .fold(0, { a, b -> a + b })
-
-    @Benchmark
-    fun testObservable(): Int =
-        Observable
-            .range(1, N)
-            .filter { it.isGood() }
-            .collect({ IntBox(0) }, { b, x -> b.v += x })
-            .blockingGet().v
-
-    @Benchmark
-    fun testFlowable(): Int =
-        Flowable
-            .range(1, N)
-            .filter { it.isGood() }
-            .collect({ IntBox(0) }, { b, x -> b.v += x })
-            .blockingGet().v
-
-    @Benchmark
-    fun testFlux(): Int =
-        Flux
-            .range(1, N)
-            .filter { it.isGood() }
-            .collect({ IntBox(0) }, { b, x -> b.v += x })
-            .block()!!.v
-
+//
+//    @Benchmark
+//    fun testObservable(): Int =
+//        Observable
+//            .range(1, N)
+//            .filter { it.isGood() }
+//            .collect({ IntBox(0) }, { b, x -> b.v += x })
+//            .blockingGet().v
+//
+//    @Benchmark
+//    fun testFlowable(): Int =
+//        Flowable
+//            .range(1, N)
+//            .filter { it.isGood() }
+//            .collect({ IntBox(0) }, { b, x -> b.v += x })
+//            .blockingGet().v
+//
+//    @Benchmark
+//    fun testFlux(): Int =
+//        Flux
+//            .range(1, N)
+//            .filter { it.isGood() }
+//            .collect({ IntBox(0) }, { b, x -> b.v += x })
+//            .block()!!.v
+//
 //    @Benchmark
 //    fun testObservableThread(): Int =
 //        Observable
@@ -256,13 +285,6 @@ open class RangeFilterSumBenchmark {
 //            .fold(0, { a, b -> a + b })
 //    }
 //
-//    @Benchmark
-//    fun testSource(): Int = runBlocking {
-//        Source
-//            .range(1, N)
-//            .filter { it.isGood() }
-//            .fold(0, { a, b -> a + b })
-//    }
 //
 //    @Benchmark
 //    fun testSourceThread(): Int = runBlocking {
@@ -281,22 +303,36 @@ open class RangeFilterSumBenchmark {
 //            .filter { it.isGood() }
 //            .fold(0, { a, b -> a + b })
 //    }
-
-    @Benchmark
-    fun testSourceInline(): Int = runBlocking {
-        SourceInline
-            .range(1, N)
-            .filter { it.isGood() }
-            .fold(0, { a, b -> a + b })
-    }
-
-
+//
+//    @Benchmark
+//    fun testSource(): Int = runBlocking {
+//        Source
+//            .range(1, N)
+//            .filter{ it.isGood() }
+//            .fold(0, { a, b -> a + b })
+//    }
+//
+//    @Benchmark
+//    fun testSourceInline(): Int = runBlocking {
+//        range(1, N)
+//            .filter { it.isGood() }
+//            .fold(0, { a, b -> a + b })
+//    }
+//
+//
     @Benchmark
     fun testSourceInlineDeep(): Int = runBlocking {
         SourceInline
-            .range(1, N)
-            .filter2 { it.isGood() }
-            .fold2(0, { a, b -> a + b })
+                .range(1, N)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+    }
+
+    @Benchmark
+    fun testSourceInlineDeep2(): Int = runBlocking {
+        SourceInline
+                .range(1, N)
+                .filterFold2(0, { a -> a.isGood() }, { a, b -> a + b })
     }
 
     @Benchmark
@@ -306,12 +342,26 @@ open class RangeFilterSumBenchmark {
             .filter { it, _ -> it.isGood() }
             .fold(0, { a, b, _ -> a + b }, cont)
     }
-
-    @Benchmark
-    fun testMulti(): Int = runBlocking {
-        MultiBuilder
-                .fromRange(1, N)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-    }
+//
+//    @Benchmark
+//    fun testMulti(): Int = runBlocking {
+//        MultiBuilder
+//                .fromRange(1, N)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
+//
+//    @Benchmark
+//    fun testPublish(): Int = runBlocking {
+//        publishRange(1, N)
+//                .filter{ it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
+//
+//    @Benchmark
+//    fun testSuspendingSequence(): Int = runBlocking {
+//        suspendingSequenceRange(1, N)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
 }

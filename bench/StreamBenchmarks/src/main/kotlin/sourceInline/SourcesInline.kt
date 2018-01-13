@@ -52,6 +52,17 @@ inline suspend fun <E, R> SourceInline<E>.fold2(initial: R, crossinline operatio
     return acc
 }
 
+inline suspend fun <E, R> SourceInline<E>.filterFold2(initial: R, crossinline predicate: (E) -> Boolean, crossinline operation: (acc: R, E) -> R): R {
+    var acc = initial
+    consume(object : Sink<E> {
+        suspend override fun send(item: E) {
+            if (predicate(item)) acc = operation(acc, item)
+        }
+        override fun close(cause: Throwable?) { cause?.let { throw it } }
+    })
+    return acc
+}
+
 // -------------- Intermediate (transforming) operations
 
 fun <E> SourceInline<E>.filter(predicate: suspend (E) -> Boolean) = object : SourceInline<E> {
