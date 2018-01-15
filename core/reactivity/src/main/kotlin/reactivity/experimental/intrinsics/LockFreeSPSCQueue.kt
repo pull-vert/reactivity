@@ -42,7 +42,7 @@ import kotlin.math.min
  * @param <E>
  * @author nitsanw, adapted by fmo
  */
-class LockFreeSPSCQueue<E>(capacity: Int) : SpscAtomicArrayQueueL3Pad<E>(capacity) {
+class LockFreeSPSCQueue(capacity: Int) : SpscAtomicArrayQueueL3Pad(capacity) {
 
     /**
      * This implementation is correct for single producer thread use only.
@@ -52,20 +52,19 @@ class LockFreeSPSCQueue<E>(capacity: Int) : SpscAtomicArrayQueueL3Pad<E>(capacit
         // local load of field to avoid repeated loads after volatile reads
         val buffer = this.buffer
         val mask = this.mask
-        _producerIndex.loop { producerIndex ->
-            if (producerIndex >= producerLimit) {
-                val f = offerSlowPath(buffer, mask, producerIndex)
-                if (null != f) return f // buffer is full or closed for send
-            }
-            val offset = calcElementOffset(producerIndex, mask)
-            val f = lvElement(buffer, offset)
-            if (null != f) return f // buffer is closed for send
-            // StoreStore
-            soElement(buffer, offset, e)
-            // ordered store -> atomic and ordered for size()
-            soProducerIndex(producerIndex + 1)
-            return f
+        val producerIndex = _producerIndex.value
+        if (producerIndex >= producerLimit) {
+            val f = offerSlowPath(buffer, mask, producerIndex)
+            if (null != f) return f // buffer is full or closed for send
         }
+        val offset = calcElementOffset(producerIndex, mask)
+        val f = lvElement(buffer, offset)
+        if (null != f) return f // buffer is closed for send
+        // StoreStore
+        soElement(buffer, offset, e)
+        // ordered store -> atomic and ordered for size()
+        soProducerIndex(producerIndex + 1)
+        return f
     }
 
     private fun offerSlowPath(buffer: AtomicReferenceArray<Any?>, mask: Int, producerIndex: Long): Any? {
@@ -84,18 +83,17 @@ class LockFreeSPSCQueue<E>(capacity: Int) : SpscAtomicArrayQueueL3Pad<E>(capacit
      * This implementation is correct for single consumer thread use only.
      */
     fun poll(): Any? {
-        _consumerIndex.loop { consumerIndex ->
-            val offset = calcElementOffset(consumerIndex)
-            // local load of field to avoid repeated loads after volatile reads
-            val buffer = this.buffer
-            // LoadLoad
-            val e = lvElement(buffer, offset) ?: return null // if null, buffer is empty
-            // StoreStore
-            soElement(buffer, offset, null)
-            // ordered store -> atomic and ordered for size()
-            soConsumerIndex(consumerIndex + 1)
-            return e
-        }
+        val consumerIndex = _consumerIndex.value
+        val offset = calcElementOffset(consumerIndex)
+        // local load of field to avoid repeated loads after volatile reads
+        val buffer = this.buffer
+        // LoadLoad
+        val e = lvElement(buffer, offset) ?: return null // if null, buffer is empty
+        // StoreStore
+        soElement(buffer, offset, null)
+        // ordered store -> atomic and ordered for size()
+        soConsumerIndex(consumerIndex + 1)
+        return e
     }
 
     fun nextValueToConsume(): Any? {
@@ -130,7 +128,7 @@ class LockFreeSPSCQueue<E>(capacity: Int) : SpscAtomicArrayQueueL3Pad<E>(capacit
     }
 }
 
-abstract class AtomicReferenceArrayQueue<E>(capacity: Int) {
+abstract class AtomicReferenceArrayQueue(capacity: Int) {
     @JvmField protected val buffer = AtomicReferenceArray<Any?>(capacity)
     @JvmField protected val mask: Int = capacity - 1
 
@@ -153,7 +151,7 @@ abstract class AtomicReferenceArrayQueue<E>(capacity: Int) {
     }
 }
 
-abstract class SpscAtomicArrayQueueColdField<E>(capacity: Int) : AtomicReferenceArrayQueue<E>(capacity) {
+abstract class SpscAtomicArrayQueueColdField(capacity: Int) : AtomicReferenceArrayQueue(capacity) {
     @JvmField protected val lookAheadStep: Int
 
     init {
@@ -165,7 +163,7 @@ abstract class SpscAtomicArrayQueueColdField<E>(capacity: Int) : AtomicReference
     }
 }
 
-abstract class SpscAtomicArrayQueueL1Pad<E>(capacity: Int) : SpscAtomicArrayQueueColdField<E>(capacity) {
+abstract class SpscAtomicArrayQueueL1Pad(capacity: Int) : SpscAtomicArrayQueueColdField(capacity) {
     private val p01: Long = 0
     private val p02: Long = 0
     private val p03: Long = 0
@@ -184,14 +182,14 @@ abstract class SpscAtomicArrayQueueL1Pad<E>(capacity: Int) : SpscAtomicArrayQueu
     private val p17: Long = 0
 }
 
-abstract class SpscAtomicArrayQueueProducerIndexFields<E>(capacity: Int) : SpscAtomicArrayQueueL1Pad<E>(capacity) {
-    protected val _producerIndex = atomic(0L)
+abstract class SpscAtomicArrayQueueProducerIndexFields(capacity: Int) : SpscAtomicArrayQueueL1Pad(capacity) {
+    protected val _producerIndex = atomic(0L) // test with LongAdder
     @JvmField protected var producerLimit: Long = 0L
 
     protected fun soProducerIndex(newValue: Long) = _producerIndex.lazySet(newValue)
 }
 
-abstract class SpscAtomicArrayQueueL2Pad<E>(capacity: Int) : SpscAtomicArrayQueueProducerIndexFields<E>(capacity) {
+abstract class SpscAtomicArrayQueueL2Pad(capacity: Int) : SpscAtomicArrayQueueProducerIndexFields(capacity) {
     private val p01: Long = 0
     private val p02: Long = 0
     private val p03: Long = 0
@@ -210,13 +208,13 @@ abstract class SpscAtomicArrayQueueL2Pad<E>(capacity: Int) : SpscAtomicArrayQueu
     private val p17: Long = 0
 }
 
-abstract class SpscAtomicArrayQueueConsumerIndexField<E>(capacity: Int) : SpscAtomicArrayQueueL2Pad<E>(capacity) {
+abstract class SpscAtomicArrayQueueConsumerIndexField(capacity: Int) : SpscAtomicArrayQueueL2Pad(capacity) {
     protected val _consumerIndex = atomic(0L)
 
     protected fun soConsumerIndex(newValue: Long) = _consumerIndex.lazySet(newValue)
 }
 
-abstract class SpscAtomicArrayQueueL3Pad<E>(capacity: Int) : SpscAtomicArrayQueueConsumerIndexField<E>(capacity) {
+abstract class SpscAtomicArrayQueueL3Pad(capacity: Int) : SpscAtomicArrayQueueConsumerIndexField(capacity) {
     private val p01: Long = 0
     private val p02: Long = 0
     private val p03: Long = 0

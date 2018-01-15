@@ -1,7 +1,8 @@
 package sourceInline
 
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.experimental.CancellableContinuation
 import kotlinx.coroutines.experimental.channels.*
+import kotlinx.coroutines.experimental.suspendCancellableCoroutine
 import reactivity.experimental.intrinsics.LockFreeSPSCQueue
 
 public abstract class AbstractSpScSendChannel<E : Any>(
@@ -12,7 +13,7 @@ public abstract class AbstractSpScSendChannel<E : Any>(
 ) : Sink<E> {
 
     /** @suppress **This is unstable API and it is subject to change.** */
-    protected val queue = LockFreeSPSCQueue<E>(capacity)
+    protected val queue = LockFreeSPSCQueue(capacity)
 
     /**
      * Tries to add element to buffer or to queued receiver.
@@ -85,7 +86,7 @@ public abstract class AbstractSpScSendChannel<E : Any>(
      */
     private fun enqueueSend(send: SpScSendElement<Any?>): Any? {
         queue.modifyNextValueToConsumeIfPrev(send, send.value, { prev ->
-            when(prev) {
+            when (prev) {
                 is SpScClosed<*> -> return@enqueueSend prev
                 null -> return ENQUEUE_FAILED
             }
@@ -96,28 +97,28 @@ public abstract class AbstractSpScSendChannel<E : Any>(
 
     public override fun close(cause: Throwable?) {
         val closed = SpScClosed<E>(cause)
-        while (true) {
-            val receive = takeFirstReceiveOrPeekClosed()
-            if (receive == null) {
-                // queue empty or has only senders -- try add last "SpScClosed" item to the queue
-                if (queue.addLastIfPrev(closed, { prev ->
-                    if (prev is SpScClosed<*>) return false // already closed
-                    prev !is ReceiveOrClosed<*> // only add close if no waiting receive
-                })) {
-//                    onClosed(closed)
-//                    afterClose(cause)
-                    return true
-                }
-                continue // retry on failure
-            }
-            if (receive is Closed<*>) return false // already marked as closed -- nothing to do
-            receive as Receive<E> // type assertion
-            receive.resumeReceiveClosed(closed)
+        val result = queue.offer(closed)
+        when {
+            result === OFFER_SUCCESS -> return
+            result === OFFER_FAILED -> // continue
+            result is SpScClosed<*> -> throw result.sendException
+            else -> error("offerInternal returned $result")
         }
     }
 }
 
 internal const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
+
+/**
+ * Represents sending waiter in the queue.
+ * @suppress **This is unstable API and it is subject to change.**
+ */
+public interface SpScSend {
+    val pollResult: Any? // E | Closed
+    fun tryResumeSend(idempotent: Any?): Any?
+    fun completeResumeSend(token: Any)
+    fun resumeSendClosed(closed: SpScClosed<*>)
+}
 
 /**
  * Represents sender for a specific element.
@@ -128,11 +129,11 @@ public class SpScSendElement<E : Any?>(
         override val pollResult: Any?,
         val value: E,
         @JvmField val cont: CancellableContinuation<Unit>
-) : Send {
+) : SpScSend {
     override fun tryResumeSend(idempotent: Any?): Any? = cont.tryResume(Unit, idempotent)
     override fun completeResumeSend(token: Any) = cont.completeResume(token)
-    override fun resumeSendClosed(closed: Closed<*>) = cont.resumeWithException(closed.sendException)
-    override fun toString(): String = "SendElement($pollResult)[$cont]"
+    override fun resumeSendClosed(closed: SpScClosed<*>) = cont.resumeWithException(closed.sendException)
+    override fun toString() = "SendElement($pollResult)[$cont]"
 }
 
 /**
@@ -141,7 +142,7 @@ public class SpScSendElement<E : Any?>(
  */
 public class SpScClosed<in E>(
         @JvmField val closeCause: Throwable?
-) : Send, ReceiveOrClosed<E> {
+) : SpScSend, ReceiveOrClosed<E> {
     val sendException: Throwable get() = closeCause ?: ClosedSendChannelException(DEFAULT_CLOSE_MESSAGE)
     val receiveException: Throwable get() = closeCause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
 
@@ -157,6 +158,6 @@ public class SpScClosed<in E>(
         check(token === CLOSE_RESUMED)
     }
 
-    override fun resumeSendClosed(closed: kotlinx.coroutines.experimental.channels.Closed<*>) = error("Should be never invoked")
-    override fun toString(): String = "Closed[$closeCause]"
+    override fun resumeSendClosed(closed: SpScClosed<*>) = error("Should be never invoked")
+    override fun toString() = "Closed[$closeCause]"
 }
