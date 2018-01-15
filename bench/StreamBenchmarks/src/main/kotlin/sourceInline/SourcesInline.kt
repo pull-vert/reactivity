@@ -1,5 +1,8 @@
 package sourceInline
 
+import kotlinx.coroutines.experimental.DefaultDispatcher
+import kotlin.coroutines.experimental.CoroutineContext
+
 // -------------- Interface definitions
 
 interface SourceInline<out E> {
@@ -92,6 +95,25 @@ inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = 
                 }
                 override fun close(cause: Throwable?) { cause?.let { throw it } }
             })
+        } catch (e: Throwable) {
+            cause = e
+        }
+        sink.close(cause)
+    }
+}
+
+fun <E> SourceInline<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceInline<E> {
+    val channel = Channel<E>(buffer)
+    return object : SourceInline<E> {
+    suspend override fun consume(sink: Sink<E>) {
+        var cause: Throwable? = null
+        try {
+            channel.send(it)
+            this@async.consume(object : Sink<E> {
+                suspend override fun send(item: E) {
+
+                }
+            }
         } catch (e: Throwable) {
             cause = e
         }

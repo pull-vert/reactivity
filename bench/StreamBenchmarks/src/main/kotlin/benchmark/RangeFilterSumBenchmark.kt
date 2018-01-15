@@ -15,6 +15,7 @@ import kotlinx.coroutines.experimental.rx2.rxObservable
 import org.openjdk.jmh.annotations.Benchmark
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
+import source.*
 import sourceInline.*
 import srcmanbase.*
 import suspendingSequence.SuspendingSequence
@@ -295,14 +296,14 @@ open class RangeFilterSumBenchmark {
 //            .fold(0, { a, b -> a + b })
 //    }
 //
-//    @Benchmark
-//    fun testSourceThreadBuffer128(): Int = runBlocking {
-//        Source
-//            .range(1, N)
-//            .async(buffer = 128)
-//            .filter { it.isGood() }
-//            .fold(0, { a, b -> a + b })
-//    }
+    @Benchmark
+    fun testSourceThreadBuffer128(): Int = runBlocking {
+        Source
+            .range(1, N)
+            .async(buffer = 128)
+            .filter { it.isGood() }
+            .fold(0, { a, b -> a + b })
+    }
 //
 //    @Benchmark
 //    fun testSource(): Int = runBlocking {
