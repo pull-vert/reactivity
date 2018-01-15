@@ -9,7 +9,7 @@ include 'reactivity-extra-android'
 include 'reactivity-extra-javafx'
 include 'reactivity-extra-swing'
 include 'reactivity-extra-nio'
-include 'StreamBenchmarks'
+include 'reactivity-stream-benchmarks'
 // include 'reactivity-http2'
 //include 'reactivity-js'
 
@@ -20,5 +20,5 @@ project(':reactivity-extra-android').projectDir = file('core/extras/ui/reactivit
 project(':reactivity-extra-javafx').projectDir = file('core/extras/ui/reactivity-extra-javafx')
 project(':reactivity-extra-swing').projectDir = file('core/extras/ui/reactivity-extra-swing')
 project(':reactivity-extra-nio').projectDir = file('core/extras/nio/reactivity-extra-nio')
-project(':StreamBenchmarks').projectDir = file('bench/StreamBenchmarks')
+project(':reactivity-stream-benchmarks').projectDir = file('bench/reactivity-stream-benchmarks')
 //project(':reactivity-js').projectDir = file('js/reactivity-js')

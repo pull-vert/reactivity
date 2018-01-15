@@ -15,7 +15,7 @@
 * Original location: https://github.com/JCTools/JCTools/blob/master/jctools-core/src/main/java/org/jctools/queues/atomic/SpscAtomicArrayQueue.java
 */
 
-package reactivity.experimental.intrinsics
+package internal
 
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.loop
@@ -42,7 +42,7 @@ import kotlin.math.min
  * @param <E>
  * @author nitsanw, adapted by fmo
  */
-class LockFreeSPSCQueue(capacity: Int) : SpscAtomicArrayQueueL3Pad(capacity) {
+class LockFreeSPSCQueue(private val capacity: Int) : SpscAtomicArrayQueueL3Pad(capacity) {
 
     /**
      * This implementation is correct for single producer thread use only.
@@ -55,11 +55,11 @@ class LockFreeSPSCQueue(capacity: Int) : SpscAtomicArrayQueueL3Pad(capacity) {
         val producerIndex = _producerIndex.value
         if (producerIndex >= producerLimit) {
             val f = offerSlowPath(buffer, mask, producerIndex)
-            if (null != f) return f // buffer is full or closed for send
+            if (null != f) return f // buffer is full or consumer is suspended
         }
         val offset = calcElementOffset(producerIndex, mask)
         val f = lvElement(buffer, offset)
-        if (null != f) return f // buffer is closed for send
+        if (null != f) return f // buffer is full or consumer is suspended
         // StoreStore
         soElement(buffer, offset, e)
         // ordered store -> atomic and ordered for size()
@@ -72,11 +72,11 @@ class LockFreeSPSCQueue(capacity: Int) : SpscAtomicArrayQueueL3Pad(capacity) {
         if (null == lvElement(buffer, calcElementOffset(producerIndex + lookAheadStep, mask))) {
             // LoadLoad
             producerLimit = producerIndex + lookAheadStep
+            return null
         } else {
             val offset = calcElementOffset(producerIndex, mask)
             return lvElement(buffer, offset)
         }
-        return null
     }
 
     /**
@@ -126,10 +126,19 @@ class LockFreeSPSCQueue(capacity: Int) : SpscAtomicArrayQueueL3Pad(capacity) {
 
         }
     }
+
+    fun close(closed: Any) {
+        val buffer = this.buffer
+        // StoreStore
+        val closedOffset = capacity + 1
+        soElement(buffer, closedOffset, closed)
+        // ordered store -> atomic and ordered for size()
+        soProducerIndex(closedOffset.toLong())
+    }
 }
 
 abstract class AtomicReferenceArrayQueue(capacity: Int) {
-    @JvmField protected val buffer = AtomicReferenceArray<Any?>(capacity)
+    @JvmField protected val buffer = AtomicReferenceArray<Any?>(capacity + 1) // keep one slot for closed
     @JvmField protected val mask: Int = capacity - 1
 
     init {
