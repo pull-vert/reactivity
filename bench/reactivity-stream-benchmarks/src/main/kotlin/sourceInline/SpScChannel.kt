@@ -123,11 +123,11 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 
     @Suppress("UNCHECKED_CAST")
     private suspend fun receiveSuspend(): E = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
-        val receive = ReceiveElement(cont as CancellableContinuation<E?>, nullOnClose = false)
+        val receive = EmptyElement(cont)
         while (true) {
             if (enqueueReceive(receive)) {
                 cont.initCancellability() // make it properly cancellable
-                removeReceiveOnCancel(cont, receive)
+//                removeReceiveOnCancel(cont, receive)
                 return@sc
             }
             // hm... something is not right. try to poll
@@ -143,7 +143,7 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
         }
     }
 
-    private fun enqueueReceive(receive: Receive<E>): Boolean {
+    private fun enqueueReceive(receive: EmptyElement<E>): Boolean {
         val result = if (isBufferAlwaysEmpty)
             queue.addLastIfPrev(receive, { it !is Send }) else
             queue.addLastIfPrevAndIf(receive, { it !is Send }, { isBufferEmpty })
@@ -227,14 +227,10 @@ private class FullElement<E : Any>(
     override fun toString() = "FullElement($offerValue)[$cont]"
 }
 
-private interface Empty<in E : Any> : ReceiveOrClosed<E> {
-    abstract fun resumeReceiveClosed(closed: SpScClosed<*>)
-}
-
-private class EmptyElement(
-        @JvmField val cont: CancellableContinuation<Unit>
+private class EmptyElement<in E>(
+        @JvmField val cont: CancellableContinuation<E>
 ) {
-    fun resumeReceive() = cont.resume(Unit)
+    fun resumeReceive(element: E) = cont.resume(element)
     override fun toString(): String = "EmptyElement[$cont"
 }
 
