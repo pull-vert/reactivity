@@ -18,7 +18,6 @@
 package internal
 
 import kotlinx.atomicfu.atomic
-import kotlinx.atomicfu.loop
 import java.util.concurrent.atomic.AtomicReferenceArray
 import kotlin.math.min
 
@@ -39,50 +38,47 @@ import kotlin.math.min
  * 2012 - Junchang- BQueue- Efﬁcient and Practical Queuing.pdf <br>
  * </i> This implementation is wait free.
  *
- * @param <E>
+ * @param <E> Not null value
  * @author nitsanw, adapted by fmo
  */
-class LockFreeSPSCQueue(private val capacity: Int) : SpscAtomicArrayQueueL3Pad(capacity) {
+class LockFreeSPSCQueue<E : Any>(capacity: Int) : SpscAtomicArrayQueueL3Pad<E>(capacity) {
 
     /**
      * This implementation is correct for single producer thread use only.
-     * Return the content of buffer at producerIndex.
+     * Return true if offer is done, false if buffer full
      */
-    fun offer(e: Any): Any? {
+    fun offer(e: E): Boolean {
         // local load of field to avoid repeated loads after volatile reads
         val buffer = this.buffer
         val mask = this.mask
         val producerIndex = _producerIndex.value
-        if (producerIndex >= producerLimit) {
-            val f = offerSlowPath(buffer, mask, producerIndex)
-            if (null != f) return f // buffer is full or consumer is suspended
+        if (producerIndex >= producerLimit && !offerSlowPath(buffer, mask, producerIndex)) {
+            return false // buffer is full
         }
         val offset = calcElementOffset(producerIndex, mask)
-        val f = lvElement(buffer, offset)
-        if (null != f) return f // buffer is full or consumer is suspended
         // StoreStore
         soElement(buffer, offset, e)
         // ordered store -> atomic and ordered for size()
         soProducerIndex(producerIndex + 1)
-        return f
+        return true
     }
 
-    private fun offerSlowPath(buffer: AtomicReferenceArray<Any?>, mask: Int, producerIndex: Long): Any? {
+    private fun offerSlowPath(buffer: AtomicReferenceArray<E?>, mask: Int, producerIndex: Long): Boolean {
         val lookAheadStep = this.lookAheadStep
         if (null == lvElement(buffer, calcElementOffset(producerIndex + lookAheadStep, mask))) {
             // LoadLoad
             producerLimit = producerIndex + lookAheadStep
-            return null
         } else {
             val offset = calcElementOffset(producerIndex, mask)
-            return lvElement(buffer, offset)
+            return null == lvElement(buffer, offset)
         }
+        return true
     }
 
     /**
      * This implementation is correct for single consumer thread use only.
      */
-    fun poll(): Any? {
+    fun poll(): E? {
         val consumerIndex = _consumerIndex.value
         val offset = calcElementOffset(consumerIndex)
         // local load of field to avoid repeated loads after volatile reads
@@ -96,51 +92,51 @@ class LockFreeSPSCQueue(private val capacity: Int) : SpscAtomicArrayQueueL3Pad(c
         return e
     }
 
-    fun nextValueToConsume(): Any? {
-        _consumerIndex.loop { consumerIndex ->
-            val offset = calcElementOffset(consumerIndex + 1)
-            val buffer = this.buffer
-            return lvElement(buffer, offset)
-        }
-    }
-
-    fun prevValueToConsume(): Any? {
-        _consumerIndex.loop { consumerIndex ->
-            val offset = calcElementOffset(consumerIndex - 1)
-            val buffer = this.buffer
-            return lvElement(buffer, offset)
-        }
-    }
-
-    inline fun modifyNextValueToConsumeIfPrev(new: Any, old: Any?, predicate: (Any?) -> Boolean): Boolean {
-        val prev = prevValueToConsume()
-        if (!predicate(prev)) return false
-        return modifyNextValueToConsume(new, old)
-    }
-
-    fun modifyNextValueToConsume(new: Any, old: Any?): Boolean {
-        _consumerIndex.loop { consumerIndex ->
-            val offset = calcElementOffset(consumerIndex + 1)
-            val buffer = this.buffer
-            return buffer.compareAndSet(offset, old, new)
-
-        }
-    }
-
-    fun close(closed: Any) {
-        val buffer = this.buffer
-        // StoreStore
-        soElement(buffer, capacity, closed)
-    }
-
-    fun getClosed(): Any? {
-        val buffer = this.buffer
-        return lvElement(buffer, capacity)
-    }
+//    fun nextValueToConsume(): Any? {
+//        _consumerIndex.loop { consumerIndex ->
+//            val offset = calcElementOffset(consumerIndex + 1)
+//            val buffer = this.buffer
+//            return lvElement(buffer, offset)
+//        }
+//    }
+//
+//    fun prevValueToConsume(): Any? {
+//        _consumerIndex.loop { consumerIndex ->
+//            val offset = calcElementOffset(consumerIndex - 1)
+//            val buffer = this.buffer
+//            return lvElement(buffer, offset)
+//        }
+//    }
+//
+//    inline fun modifyNextValueToConsumeIfPrev(new: Any, old: Any?, predicate: (Any?) -> Boolean): Boolean {
+//        val prev = prevValueToConsume()
+//        if (!predicate(prev)) return false
+//        return modifyNextValueToConsume(new, old)
+//    }
+//
+//    fun modifyNextValueToConsume(new: Any, old: Any?): Boolean {
+//        _consumerIndex.loop { consumerIndex ->
+//            val offset = calcElementOffset(consumerIndex + 1)
+//            val buffer = this.buffer
+//            return buffer.compareAndSet(offset, old, new)
+//
+//        }
+//    }
+//
+//    fun close(closed: Any) {
+//        val buffer = this.buffer
+//        // StoreStore
+//        soElement(buffer, capacity, closed)
+//    }
+//
+//    fun getClosed(): Any? {
+//        val buffer = this.buffer
+//        return lvElement(buffer, capacity)
+//    }
 }
 
-abstract class AtomicReferenceArrayQueue(capacity: Int) {
-    @JvmField protected val buffer = AtomicReferenceArray<Any?>(capacity + 1) // keep one slot for closed
+abstract class AtomicReferenceArrayQueue<E : Any>(capacity: Int) {
+    @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity + 1) // keep one slot for closed
     @JvmField protected val mask: Int = capacity - 1
 
     init {
@@ -152,17 +148,17 @@ abstract class AtomicReferenceArrayQueue(capacity: Int) {
 
     protected companion object {
         @JvmStatic
-        protected fun lvElement(buffer: AtomicReferenceArray<Any?>, offset: Int) = buffer[offset]
+        protected fun <E : Any> lvElement(buffer: AtomicReferenceArray<E?>, offset: Int) = buffer[offset]
 
         @JvmStatic
-        protected fun soElement(buffer: AtomicReferenceArray<Any?>, offset: Int, value: Any?) = buffer.lazySet(offset, value)
+        protected fun <E : Any> soElement(buffer: AtomicReferenceArray<E?>, offset: Int, value: E?) = buffer.lazySet(offset, value)
 
         @JvmStatic
         protected fun calcElementOffset(index: Long, mask: Int) = index.toInt() and mask
     }
 }
 
-abstract class SpscAtomicArrayQueueColdField(capacity: Int) : AtomicReferenceArrayQueue(capacity) {
+abstract class SpscAtomicArrayQueueColdField<E : Any>(capacity: Int) : AtomicReferenceArrayQueue<E>(capacity) {
     @JvmField protected val lookAheadStep: Int
 
     init {
@@ -174,7 +170,7 @@ abstract class SpscAtomicArrayQueueColdField(capacity: Int) : AtomicReferenceArr
     }
 }
 
-abstract class SpscAtomicArrayQueueL1Pad(capacity: Int) : SpscAtomicArrayQueueColdField(capacity) {
+abstract class SpscAtomicArrayQueueL1Pad<E : Any>(capacity: Int) : SpscAtomicArrayQueueColdField<E>(capacity) {
     private val p01: Long = 0
     private val p02: Long = 0
     private val p03: Long = 0
@@ -193,14 +189,14 @@ abstract class SpscAtomicArrayQueueL1Pad(capacity: Int) : SpscAtomicArrayQueueCo
     private val p17: Long = 0
 }
 
-abstract class SpscAtomicArrayQueueProducerIndexFields(capacity: Int) : SpscAtomicArrayQueueL1Pad(capacity) {
+abstract class SpscAtomicArrayQueueProducerIndexFields<E : Any>(capacity: Int) : SpscAtomicArrayQueueL1Pad<E>(capacity) {
     protected val _producerIndex = atomic(0L) // test with LongAdder
     @JvmField protected var producerLimit: Long = 0L
 
     protected fun soProducerIndex(newValue: Long) = _producerIndex.lazySet(newValue)
 }
 
-abstract class SpscAtomicArrayQueueL2Pad(capacity: Int) : SpscAtomicArrayQueueProducerIndexFields(capacity) {
+abstract class SpscAtomicArrayQueueL2Pad<E : Any>(capacity: Int) : SpscAtomicArrayQueueProducerIndexFields<E>(capacity) {
     private val p01: Long = 0
     private val p02: Long = 0
     private val p03: Long = 0
@@ -219,13 +215,13 @@ abstract class SpscAtomicArrayQueueL2Pad(capacity: Int) : SpscAtomicArrayQueuePr
     private val p17: Long = 0
 }
 
-abstract class SpscAtomicArrayQueueConsumerIndexField(capacity: Int) : SpscAtomicArrayQueueL2Pad(capacity) {
+abstract class SpscAtomicArrayQueueConsumerIndexField<E : Any>(capacity: Int) : SpscAtomicArrayQueueL2Pad<E>(capacity) {
     protected val _consumerIndex = atomic(0L)
 
     protected fun soConsumerIndex(newValue: Long) = _consumerIndex.lazySet(newValue)
 }
 
-abstract class SpscAtomicArrayQueueL3Pad(capacity: Int) : SpscAtomicArrayQueueConsumerIndexField(capacity) {
+abstract class SpscAtomicArrayQueueL3Pad<E : Any>(capacity: Int) : SpscAtomicArrayQueueConsumerIndexField<E>(capacity) {
     private val p01: Long = 0
     private val p02: Long = 0
     private val p03: Long = 0

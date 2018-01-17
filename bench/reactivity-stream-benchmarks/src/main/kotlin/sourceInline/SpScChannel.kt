@@ -1,6 +1,7 @@
 package sourceInline
 
 import internal.LockFreeSPSCQueue
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.experimental.CancellableContinuation
 import kotlinx.coroutines.experimental.channels.*
 import kotlinx.coroutines.experimental.suspendCancellableCoroutine
@@ -12,113 +13,65 @@ public open class SpScSendChannel<E : Any>(
         capacity: Int
 ) : Sink<E> {
 
-    /** @suppress **This is unstable API and it is subject to change.** */
-    protected val queue = LockFreeSPSCQueue(capacity)
+    @JvmField protected val queue = LockFreeSPSCQueue<E>(capacity)
+    internal val _full = atomic<FullElement<E>?>(null)
+    internal val _empty = atomic<EmptyElement<E>?>(null)
+    internal val _closed = atomic<ClosedElement?>(null)
 
-    /**
-     * Tries to add element to buffer or to queued receiver.
-     * Return type is `OFFER_SUCCESS | OFFER_FAILED | SpScClosed`.
-     * @suppress **This is unstable API and it is subject to change.**
-     */
-    protected fun offerInternal(element: E): Any {
-        val result = queue.offer(element)
-        return when {
-            result == null -> OFFER_SUCCESS // OK element is in the buffer
-            result is SpScClosed<*> -> result // Closed for send
-            else -> OFFER_FAILED // buffer is full
-        }
+    private fun handleEmpty(element: E): Boolean {
+        _empty.value?.resumeReceive(element) ?: return false
+        _empty.lazySet(null)
+        return true
     }
 
     public final override suspend fun send(item: E) {
+        // handle the potentially suspended consumer (empty buffer)
+        if (handleEmpty(item)) return
         // fast path -- try offer non-blocking
-        if (offer(item)) return
+        if (queue.offer(item)) return
         // slow-path does suspend
         return sendSuspend(item)
     }
 
-    public final fun offer(element: E): Boolean {
-        val result = offerInternal(element)
-        return when {
-            result === OFFER_SUCCESS -> true
-            result === OFFER_FAILED -> false
-            result is SpScClosed<*> -> throw result.sendException
-            else -> error("offerInternal returned $result")
-        }
-    }
-
-    private suspend fun sendSuspend(element: E): Unit = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
-        val send = FullElement(element, cont)
-        loop@ while (true) {
-            if (enqueueSend(send)) { // enqueued successfully
-                cont.initCancellability() // make it properly cancellable
-//                cont.removeOnCancel(send)
-                return@sc
-            }
-            // hm... receiver is waiting or buffer is not full. try to offer
-            val offerResult = offerInternal(element)
-            when {
-                offerResult === OFFER_SUCCESS -> {
-                    cont.resume(Unit)
-                    return@sc
-                }
-                offerResult === OFFER_FAILED -> continue@loop
-                offerResult is SpScClosed<*> -> {
-                    cont.resumeWithException(offerResult.sendException)
-                    return@sc
-                }
-                else -> error("offerInternal returned $offerResult")
-            }
-        }
-    }
-
-    /**
-     * Result is:
-     * * true -- successfully enqueued
-     * * false -- buffer is not full (should not enqueue)
-     */
-    private fun enqueueSend(send: FullElement<E>): Boolean {
-        send.currentValue = queue.nextValueToConsume() ?: return false // if next value is null there is room to Send to
-        return queue.modifyNextValueToConsumeIfPrev(send, send.currentValue, { prev ->
-            // if prev value is null, there is room to Send to
-            if (null == prev) return@enqueueSend false
-            // otherwise buffer is still full, predicate is true
-            true
-        })
+    private suspend fun sendSuspend(element: E): Unit = suspendCancellableCoroutine sc@ { cont ->
+        val full = FullElement(element, cont)
+        _full.lazySet(full) //  store full in atomic _full
+//        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
+//            _full.lazySet(null)
+//        }
     }
 
     public override fun close(cause: Throwable?) {
-        val closed = SpScClosed<E>(cause)
-        queue.close(closed)
+        _closed.lazySet(ClosedElement(cause))
     }
 }
 
 class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 
-    /**
-     * Tries to remove element from buffer
-     * Return type is `E | POLL_FAILED`
-     * @suppress **This is unstable API and it is subject to change.**
-     */
-    protected fun pollInternal(): Any {
-        val value = queue.poll()
-        return when {
-            value is FullElement<*> -> {
-                queue.offer(value.offerValue) // we are sure there is at least one slot for this value
-                value.resumeSend() // resume Send
-                value.currentValue
-            }
-            value == null -> POLL_FAILED // buffer is Empty, or Closed
-            else -> value
-        }
+    private fun handleClosed() {
+        val exception = _closed.value?.receiveException ?: return
+        _closed.lazySet(null)
+        throw exception
+    }
+
+    private fun handleFull() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     @Suppress("UNCHECKED_CAST")
     public final suspend fun receive(): E {
         // fast path -- try poll non-blocking
-        val result = pollInternal()
-        if (result !== POLL_FAILED) return result as E
-        val closed = queue.getClosed() as? SpScClosed<E> ?: return receiveSuspend() // slow-path does suspend
-        throw closed.receiveException
+        var value = queue.poll()
+        if (null != value) {
+            // handle the potentially suspended consumer (full buffer)
+            handleFull()
+            return value
+        } else {
+            // maybe there is a Closed event
+            handleClosed()
+            // buffer is empty -> slow-path does suspend
+            return receiveSuspend()
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -218,44 +171,31 @@ internal const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
 /**
  * Full element to store when suspend Producer
  */
-private class FullElement<E : Any>(
+internal class FullElement<E : Any>(
         val offerValue: E,
-        @JvmField val cont: CancellableContinuation<Unit>
+        @JvmField var cont: CancellableContinuation<Unit>?
 ) {
     lateinit var currentValue: Any
-    fun resumeSend() = cont.resume(Unit)
+    fun resumeSend() = cont?.resume(Unit)
     override fun toString() = "FullElement($offerValue)[$cont]"
 }
 
-private class EmptyElement<in E>(
-        @JvmField val cont: CancellableContinuation<E>
+/**
+ * Empty element to store when suspend Consumer
+ */
+internal class EmptyElement<in E>(
+        @JvmField val cont: CancellableContinuation<E>?
 ) {
-    fun resumeReceive(element: E) = cont.resume(element)
+    fun resumeReceive(element: E) = cont?.resume(element)
     override fun toString(): String = "EmptyElement[$cont"
 }
 
 /**
- * Represents closed channel.
- * @suppress **This is unstable API and it is subject to change.**
+ * Closed element to store when Producer is closed
  */
-public class SpScClosed<in E>(
-        @JvmField val closeCause: Throwable?
+internal class ClosedElement(
+        private val closeCause: Throwable?
 ) {
-    val sendException: Throwable get() = closeCause ?: ClosedSendChannelException(DEFAULT_CLOSE_MESSAGE)
     val receiveException: Throwable get() = closeCause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
-
-    override val offerResult get() = this
-    override val pollResult get() = this
-    override fun tryResumeSend(idempotent: Any?): Any? = CLOSE_RESUMED
-    override fun completeResumeSend(token: Any) {
-        check(token === CLOSE_RESUMED)
-    }
-
-    override fun tryResumeReceive(value: E, idempotent: Any?): Any? = CLOSE_RESUMED
-    override fun completeResumeReceive(token: Any) {
-        check(token === CLOSE_RESUMED)
-    }
-
-    override fun resumeSendClosed(closed: SpScClosed<*>) = error("Should be never invoked")
     override fun toString() = "Closed[$closeCause]"
 }
