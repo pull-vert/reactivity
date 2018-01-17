@@ -143,6 +143,14 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
         }
     }
 
+    private fun enqueueReceive(receive: Receive<E>): Boolean {
+        val result = if (isBufferAlwaysEmpty)
+            queue.addLastIfPrev(receive, { it !is Send }) else
+            queue.addLastIfPrevAndIf(receive, { it !is Send }, { isBufferEmpty })
+        if (result) onEnqueuedReceive()
+        return result
+    }
+
     public final fun iterator(): ChannelIterator<E> = Itr(this)
 
     private class Itr<E : Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
