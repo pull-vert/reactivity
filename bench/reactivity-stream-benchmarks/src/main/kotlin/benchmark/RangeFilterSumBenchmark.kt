@@ -329,11 +329,20 @@ open class RangeFilterSumBenchmark {
                 .fold2(0, { a, b -> a + b })
     }
 
+//    @Benchmark
+//    fun testSourceInlineDeepFused(): Int = runBlocking {
+//        SourceInline
+//                .range(1, N)
+//                .filterFold2(0, { a -> a.isGood() }, { a, b -> a + b })
+//    }
+
     @Benchmark
-    fun testSourceInlineDeep2(): Int = runBlocking {
+    fun testSourceInlineThreadBuffer128(): Int = runBlocking {
         SourceInline
                 .range(1, N)
-                .filterFold2(0, { a -> a.isGood() }, { a, b -> a + b })
+                .async(buffer = 128)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
     }
 
     @Benchmark

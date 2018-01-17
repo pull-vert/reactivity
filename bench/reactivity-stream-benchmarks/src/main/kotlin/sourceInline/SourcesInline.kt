@@ -1,12 +1,15 @@
 package sourceInline
 
 import kotlinx.coroutines.experimental.DefaultDispatcher
+import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.experimental.launch
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Interface definitions
 
 interface SourceInline<out E> {
     suspend fun consume(sink: Sink<E>)
+
     companion object Factory
 }
 
@@ -39,7 +42,10 @@ suspend fun <E, R> SourceInline<E>.fold(initial: R, operation: suspend (acc: R, 
         suspend override fun send(item: E) {
             acc = operation(acc, item)
         }
-        override fun close(cause: Throwable?) { cause?.let { throw it } }
+
+        override fun close(cause: Throwable?) {
+            cause?.let { throw it }
+        }
     })
     return acc
 }
@@ -50,7 +56,10 @@ inline suspend fun <E, R> SourceInline<E>.fold2(initial: R, crossinline operatio
         suspend override fun send(item: E) {
             acc = operation(acc, item)
         }
-        override fun close(cause: Throwable?) { cause?.let { throw it } }
+
+        override fun close(cause: Throwable?) {
+            cause?.let { throw it }
+        }
     })
     return acc
 }
@@ -61,7 +70,10 @@ inline suspend fun <E, R> SourceInline<E>.filterFold2(initial: R, crossinline pr
         suspend override fun send(item: E) {
             if (predicate(item)) acc = operation(acc, item)
         }
-        override fun close(cause: Throwable?) { cause?.let { throw it } }
+
+        override fun close(cause: Throwable?) {
+            cause?.let { throw it }
+        }
     })
     return acc
 }
@@ -76,7 +88,10 @@ fun <E> SourceInline<E>.filter(predicate: suspend (E) -> Boolean) = object : Sou
                 suspend override fun send(item: E) {
                     if (predicate(item)) sink.send(item)
                 }
-                override fun close(cause: Throwable?) { cause?.let { throw it } }
+
+                override fun close(cause: Throwable?) {
+                    cause?.let { throw it }
+                }
             })
         } catch (e: Throwable) {
             cause = e
@@ -93,7 +108,10 @@ inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = 
                 suspend override fun send(item: E) {
                     if (predicate(item)) sink.send(item)
                 }
-                override fun close(cause: Throwable?) { cause?.let { throw it } }
+
+                override fun close(cause: Throwable?) {
+                    cause?.let { throw it }
+                }
             })
         } catch (e: Throwable) {
             cause = e
@@ -102,21 +120,32 @@ inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = 
     }
 }
 
-fun <E> SourceInline<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceInline<E> {
-    val channel = Channel<E>(buffer)
+fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceInline<E> {
+    val channel = SpScChannel<E>(buffer)
     return object : SourceInline<E> {
-    suspend override fun consume(sink: Sink<E>) {
-        var cause: Throwable? = null
-        try {
-            channel.send(it)
-            this@async.consume(object : Sink<E> {
-                suspend override fun send(item: E) {
-
+        suspend override fun consume(sink: Sink<E>) {
+            launch(context) {
+                try {
+                    while (true) {
+                        sink.send(channel.receive())
+                    }
+                } catch (e: Throwable) {
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    sink.close(e)
                 }
             }
-        } catch (e: Throwable) {
-            cause = e
+            var cause: Throwable? = null
+            try {
+                this@async.consume(object : Sink<E> {
+                    suspend override fun send(item: E) = channel.send(item)
+                    override fun close(cause: Throwable?) {
+                        cause?.let { throw it }
+                    }
+                })
+            } catch (e: Throwable) {
+                cause = e
+            }
+            channel.close(cause)
         }
-        sink.close(cause)
     }
 }

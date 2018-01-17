@@ -3,7 +3,7 @@ package sourceInline
 import internal.LockFreeSPSCQueue
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.experimental.CancellableContinuation
-import kotlinx.coroutines.experimental.channels.*
+import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.experimental.suspendCancellableCoroutine
 
 public open class SpScSendChannel<E : Any>(
@@ -25,7 +25,7 @@ public open class SpScSendChannel<E : Any>(
     }
 
     public final override suspend fun send(item: E) {
-        // handle the potentially suspended consumer (empty buffer)
+        // handle the potentially suspended consumer (empty buffer), there is at least one element in buffer
         if (handleEmpty(item)) return
         // fast path -- try offer non-blocking
         if (queue.offer(item)) return
@@ -33,10 +33,10 @@ public open class SpScSendChannel<E : Any>(
         return sendSuspend(item)
     }
 
-    private suspend fun sendSuspend(element: E): Unit = suspendCancellableCoroutine sc@ { cont ->
+    private suspend fun sendSuspend(element: E): Unit = suspendCancellableCoroutine { cont ->
         val full = FullElement(element, cont)
         _full.lazySet(full) //  store full in atomic _full
-//        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
+        //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels
 //            _full.lazySet(null)
 //        }
     }
@@ -55,15 +55,15 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
     }
 
     private fun handleFull() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        _full.value?.resumeSend() ?: return
+        _full.lazySet(null)
     }
 
-    @Suppress("UNCHECKED_CAST")
     public final suspend fun receive(): E {
         // fast path -- try poll non-blocking
-        var value = queue.poll()
+        val value = queue.poll()
         if (null != value) {
-            // handle the potentially suspended consumer (full buffer)
+            // handle the potentially suspended consumer (full buffer), one slot is free now in buffer
             handleFull()
             return value
         } else {
@@ -74,95 +74,12 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private suspend fun receiveSuspend(): E = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
-        val receive = EmptyElement(cont)
-        while (true) {
-            if (enqueueReceive(receive)) {
-                cont.initCancellability() // make it properly cancellable
-//                removeReceiveOnCancel(cont, receive)
-                return@sc
-            }
-            // hm... something is not right. try to poll
-            val result = pollInternal()
-            if (result is Closed<*>) {
-                cont.resumeWithException(result.receiveException)
-                return@sc
-            }
-            if (result !== POLL_FAILED) {
-                cont.resume(result as E)
-                return@sc
-            }
-        }
-    }
-
-    private fun enqueueReceive(receive: EmptyElement<E>): Boolean {
-        val result = if (isBufferAlwaysEmpty)
-            queue.addLastIfPrev(receive, { it !is Send }) else
-            queue.addLastIfPrevAndIf(receive, { it !is Send }, { isBufferEmpty })
-        if (result) onEnqueuedReceive()
-        return result
-    }
-
-    public final fun iterator(): ChannelIterator<E> = Itr(this)
-
-    private class Itr<E : Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
-        var result: Any? = POLL_FAILED // E | POLL_FAILED | Closed
-
-        override suspend fun hasNext(): Boolean {
-            // check for repeated hasNext
-            if (result !== POLL_FAILED) return hasNextResult(result)
-            // fast path -- try poll non-blocking
-            result = channel.pollInternal()
-            if (result !== POLL_FAILED) return hasNextResult(result)
-            // slow-path does suspend
-            return hasNextSuspend()
-        }
-
-        private fun hasNextResult(result: Any?): Boolean {
-            if (result is Closed<*>) {
-                if (result.closeCause != null) throw result.receiveException
-                return false
-            }
-            return true
-        }
-
-        private suspend fun hasNextSuspend(): Boolean = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
-            val receive = ReceiveHasNext(this, cont)
-            while (true) {
-                if (channel.enqueueReceive(receive)) {
-                    cont.initCancellability() // make it properly cancellable
-                    channel.removeReceiveOnCancel(cont, receive)
-                    return@sc
-                }
-                // hm... something is not right. try to poll
-                val result = channel.pollInternal()
-                this.result = result
-                if (result is Closed<*>) {
-                    if (result.closeCause == null)
-                        cont.resume(false)
-                    else
-                        cont.resumeWithException(result.receiveException)
-                    return@sc
-                }
-                if (result !== POLL_FAILED) {
-                    cont.resume(true)
-                    return@sc
-                }
-            }
-        }
-
-        @Suppress("UNCHECKED_CAST")
-        override suspend fun next(): E {
-            val result = this.result
-            if (result is Closed<*>) throw result.receiveException
-            if (result !== POLL_FAILED) {
-                this.result = POLL_FAILED
-                return result as E
-            }
-            // rare case when hasNext was not invoked yet -- just delegate to receive (leave state as is)
-            return channel.receive()
-        }
+    private suspend fun receiveSuspend(): E = suspendCancellableCoroutine { cont ->
+        val empty = EmptyElement(cont)
+        _empty.lazySet(empty)
+        //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
+//            _empty.lazySet(null)
+//        }
     }
 }
 
@@ -199,3 +116,64 @@ internal class ClosedElement(
     val receiveException: Throwable get() = closeCause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
     override fun toString() = "Closed[$closeCause]"
 }
+
+//    public final fun iterator(): ChannelIterator<E> = Itr(this)
+//
+//    private class Itr<E : Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
+//        var result: Any? = POLL_FAILED // E | POLL_FAILED | Closed
+//
+//        override suspend fun hasNext(): Boolean {
+//            // check for repeated hasNext
+//            if (result !== POLL_FAILED) return hasNextResult(result)
+//            // fast path -- try poll non-blocking
+//            result = channel.pollInternal()
+//            if (result !== POLL_FAILED) return hasNextResult(result)
+//            // slow-path does suspend
+//            return hasNextSuspend()
+//        }
+//
+//        private fun hasNextResult(result: Any?): Boolean {
+//            if (result is Closed<*>) {
+//                if (result.closeCause != null) throw result.receiveException
+//                return false
+//            }
+//            return true
+//        }
+//
+//        private suspend fun hasNextSuspend(): Boolean = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
+//            val receive = ReceiveHasNext(this, cont)
+//            while (true) {
+//                if (channel.enqueueReceive(receive)) {
+//                    cont.initCancellability() // make it properly cancellable
+//                    channel.removeReceiveOnCancel(cont, receive)
+//                    return@sc
+//                }
+//                // hm... something is not right. try to poll
+//                val result = channel.pollInternal()
+//                this.result = result
+//                if (result is Closed<*>) {
+//                    if (result.closeCause == null)
+//                        cont.resume(false)
+//                    else
+//                        cont.resumeWithException(result.receiveException)
+//                    return@sc
+//                }
+//                if (result !== POLL_FAILED) {
+//                    cont.resume(true)
+//                    return@sc
+//                }
+//            }
+//        }
+//
+//        @Suppress("UNCHECKED_CAST")
+//        override suspend fun next(): E {
+//            val result = this.result
+//            if (result is Closed<*>) throw result.receiveException
+//            if (result !== POLL_FAILED) {
+//                this.result = POLL_FAILED
+//                return result as E
+//            }
+//            // rare case when hasNext was not invoked yet -- just delegate to receive (leave state as is)
+//            return channel.receive()
+//        }
+//    }
