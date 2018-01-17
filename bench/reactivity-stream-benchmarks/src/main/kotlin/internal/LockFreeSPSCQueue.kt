@@ -130,10 +130,12 @@ class LockFreeSPSCQueue(private val capacity: Int) : SpscAtomicArrayQueueL3Pad(c
     fun close(closed: Any) {
         val buffer = this.buffer
         // StoreStore
-        val closedOffset = capacity + 1
-        soElement(buffer, closedOffset, closed)
-        // ordered store -> atomic and ordered for size()
-        soProducerIndex(closedOffset.toLong())
+        soElement(buffer, capacity, closed)
+    }
+
+    fun getClosed(): Any? {
+        val buffer = this.buffer
+        return lvElement(buffer, capacity)
     }
 }
 

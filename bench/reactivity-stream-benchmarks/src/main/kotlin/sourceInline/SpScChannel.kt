@@ -47,19 +47,12 @@ public open class SpScSendChannel<E : Any>(
     }
 
     private suspend fun sendSuspend(element: E): Unit = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
-        val send = SpScSendElement(queue.nextValueToConsume(), element, cont)
+        val send = FullElement(element, cont)
         loop@ while (true) {
-            val enqueueResult = enqueueSend(send)
-            when (enqueueResult) {
-                null -> { // enqueued successfully
-                    cont.initCancellability() // make it properly cancellable
-//                    cont.removeOnCancel(send)
-                    return@sc
-                }
-                is SpScClosed<*> -> {
-                    cont.resumeWithException(enqueueResult.sendException)
-                    return@sc
-                }
+            if (enqueueSend(send)) { // enqueued successfully
+                cont.initCancellability() // make it properly cancellable
+//                cont.removeOnCancel(send)
+                return@sc
             }
             // hm... receiver is waiting or buffer is not full. try to offer
             val offerResult = offerInternal(element)
@@ -80,19 +73,17 @@ public open class SpScSendChannel<E : Any>(
 
     /**
      * Result is:
-     * * null -- successfully enqueued
-     * * ENQUEUE_FAILED -- buffer is not full (should not enqueue)
-     * * SpScClosed<*> -- receiver is closed (should not enqueue)
+     * * true -- successfully enqueued
+     * * false -- buffer is not full (should not enqueue)
      */
-    private fun enqueueSend(send: SpScSendElement<E>): Any? {
-        queue.modifyNextValueToConsumeIfPrev(send, send.value, { prev ->
-            when (prev) {
-                is SpScClosed<*> -> return@enqueueSend prev
-                null -> return ENQUEUE_FAILED
-            }
+    private fun enqueueSend(send: FullElement<E>): Boolean {
+        send.currentValue = queue.nextValueToConsume() ?: return false // if next value is null there is room to Send to
+        return queue.modifyNextValueToConsumeIfPrev(send, send.currentValue, { prev ->
+            // if prev value is null, there is room to Send to
+            if (null == prev) return@enqueueSend false
+            // otherwise buffer is still full, predicate is true
             true
         })
-        return null
     }
 
     public override fun close(cause: Throwable?) {
@@ -105,23 +96,18 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 
     /**
      * Tries to remove element from buffer
-     * Return type is `E | POLL_FAILED | Closed`
+     * Return type is `E | POLL_FAILED`
      * @suppress **This is unstable API and it is subject to change.**
      */
-    protected fun pollInternal(): Any? {
+    protected fun pollInternal(): Any {
         val value = queue.poll()
         return when {
-            value is SpScClosed<*> -> value
-            value is SpScSend -> {
-                val token = value.tryResumeSend(idempotent = null)
-                if (token != null) {
-                    value.completeResumeSend(token)
-                    value.pollResult
-                } else {
-                    POLL_FAILED
-                }
+            value is FullElement<*> -> {
+                queue.offer(value.offerValue) // we are sure there is at least one slot for this value
+                value.resumeSend() // resume Send
+                value.currentValue
             }
-            value == null -> POLL_FAILED// buffer is Empty
+            value == null -> POLL_FAILED // buffer is Empty, or Closed
             else -> value
         }
     }
@@ -130,15 +116,9 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
     public final suspend fun receive(): E {
         // fast path -- try poll non-blocking
         val result = pollInternal()
-        if (result !== POLL_FAILED) return receiveResult(result)
-        // slow-path does suspend
-        return receiveSuspend()
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun receiveResult(result: Any?): E {
-        if (result is Closed<*>) throw result.receiveException
-        return result as E
+        if (result !== POLL_FAILED) return result as E
+        val closed = queue.getClosed() as? SpScClosed<E> ?: return receiveSuspend() // slow-path does suspend
+        throw closed.receiveException
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -165,7 +145,7 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 
     public final fun iterator(): ChannelIterator<E> = Itr(this)
 
-    private class Itr<E: Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
+    private class Itr<E : Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
         var result: Any? = POLL_FAILED // E | POLL_FAILED | Closed
 
         override suspend fun hasNext(): Boolean {
@@ -228,30 +208,26 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 internal const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
 
 /**
- * Represents sending waiter in the queue.
- * @suppress **This is unstable API and it is subject to change.**
+ * Full element to store when suspend Producer
  */
-public interface SpScSend {
-    val pollResult: Any? // E | Closed
-    fun tryResumeSend(idempotent: Any?): Any?
-    fun completeResumeSend(token: Any)
-    fun resumeSendClosed(closed: SpScClosed<*>)
+private class FullElement<E : Any>(
+        val offerValue: E,
+        @JvmField val cont: CancellableContinuation<Unit>
+) {
+    lateinit var currentValue: Any
+    fun resumeSend() = cont.resume(Unit)
+    override fun toString() = "FullElement($offerValue)[$cont]"
 }
 
-/**
- * Represents sender for a specific element.
- * @suppress **This is unstable API and it is subject to change.**
- */
-@Suppress("UNCHECKED_CAST")
-public class SpScSendElement<E : Any?>(
-        override val pollResult: Any?,
-        val value: E,
+private interface Empty<in E : Any> : ReceiveOrClosed<E> {
+    abstract fun resumeReceiveClosed(closed: SpScClosed<*>)
+}
+
+private class EmptyElement(
         @JvmField val cont: CancellableContinuation<Unit>
-) : SpScSend {
-    override fun tryResumeSend(idempotent: Any?): Any? = cont.tryResume(Unit, idempotent)
-    override fun completeResumeSend(token: Any) = cont.completeResume(token)
-    override fun resumeSendClosed(closed: SpScClosed<*>) = cont.resumeWithException(closed.sendException)
-    override fun toString() = "SendElement($pollResult)[$cont]"
+) {
+    fun resumeReceive() = cont.resume(Unit)
+    override fun toString(): String = "EmptyElement[$cont"
 }
 
 /**
@@ -260,7 +236,7 @@ public class SpScSendElement<E : Any?>(
  */
 public class SpScClosed<in E>(
         @JvmField val closeCause: Throwable?
-) : SpScSend, ReceiveOrClosed<E> {
+) {
     val sendException: Throwable get() = closeCause ?: ClosedSendChannelException(DEFAULT_CLOSE_MESSAGE)
     val receiveException: Throwable get() = closeCause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
 
@@ -278,24 +254,4 @@ public class SpScClosed<in E>(
 
     override fun resumeSendClosed(closed: SpScClosed<*>) = error("Should be never invoked")
     override fun toString() = "Closed[$closeCause]"
-}
-
-private abstract class Receive<in E> : ReceiveOrClosed<E> {
-    override val offerResult get() = OFFER_SUCCESS
-    abstract fun resumeReceiveClosed(closed: SpScClosed<*>)
-}
-
-private class ReceiveElement<in E>(
-        @JvmField val cont: CancellableContinuation<E?>,
-        @JvmField val nullOnClose: Boolean
-) : Receive<E>() {
-    override fun tryResumeReceive(value: E, idempotent: Any?): Any? = cont.tryResume(value, idempotent)
-    override fun completeResumeReceive(token: Any) = cont.completeResume(token)
-    override fun resumeReceiveClosed(closed: SpScClosed<*>) {
-        if (closed.closeCause == null && nullOnClose)
-            cont.resume(null)
-        else
-            cont.resumeWithException(closed.receiveException)
-    }
-    override fun toString(): String = "ReceiveElement[$cont,nullOnClose=$nullOnClose]"
 }
