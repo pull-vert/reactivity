@@ -2,7 +2,9 @@ package sourceInline
 
 import internal.LockFreeSPSCQueue
 import kotlinx.coroutines.experimental.CancellableContinuation
+import kotlinx.coroutines.experimental.channels.ChannelIterator
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.experimental.channels.POLL_FAILED
 import kotlinx.coroutines.experimental.suspendCancellableCoroutine
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
 
@@ -20,18 +22,25 @@ public open class SpScSendChannel<E : Any>(
             val offerValue: E,
             @JvmField var cont: CancellableContinuation<Unit>?
     ) {
-        lateinit var currentValue: Any
-        fun resumeSend() = cont?.resume(Unit)
+        fun resumeSend(){
+            cont?.resume(Unit)
+        }
         override fun toString() = "FullElement($offerValue)[$cont]"
+    }
+
+    protected interface Empty<in E : Any> {
+        fun resumeReceive(element: E)
     }
 
     /**
      * Empty element to store when suspend Consumer
      */
-    protected class EmptyElement<in E>(
+    protected open class EmptyElement<in E : Any>(
             @JvmField val cont: CancellableContinuation<E>?
-    ) {
-        fun resumeReceive(element: E) = cont?.resume(element)
+    ): Empty<E> {
+        override fun resumeReceive(element: E) {
+            cont?.resume(element)
+        }
         override fun toString(): String = "EmptyElement[$cont"
     }
 
@@ -49,16 +58,16 @@ public open class SpScSendChannel<E : Any>(
     private val FULL_UPDATER = AtomicReferenceFieldUpdater.newUpdater<SpScSendChannel<*>, FullElement<*>>(
             SpScSendChannel::class.java, FullElement::class.java, "full")
     @Volatile @JvmField protected var full: FullElement<E>? = null
-    private val EMPTY_UPDATER = AtomicReferenceFieldUpdater.newUpdater<SpScSendChannel<*>, EmptyElement<*>>(
-            SpScSendChannel::class.java, EmptyElement::class.java, "empty")
-    @Volatile @JvmField protected var empty: EmptyElement<E>? = null
+    private val EMPTY_UPDATER = AtomicReferenceFieldUpdater.newUpdater<SpScSendChannel<*>, Empty<*>>(
+            SpScSendChannel::class.java, Empty::class.java, "empty")
+    @Volatile @JvmField protected var empty: Empty<E>? = null
     private val CLOSED_UPDATER = AtomicReferenceFieldUpdater.newUpdater<SpScSendChannel<*>, ClosedElement>(
             SpScSendChannel::class.java, ClosedElement::class.java, "closed")
     @Volatile @JvmField protected var closed: ClosedElement? = null
 
     protected fun soFull(newValue: FullElement<E>?) = FULL_UPDATER.lazySet(this, newValue)
 
-    protected fun soEmpty(newValue: EmptyElement<E>?) = EMPTY_UPDATER.lazySet(this, newValue)
+    protected fun soEmpty(newValue: Empty<E>?) = EMPTY_UPDATER.lazySet(this, newValue)
 
     protected fun soClosed(newValue: ClosedElement?) = CLOSED_UPDATER.lazySet(this, newValue)
 
@@ -102,6 +111,8 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
         soFull(null)
     }
 
+    private fun pollInternal(): E? = queue.poll()
+
     public final suspend fun receive(): E {
         // fast path -- try poll non-blocking
         val value = queue.poll()
@@ -125,67 +136,65 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 //            _empty.lazySet(null)
 //        }
     }
+
+        public final fun iterator(): ChannelIterator<E> = Itr(this)
+
+    private class Itr<E : Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
+        var result: E? = null
+
+        override suspend fun hasNext(): Boolean {
+            // check for repeated hasNext
+            if (result != null) return hasNextResult(result)
+            // fast path -- try poll non-blocking
+            result = channel.pollInternal()
+            if (result != null) return hasNextResult(result)
+            // slow-path does suspend
+            return hasNextSuspend()
+        }
+
+        private fun hasNextResult(result: Any?): Boolean {
+            if (null != result) {
+                if (result === 119) println("polled $result")
+                // handle the potentially suspended consumer (full buffer), one slot is free now in buffer
+                channel.handleFull()
+                return true
+            } else {
+                // maybe there is a Closed event
+                channel.handleClosed()
+                return false
+            }
+        }
+
+        private suspend fun hasNextSuspend(): Boolean = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
+            val empty = EmptyHasNext(this, cont)
+            channel.soEmpty(empty)
+            //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
+//            _empty.lazySet(null)
+//        }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        override suspend fun next(): E {
+            val result = this.result
+            if (result is Closed<*>) throw result.receiveException
+            if (result !== POLL_FAILED) {
+                this.result = POLL_FAILED
+                return result as E
+            }
+            // rare case when hasNext was not invoked yet -- just delegate to receive (leave state as is)
+            return channel.receive()
+        }
+
+        protected class EmptyHasNext<E : Any>(
+                @JvmField val iterator: SpScChannel.Itr<E>,
+                @JvmField val cont: CancellableContinuation<Boolean>?
+        ): Empty<E> {
+            override fun resumeReceive(element: E) {
+                iterator.result = element
+                cont?.resume(true)
+            }
+        }
+    }
 }
 
 internal const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
-
-//    public final fun iterator(): ChannelIterator<E> = Itr(this)
-//
-//    private class Itr<E : Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
-//        var result: Any? = POLL_FAILED // E | POLL_FAILED | Closed
-//
-//        override suspend fun hasNext(): Boolean {
-//            // check for repeated hasNext
-//            if (result !== POLL_FAILED) return hasNextResult(result)
-//            // fast path -- try poll non-blocking
-//            result = channel.pollInternal()
-//            if (result !== POLL_FAILED) return hasNextResult(result)
-//            // slow-path does suspend
-//            return hasNextSuspend()
-//        }
-//
-//        private fun hasNextResult(result: Any?): Boolean {
-//            if (result is Closed<*>) {
-//                if (result.closeCause != null) throw result.receiveException
-//                return false
-//            }
-//            return true
-//        }
-//
-//        private suspend fun hasNextSuspend(): Boolean = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
-//            val receive = ReceiveHasNext(this, cont)
-//            while (true) {
-//                if (channel.enqueueReceive(receive)) {
-//                    cont.initCancellability() // make it properly cancellable
-//                    channel.removeReceiveOnCancel(cont, receive)
-//                    return@sc
-//                }
-//                // hm... something is not right. try to poll
-//                val result = channel.pollInternal()
-//                this.result = result
-//                if (result is Closed<*>) {
-//                    if (result.closeCause == null)
-//                        cont.resume(false)
-//                    else
-//                        cont.resumeWithException(result.receiveException)
-//                    return@sc
-//                }
-//                if (result !== POLL_FAILED) {
-//                    cont.resume(true)
-//                    return@sc
-//                }
-//            }
-//        }
-//
-//        @Suppress("UNCHECKED_CAST")
-//        override suspend fun next(): E {
-//            val result = this.result
-//            if (result is Closed<*>) throw result.receiveException
-//            if (result !== POLL_FAILED) {
-//                this.result = POLL_FAILED
-//                return result as E
-//            }
-//            // rare case when hasNext was not invoked yet -- just delegate to receive (leave state as is)
-//            return channel.receive()
-//        }
-//    }
