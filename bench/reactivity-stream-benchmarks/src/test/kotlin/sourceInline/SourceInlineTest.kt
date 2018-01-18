@@ -1,20 +1,19 @@
 package sourceInline
 
-import benchmark.N
 import benchmark.isGood
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
-import sourceInline.filter2
-import sourceInline.fold2
-import sourceInline.range
+import kotlin.test.assertEquals
 
 class SourceInlineTest {
     @Test
     fun testSourceInlineDeep() = runBlocking {
-        println(SourceInline
-                .range(1, N)
+        val value = SourceInline
+                .range(1, 10)
                 .async(coroutineContext, buffer = 128)
                 .filter2 { it.isGood() }
-                .fold2(0, { a, b -> a + b }))
+                .fold2(0, { a, b -> a + b })
+        println(value)
+        assertEquals(12, value)
     }
 }

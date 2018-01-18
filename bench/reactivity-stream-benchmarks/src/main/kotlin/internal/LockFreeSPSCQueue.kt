@@ -44,23 +44,21 @@ import kotlin.math.min
 class LockFreeSPSCQueue<E : Any>(capacity: Int) : SpscAtomicArrayQueueL3Pad<E>(capacity) {
 
     /**
-     * This implementation is correct for single producer thread use only.
-     * Return true if offer is done, false if buffer full
+     * Offer the value in buffer
+     * Return true if there is room left in buffer, false if buffer full
      */
     fun offer(e: E): Boolean {
         // local load of field to avoid repeated loads after volatile reads
         val buffer = this.buffer
         val mask = this.mask
-        val producerIndex = producerIndex
-        if (producerIndex >= producerLimit && !offerSlowPath(buffer, mask, producerIndex)) {
-            return false // buffer is full
-        }
+        val producerIndex = lvProducerIndex()
         val offset = calcElementOffset(producerIndex, mask)
         // StoreStore
         soElement(buffer, offset, e)
         // ordered store -> atomic and ordered for size()
         soProducerIndex(producerIndex + 1)
-        return true
+        // buffer is full when producer_offset equals next (just filled the last empty spot)
+        return offset != calcElementOffset(lvConsumerIndex() - 1)
     }
 
     private fun offerSlowPath(buffer: AtomicReferenceArray<E?>, mask: Int, producerIndex: Long): Boolean {
@@ -79,7 +77,7 @@ class LockFreeSPSCQueue<E : Any>(capacity: Int) : SpscAtomicArrayQueueL3Pad<E>(c
      * This implementation is correct for single consumer thread use only.
      */
     fun poll(): E? {
-        val consumerIndex = consumerIndex
+        val consumerIndex = lvConsumerIndex()
         val offset = calcElementOffset(consumerIndex)
         // local load of field to avoid repeated loads after volatile reads
         val buffer = this.buffer
@@ -190,11 +188,14 @@ abstract class SpscAtomicArrayQueueL1Pad<E : Any>(capacity: Int) : SpscAtomicArr
 }
 
 abstract class SpscAtomicArrayQueueProducerIndexFields<E : Any>(capacity: Int) : SpscAtomicArrayQueueL1Pad<E>(capacity) {
+    // TODO test with LongAdder with jdk8 !
     private val P_INDEX_UPDATER = AtomicLongFieldUpdater.newUpdater<SpscAtomicArrayQueueProducerIndexFields<*>>(SpscAtomicArrayQueueProducerIndexFields::class.java, "producerIndex")
-    @Volatile @JvmField protected var producerIndex: Long = 0
-    @JvmField protected var producerLimit: Long = 0L
+    @Volatile private var producerIndex: Long = 0
+//    @JvmField protected var producerLimit: Long = 0L
 
-    protected fun soProducerIndex(newValue: Long) = P_INDEX_UPDATER.lazySet(this, newValue)
+    protected fun lvProducerIndex() = P_INDEX_UPDATER.get(this)
+
+    protected fun soProducerIndex(newValue: Long) = P_INDEX_UPDATER.set(this, newValue)
 }
 
 abstract class SpscAtomicArrayQueueL2Pad<E : Any>(capacity: Int) : SpscAtomicArrayQueueProducerIndexFields<E>(capacity) {
@@ -217,9 +218,11 @@ abstract class SpscAtomicArrayQueueL2Pad<E : Any>(capacity: Int) : SpscAtomicArr
 }
 
 abstract class SpscAtomicArrayQueueConsumerIndexField<E : Any>(capacity: Int) : SpscAtomicArrayQueueL2Pad<E>(capacity) {
+    // TODO test with LongAdder with jdk8 !
     private val C_INDEX_UPDATER  = AtomicLongFieldUpdater.newUpdater<SpscAtomicArrayQueueConsumerIndexField<*>>(SpscAtomicArrayQueueConsumerIndexField::class.java, "consumerIndex")
-    @Volatile @JvmField protected var consumerIndex: Long = 0
+    @Volatile private var consumerIndex: Long = 0
 
+    protected fun lvConsumerIndex() = C_INDEX_UPDATER.get(this)
     protected fun soConsumerIndex(newValue: Long) = C_INDEX_UPDATER.lazySet(this, newValue)
 }
 

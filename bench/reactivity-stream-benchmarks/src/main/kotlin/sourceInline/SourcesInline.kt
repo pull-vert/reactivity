@@ -1,7 +1,6 @@
 package sourceInline
 
 import kotlinx.coroutines.experimental.DefaultDispatcher
-import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.experimental.launch
 import kotlin.coroutines.experimental.CoroutineContext
 
@@ -125,20 +124,19 @@ fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatche
     return object : SourceInline<E> {
         suspend override fun consume(sink: Sink<E>) {
             launch(context) {
-                var sinkCause: Throwable?
-                try {
-                    while (true) {
-                        sink.send(channel.receive())
-                    }
-                } catch (e: Throwable) {
-                    if (e is ClosedReceiveChannelException) {
-                        sinkCause = null
-                    } else {
-                        sinkCause = e
-                    }
-                }
-                sink.close(sinkCause)
+                channel.consumeEach { sink.send(it) }
             }
+//                    while (true) {
+//                        sink.send(channel.receive())
+//                    }
+//                } catch (e: Throwable) {
+//                    if (e is ClosedReceiveChannelException) {
+//                        sinkCause = null
+//                    } else {
+//                        sinkCause = e
+//                    }
+//                }
+//                sink.close(sinkCause)
             var cause: Throwable? = null
             try {
                 this@async.consume(object : Sink<E> {
