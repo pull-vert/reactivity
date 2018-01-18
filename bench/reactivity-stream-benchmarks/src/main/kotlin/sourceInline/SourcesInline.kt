@@ -125,19 +125,27 @@ fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatche
     return object : SourceInline<E> {
         suspend override fun consume(sink: Sink<E>) {
             launch(context) {
+                var sinkCause: Throwable?
                 try {
                     while (true) {
                         sink.send(channel.receive())
                     }
                 } catch (e: Throwable) {
-                    if (e is ClosedReceiveChannelException) sink.close(null)
-                    sink.close(e)
+                    if (e is ClosedReceiveChannelException) {
+                        sinkCause = null
+                    } else {
+                        sinkCause = e
+                    }
                 }
+                sink.close(sinkCause)
             }
             var cause: Throwable? = null
             try {
                 this@async.consume(object : Sink<E> {
-                    suspend override fun send(item: E) = channel.send(item)
+                    suspend override fun send(item: E) {
+                        channel.send(item)
+                    }
+
                     override fun close(cause: Throwable?) {
                         cause?.let { throw it }
                     }
@@ -149,3 +157,31 @@ fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatche
         }
     }
 }
+
+//fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceInline<E> {
+//    val channel = SpScChannel<E>(buffer)
+//    return object : SourceInline<E> {
+//        suspend override fun consume(sink: Sink<E>) {
+//            launch(context) {
+//                try {
+//                    while (true) {
+//                        sink.send(channel.receive())
+//                    }
+//                } catch (e: Throwable) {
+//                    if (e is ClosedReceiveChannelException) sink.close(null)
+//                    sink.close(e)
+//                }
+//            }
+//            this@async.consumeEach { channel.send(it) }
+//        }
+//    }
+//}
+//
+//suspend fun <E> SourceInline<E>.consumeEach(action: suspend (E) -> Unit) {
+//    consume(object : Sink<E> {
+//        suspend override fun send(item: E) = action(item)
+//        override fun close(cause: Throwable?) {
+//            cause?.let { throw it }
+//        }
+//    })
+//}

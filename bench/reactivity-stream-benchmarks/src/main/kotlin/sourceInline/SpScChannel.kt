@@ -1,10 +1,10 @@
 package sourceInline
 
 import internal.LockFreeSPSCQueue
-import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.experimental.CancellableContinuation
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.experimental.suspendCancellableCoroutine
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
 
 public open class SpScSendChannel<E : Any>(
         /**
@@ -13,14 +13,59 @@ public open class SpScSendChannel<E : Any>(
         capacity: Int
 ) : Sink<E> {
 
+    /**
+     * Full element to store when suspend Producer
+     */
+    protected class FullElement<E : Any>(
+            val offerValue: E,
+            @JvmField var cont: CancellableContinuation<Unit>?
+    ) {
+        lateinit var currentValue: Any
+        fun resumeSend() = cont?.resume(Unit)
+        override fun toString() = "FullElement($offerValue)[$cont]"
+    }
+
+    /**
+     * Empty element to store when suspend Consumer
+     */
+    protected class EmptyElement<in E>(
+            @JvmField val cont: CancellableContinuation<E>?
+    ) {
+        fun resumeReceive(element: E) = cont?.resume(element)
+        override fun toString(): String = "EmptyElement[$cont"
+    }
+
+    /**
+     * Closed element to store when Producer is closed
+     */
+    protected class ClosedElement(
+            private val closeCause: Throwable?
+    ) {
+        val receiveException: Throwable get() = closeCause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
+        override fun toString() = "Closed[$closeCause]"
+    }
+
     @JvmField protected val queue = LockFreeSPSCQueue<E>(capacity)
-    internal val _full = atomic<FullElement<E>?>(null)
-    internal val _empty = atomic<EmptyElement<E>?>(null)
-    internal val _closed = atomic<ClosedElement?>(null)
+    private val FULL_UPDATER = AtomicReferenceFieldUpdater.newUpdater<SpScSendChannel<*>, FullElement<*>>(
+            SpScSendChannel::class.java, FullElement::class.java, "full")
+    @Volatile @JvmField protected var full: FullElement<E>? = null
+    private val EMPTY_UPDATER = AtomicReferenceFieldUpdater.newUpdater<SpScSendChannel<*>, EmptyElement<*>>(
+            SpScSendChannel::class.java, EmptyElement::class.java, "empty")
+    @Volatile @JvmField protected var empty: EmptyElement<E>? = null
+    private val CLOSED_UPDATER = AtomicReferenceFieldUpdater.newUpdater<SpScSendChannel<*>, ClosedElement>(
+            SpScSendChannel::class.java, ClosedElement::class.java, "closed")
+    @Volatile @JvmField protected var closed: ClosedElement? = null
+
+    protected fun soFull(newValue: FullElement<E>?) = FULL_UPDATER.lazySet(this, newValue)
+
+    protected fun soEmpty(newValue: EmptyElement<E>?) = EMPTY_UPDATER.lazySet(this, newValue)
+
+    protected fun soClosed(newValue: ClosedElement?) = CLOSED_UPDATER.lazySet(this, newValue)
 
     private fun handleEmpty(element: E): Boolean {
-        _empty.value?.resumeReceive(element) ?: return false
-        _empty.lazySet(null)
+        val empty = empty
+        empty?.resumeReceive(element) ?: return false
+        soEmpty(null)
         return true
     }
 
@@ -35,34 +80,33 @@ public open class SpScSendChannel<E : Any>(
 
     private suspend fun sendSuspend(element: E): Unit = suspendCancellableCoroutine { cont ->
         val full = FullElement(element, cont)
-        _full.lazySet(full) //  store full in atomic _full
+        soFull(full) //  store full in atomic _full
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels
-//            _full.lazySet(null)
+//            soFull(null)
 //        }
     }
 
-    public override fun close(cause: Throwable?) {
-        _closed.lazySet(ClosedElement(cause))
-    }
+    public override fun close(cause: Throwable?) = soClosed(ClosedElement(cause))
 }
 
 class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 
     private fun handleClosed() {
-        val exception = _closed.value?.receiveException ?: return
-        _closed.lazySet(null)
+        val exception = closed?.receiveException ?: return
+        soClosed(null)
         throw exception
     }
 
     private fun handleFull() {
-        _full.value?.resumeSend() ?: return
-        _full.lazySet(null)
+        full?.resumeSend() ?: return
+        soFull(null)
     }
 
     public final suspend fun receive(): E {
         // fast path -- try poll non-blocking
         val value = queue.poll()
         if (null != value) {
+            if (value === 119) println("polled $value")
             // handle the potentially suspended consumer (full buffer), one slot is free now in buffer
             handleFull()
             return value
@@ -76,7 +120,7 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 
     private suspend fun receiveSuspend(): E = suspendCancellableCoroutine { cont ->
         val empty = EmptyElement(cont)
-        _empty.lazySet(empty)
+        soEmpty(empty)
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
 //            _empty.lazySet(null)
 //        }
@@ -84,38 +128,6 @@ class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 }
 
 internal const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
-
-/**
- * Full element to store when suspend Producer
- */
-internal class FullElement<E : Any>(
-        val offerValue: E,
-        @JvmField var cont: CancellableContinuation<Unit>?
-) {
-    lateinit var currentValue: Any
-    fun resumeSend() = cont?.resume(Unit)
-    override fun toString() = "FullElement($offerValue)[$cont]"
-}
-
-/**
- * Empty element to store when suspend Consumer
- */
-internal class EmptyElement<in E>(
-        @JvmField val cont: CancellableContinuation<E>?
-) {
-    fun resumeReceive(element: E) = cont?.resume(element)
-    override fun toString(): String = "EmptyElement[$cont"
-}
-
-/**
- * Closed element to store when Producer is closed
- */
-internal class ClosedElement(
-        private val closeCause: Throwable?
-) {
-    val receiveException: Throwable get() = closeCause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
-    override fun toString() = "Closed[$closeCause]"
-}
 
 //    public final fun iterator(): ChannelIterator<E> = Itr(this)
 //

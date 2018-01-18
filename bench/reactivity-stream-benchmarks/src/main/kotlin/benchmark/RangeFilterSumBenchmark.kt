@@ -5,6 +5,7 @@ import io.reactivex.Observable
 import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.produce
+import kotlinx.coroutines.experimental.newSingleThreadContext
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.publish
 import kotlinx.coroutines.experimental.reactor.flux
@@ -296,14 +297,14 @@ open class RangeFilterSumBenchmark {
 //            .fold(0, { a, b -> a + b })
 //    }
 //
-    @Benchmark
-    fun testSourceThreadBuffer128(): Int = runBlocking {
-        Source
-            .range(1, N)
-            .async(buffer = 128)
-            .filter { it.isGood() }
-            .fold(0, { a, b -> a + b })
-    }
+//    @Benchmark
+//    fun testSourceThreadBuffer128(): Int = runBlocking {
+//        Source
+//            .range(1, 3)
+//            .async(buffer = 128)
+//            .filter { it.isGood() }
+//            .fold(0, { a, b -> a + b })
+//    }
 //
 //    @Benchmark
 //    fun testSource(): Int = runBlocking {
@@ -321,13 +322,7 @@ open class RangeFilterSumBenchmark {
 //    }
 //
 //
-    @Benchmark
-    fun testSourceInlineDeep(): Int = runBlocking {
-        SourceInline
-                .range(1, N)
-                .filter2 { it.isGood() }
-                .fold2(0, { a, b -> a + b })
-    }
+//    l
 
 //    @Benchmark
 //    fun testSourceInlineDeepFused(): Int = runBlocking {
@@ -339,7 +334,7 @@ open class RangeFilterSumBenchmark {
     @Benchmark
     fun testSourceInlineThreadBuffer128(): Int = runBlocking {
         SourceInline
-                .range(1, N)
+                .range(1, 120)
                 .async(buffer = 128)
                 .filter2 { it.isGood() }
                 .fold2(0, { a, b -> a + b })
