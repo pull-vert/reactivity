@@ -1,20 +1,57 @@
 package sourceInline
 
+/**
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Original License: https://github.com/JCTools/JCTools/blob/master/LICENSE
+ * Original location: https://github.com/JCTools/JCTools/blob/master/jctools-core/src/main/java/org/jctools/queues/atomic/SpscAtomicArrayQueue.java
+ */
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.loop
 import kotlinx.atomicfu.update
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
+import java.util.concurrent.atomic.AtomicLongFieldUpdater
+import java.util.concurrent.atomic.AtomicReferenceArray
 import kotlin.coroutines.experimental.Continuation
 import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.math.min
 
 /**
- * Inspired by https://www.codeproject.com/Articles/43510/Lock-Free-Single-Producer-Single-Consumer-Circular
+ *
+ * Lock-free Single-Producer Single-Consumer Queue backed by a pre-allocated buffer.
+ * Based on Ring Buffer = circular array = circular buffer
+ * http://psy-lob-saw.blogspot.fr/2014/04/notes-on-concurrent-ring-buffer-queue.html
+ * http://psy-lob-saw.blogspot.fr/2014/01/picking-2013-spsc-queue-champion.html
+ * Inspirition https://www.codeproject.com/Articles/43510/Lock-Free-Single-Producer-Single-Consumer-Circular
+ *
+ * <p>
+ * This implementation is a mashup of the <a href="http://sourceforge.net/projects/mc-fastflow/">Fast Flow</a>
+ * algorithm with an optimization of the offer method taken from the <a
+ * href="http://staff.ustc.edu.cn/~bhua/publications/IJPP_draft.pdf">BQueue</a> algorithm (a variation on Fast
+ * Flow), and adjusted to comply with Queue.offer semantics with regards to capacity.<br>
+ * For convenience the relevant papers are available in the resources folder:<br>
+ * <i>2010 - Pisa - SPSC Queues on Shared Cache Multi-Core Systems.pdf<br>
+ * 2012 - Junchang- BQueue- Efﬁcient and Practical Queuing.pdf <br>
+ * </i> This implementation is wait free.
+ *
+ * @param <E> Not null value
+ * @author nitsanw, adapted by fmo
  */
 public open class SpScChannel<E : Any>(
         /**
          * Buffer capacity.
          */
-        capacity: Int
+        private val capacity: Int
 ) : SpscAtomicArrayQueueL3Pad<Element<E>>(capacity), Sink<E> {
 
     protected val _full = atomic<Suspended?>(null)
@@ -23,6 +60,8 @@ public open class SpScChannel<E : Any>(
     /**
      * Offer the value in buffer
      * Return true if there is room left in buffer, false if just 1 spot left in the buffer
+     * <p>
+     * This implementation is correct for single producer thread use only.
      */
     fun offer(item: E): Boolean {
         println("offer $item")
@@ -30,15 +69,29 @@ public open class SpScChannel<E : Any>(
         val buffer = this.buffer
         val mask = this.mask
         val producerIndex = lvProducerIndex()
+        if (producerIndex >= producerLimit && !offerSlowPath(buffer, mask, producerIndex)) {
+            return false // buffer is full
+        }
         val offset = calcElementOffset(producerIndex, mask)
         // StoreStore
         soElement(buffer, offset, Element(item))
         // ordered store -> atomic and ordered for size()
         soProducerIndex(producerIndex + 1)
-        // if empty = suspended Consumer, then no check required for full buffer
-        if (handleEmpty()) return true
-        // return true if buffer has only one last free spot (we leave one spot remaining for Closed item)
-        return offset != calcElementOffset(lvConsumerIndex() - 2)
+        // handle empty case (= suspended Consumer)
+        handleEmpty()
+        return true
+    }
+
+    private fun offerSlowPath(buffer: AtomicReferenceArray<Element<E>?>, mask: Int, producerIndex: Long): Boolean {
+        val lookAheadStep = this.lookAheadStep
+        if (null == lvElement(buffer, calcElementOffset(producerIndex + lookAheadStep, mask))) {
+            // LoadLoad
+            producerLimit = producerIndex + lookAheadStep
+        } else {
+            val offset = calcElementOffset(producerIndex, mask)
+            return null == lvElement(buffer, offset)
+        }
+        return true
     }
 
     /**
@@ -71,15 +124,16 @@ public open class SpScChannel<E : Any>(
 //        }
     }
 
+    /**
+     * <p>
+     * This implementation is correct for single producer thread use only.
+     */
     override fun close(cause: Throwable?) {
         val buffer = this.buffer
-        val mask = this.mask
-        val producerIndex = lvProducerIndex()
-        val offset = calcElementOffset(producerIndex, mask)
         // StoreStore
         val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
-        println("close $cause offset = $offset")
-        soElement(buffer, offset, Element(closeCause = closeCause))
+        println("close $cause offset = $capacity")
+        compareAndSetElement(buffer, capacity, null, Element(closeCause = closeCause)) // store closed in last position
     }
 
     /**
@@ -103,6 +157,10 @@ public open class SpScChannel<E : Any>(
         }
     }
 
+    /**
+     * <p>
+     * This implementation is correct for single producer thread use only.
+     */
     suspend fun receive(): E {
         println("receive")
         // local load of field to avoid repeated loads after volatile reads
@@ -111,21 +169,27 @@ public open class SpScChannel<E : Any>(
         val offset = calcElementOffset(consumerIndex)
         // LoadLoad
         val value = lvElement(buffer, offset)
-        if (null == value) {
+        if (null == value) { // empty buffer
+            println("receive : read value was null = empty buffer ")
+            // before suspend, check if Closed
+            val closed = lvElement(buffer, capacity)
+            if (null != closed) {
+                println("receive : closed !")
+                throw closed.closeCause as Throwable
+            }
+            // check if Producer is full (for really fast operations)
+            handleFull()
             receiveSuspend()
-            return receive() // re-call after suspension
+            return receive() // re-call receive after suspension
         } else {
-            if (null != value.closeCause) throw value.closeCause // fail fast
             // StoreStore
             soElement(buffer, offset, null)
             // ordered store -> atomic and ordered for size()
             soConsumerIndex(consumerIndex + 1)
             // we consumed the value from buffer, now check if Producer is full
-            if (handleFull()) return value.item as E // if producer was full, no need to check if consumer is empty
+            handleFull()
+            return value.item as E // if producer was full
         }
-        // if buffer is empty -> slow-path does suspend
-        if (offset == calcElementOffset(lvProducerIndex() - 1)) receiveSuspend()
-        return value.item as E
     }
 
     private suspend fun receiveSuspend(): Unit = suspendCoroutine { cont ->
@@ -246,3 +310,118 @@ data class Element<E : Any>(
 )
 
 class BufferShouldNotBeEmptyException: IndexOutOfBoundsException("Buffer should not be empty")
+
+abstract class AtomicReferenceArrayQueue<E : Any>(capacity: Int) {
+    @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity + 1) // keep one slot for closed
+    @JvmField protected val mask: Int = capacity - 1
+
+    init {
+        check(capacity > 0) { "capacity must be positive" }
+        check(capacity and mask == 0) { "capacity must be a power of 2" }
+    }
+
+    protected fun calcElementOffset(index: Long) = index.toInt() and mask
+
+    protected companion object {
+        @JvmStatic
+        protected fun <E : Any> lvElement(buffer: AtomicReferenceArray<E?>, offset: Int) = buffer.get(offset)
+
+        @JvmStatic
+        protected fun <E : Any> soElement(buffer: AtomicReferenceArray<E?>, offset: Int, value: E?) = buffer.lazySet(offset, value)
+
+        @JvmStatic
+        protected fun <E : Any> compareAndSetElement(buffer: AtomicReferenceArray<E?>, offset: Int, old: E?, new: E?) = buffer.compareAndSet(offset, old, new)
+
+        @JvmStatic
+        protected fun calcElementOffset(index: Long, mask: Int) = index.toInt() and mask
+    }
+}
+
+abstract class SpscAtomicArrayQueueColdField<E : Any>(capacity: Int) : AtomicReferenceArrayQueue<E>(capacity) {
+    @JvmField protected val lookAheadStep: Int
+
+    init {
+        lookAheadStep = min(capacity / 4, MAX_LOOK_AHEAD_STEP)
+    }
+
+    companion object {
+        val MAX_LOOK_AHEAD_STEP = Integer.getInteger("jctools.spsc.max.lookahead.step", 4096)
+    }
+}
+
+abstract class SpscAtomicArrayQueueL1Pad<E : Any>(capacity: Int) : SpscAtomicArrayQueueColdField<E>(capacity) {
+    private val p01: Long = 0
+    private val p02: Long = 0
+    private val p03: Long = 0
+    private val p04: Long = 0
+    private val p05: Long = 0
+    private val p06: Long = 0
+    private val p07: Long = 0
+
+    private val p10: Long = 0
+    private val p11: Long = 0
+    private val p12: Long = 0
+    private val p13: Long = 0
+    private val p14: Long = 0
+    private val p15: Long = 0
+    private val p16: Long = 0
+    private val p17: Long = 0
+}
+
+abstract class SpscAtomicArrayQueueProducerIndexFields<E : Any>(capacity: Int) : SpscAtomicArrayQueueL1Pad<E>(capacity) {
+    // TODO test with LongAdder with jdk8 !
+    private val P_INDEX_UPDATER = AtomicLongFieldUpdater.newUpdater<SpscAtomicArrayQueueProducerIndexFields<*>>(SpscAtomicArrayQueueProducerIndexFields::class.java, "producerIndex")
+    @Volatile private var producerIndex: Long = 0
+    @JvmField protected var producerLimit: Long = 0L
+
+    protected fun lvProducerIndex() = producerIndex
+
+    protected fun soProducerIndex(newValue: Long) = P_INDEX_UPDATER.lazySet(this, newValue)
+}
+
+abstract class SpscAtomicArrayQueueL2Pad<E : Any>(capacity: Int) : SpscAtomicArrayQueueProducerIndexFields<E>(capacity) {
+    private val p01: Long = 0
+    private val p02: Long = 0
+    private val p03: Long = 0
+    private val p04: Long = 0
+    private val p05: Long = 0
+    private val p06: Long = 0
+    private val p07: Long = 0
+
+    private val p10: Long = 0
+    private val p11: Long = 0
+    private val p12: Long = 0
+    private val p13: Long = 0
+    private val p14: Long = 0
+    private val p15: Long = 0
+    private val p16: Long = 0
+    private val p17: Long = 0
+}
+
+abstract class SpscAtomicArrayQueueConsumerIndexField<E : Any>(capacity: Int) : SpscAtomicArrayQueueL2Pad<E>(capacity) {
+    // TODO test with LongAdder with jdk8 !
+    private val C_INDEX_UPDATER  = AtomicLongFieldUpdater.newUpdater<SpscAtomicArrayQueueConsumerIndexField<*>>(SpscAtomicArrayQueueConsumerIndexField::class.java, "consumerIndex")
+    @Volatile private var consumerIndex: Long = 0
+
+    protected fun lvConsumerIndex() = consumerIndex
+    protected fun soConsumerIndex(newValue: Long) = C_INDEX_UPDATER.lazySet(this, newValue)
+}
+
+abstract class SpscAtomicArrayQueueL3Pad<E : Any>(capacity: Int) : SpscAtomicArrayQueueConsumerIndexField<E>(capacity) {
+    private val p01: Long = 0
+    private val p02: Long = 0
+    private val p03: Long = 0
+    private val p04: Long = 0
+    private val p05: Long = 0
+    private val p06: Long = 0
+    private val p07: Long = 0
+
+    private val p10: Long = 0
+    private val p11: Long = 0
+    private val p12: Long = 0
+    private val p13: Long = 0
+    private val p14: Long = 0
+    private val p15: Long = 0
+    private val p16: Long = 0
+    private val p17: Long = 0
+}
