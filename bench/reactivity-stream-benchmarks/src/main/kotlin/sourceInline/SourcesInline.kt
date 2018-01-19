@@ -54,13 +54,16 @@ inline suspend fun <E, R> SourceInline<E>.fold2(initial: R, crossinline operatio
     var acc = initial
     consume(object : Sink<E> {
         suspend override fun send(item: E) {
+            println("fold2 send = $item")
             acc = operation(acc, item)
         }
 
         override fun close(cause: Throwable?) {
+            println("fold2 close cause = $cause")
             cause?.let { throw it }
         }
     })
+    println("fold2 retour = $acc")
     return acc
 }
 
@@ -110,6 +113,7 @@ inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = 
                 }
 
                 override fun close(cause: Throwable?) {
+                    println("filter2 close cause = $cause")
                     cause?.let { throw it }
                 }
             })
@@ -127,19 +131,22 @@ fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatche
             launch(context) {
                 //                channel.consumeEach { sink.send(it) }
 //            }
-
                 var sinkCause: Throwable? = null
                 try {
                     while (true) {
-                        sink.send(channel.receive())
+                        val currentValue = channel.receive()
+                        println("async: value received = $currentValue")
+                        sink.send(currentValue)
                     }
                 } catch (e: Throwable) {
+                    println("async : exception = $e")
                     if (e is ClosedReceiveChannelException) {
                         sinkCause = null
                     } else {
                         sinkCause = e
                     }
                 }
+                println("async : sink close = $sinkCause")
                 sink.close(sinkCause)
             }
             var cause: Throwable? = null
@@ -156,6 +163,7 @@ fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatche
             } catch (e: Throwable) {
                 cause = e
             }
+            println("async : channel close = $cause")
             channel.close(cause)
         }
     }

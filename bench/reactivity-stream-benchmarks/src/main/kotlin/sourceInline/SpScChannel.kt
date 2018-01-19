@@ -54,8 +54,8 @@ public open class SpScChannel<E : Any>(
         private val capacity: Int
 ) : SpscAtomicArrayQueueL3Pad<Element<E>>(capacity), Sink<E> {
 
-    protected val _full = atomic<Suspended?>(null)
-    protected val _empty = atomic<Suspended?>(null)
+    private val _full = atomic<Suspended?>(null)
+    private val _empty = atomic<Suspended?>(null)
 
     /**
      * Offer the value in buffer
@@ -69,9 +69,6 @@ public open class SpScChannel<E : Any>(
         val buffer = this.buffer
         val mask = this.mask
         val producerIndex = lvProducerIndex()
-        if (producerIndex >= producerLimit && !offerSlowPath(buffer, mask, producerIndex)) {
-            return false // buffer is full
-        }
         val offset = calcElementOffset(producerIndex, mask)
         // StoreStore
         soElement(buffer, offset, Element(item))
@@ -79,19 +76,24 @@ public open class SpScChannel<E : Any>(
         soProducerIndex(producerIndex + 1)
         // handle empty case (= suspended Consumer)
         handleEmpty()
+        // check if buffer is full
+        if (producerIndex >= producerLimit && !hasRoomLeft(buffer, mask, producerIndex)) {
+            return false
+        }
         return true
     }
 
-    private fun offerSlowPath(buffer: AtomicReferenceArray<Element<E>?>, mask: Int, producerIndex: Long): Boolean {
+    private fun hasRoomLeft(buffer: AtomicReferenceArray<Element<E>?>, mask: Int, producerIndex: Long): Boolean {
         val lookAheadStep = this.lookAheadStep
+        println("hasRoomLeft prodIndex = $producerIndex lookAheadStep = $lookAheadStep")
         if (null == lvElement(buffer, calcElementOffset(producerIndex + lookAheadStep, mask))) {
             // LoadLoad
             producerLimit = producerIndex + lookAheadStep
+            return true
         } else {
-            val offset = calcElementOffset(producerIndex, mask)
-            return null == lvElement(buffer, offset)
+            val offsetNext = calcElementOffset(producerIndex + 2, mask) // always leave one free spot for Closed
+            return null == lvElement(buffer, offsetNext)
         }
-        return true
     }
 
     /**
@@ -130,24 +132,14 @@ public open class SpScChannel<E : Any>(
      */
     override fun close(cause: Throwable?) {
         val buffer = this.buffer
+        val mask = this.mask
+        val producerIndex = lvProducerIndex()
+        val offset = calcElementOffset(producerIndex, mask)
         // StoreStore
         val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
-        println("close $cause offset = $capacity")
-        compareAndSetElement(buffer, capacity, null, Element(closeCause = closeCause)) // store closed in last position
+        println("close $closeCause offset = $offset")
+        soElement(buffer, offset, Element(closeCause = closeCause))
     }
-
-    /**
-     * Full element to store when suspend Producer or Consumer
-     */
-    protected class Suspended(
-            @JvmField var cont: Continuation<Unit>?
-    ) {
-        fun resume() { cont?.resume(Unit) }
-        override fun toString() = "FullElement[$cont]"
-    }
-//}
-//
-//class SpScChannel<E : Any>(capacity: Int) : SpScSendChannel<E>(capacity) {
 
     private fun handleFull(): Boolean {
         _full.loop {full ->
@@ -162,7 +154,6 @@ public open class SpScChannel<E : Any>(
      * This implementation is correct for single producer thread use only.
      */
     suspend fun receive(): E {
-        println("receive")
         // local load of field to avoid repeated loads after volatile reads
         val buffer = this.buffer
         val consumerIndex = lvConsumerIndex()
@@ -171,12 +162,6 @@ public open class SpScChannel<E : Any>(
         val value = lvElement(buffer, offset)
         if (null == value) { // empty buffer
             println("receive : read value was null = empty buffer ")
-            // before suspend, check if Closed
-            val closed = lvElement(buffer, capacity)
-            if (null != closed) {
-                println("receive : closed !")
-                throw closed.closeCause as Throwable
-            }
             // check if Producer is full (for really fast operations)
             handleFull()
             receiveSuspend()
@@ -184,6 +169,13 @@ public open class SpScChannel<E : Any>(
         } else {
             // StoreStore
             soElement(buffer, offset, null)
+            // before suspend, check if Closed
+            val closed = value.closeCause
+            if (null != closed) {
+                println("receive : closed !")
+                throw closed
+            }
+            println("receive : ${value.item}")
             // ordered store -> atomic and ordered for size()
             soConsumerIndex(consumerIndex + 1)
             // we consumed the value from buffer, now check if Producer is full
@@ -261,7 +253,7 @@ public open class SpScChannel<E : Any>(
 //
 //        }
 //
-//        protected class EmptyHasNext<E : Any>(
+//        private class EmptyHasNext<E : Any>(
 //                @JvmField val iterator: SpScChannel.Itr<E>,
 //                @JvmField val cont: CancellableContinuation<Boolean>?
 //        ) : Empty<E> {
@@ -272,6 +264,17 @@ public open class SpScChannel<E : Any>(
 //        }
 //    }
 }
+
+/**
+ * Full element to store when suspend Producer or Consumer
+ */
+private class Suspended(
+        @JvmField var cont: Continuation<Unit>?
+) {
+    fun resume() { cont?.resume(Unit) }
+    override fun toString() = "FullElement[$cont]"
+}
+
 
 /**
  * Makes sure that the given [block] consumes all elements from the given channel
@@ -375,7 +378,6 @@ abstract class SpscAtomicArrayQueueProducerIndexFields<E : Any>(capacity: Int) :
     @JvmField protected var producerLimit: Long = 0L
 
     protected fun lvProducerIndex() = producerIndex
-
     protected fun soProducerIndex(newValue: Long) = P_INDEX_UPDATER.lazySet(this, newValue)
 }
 
