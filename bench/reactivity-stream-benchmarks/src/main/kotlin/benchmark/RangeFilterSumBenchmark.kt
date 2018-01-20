@@ -15,12 +15,18 @@ import kotlinx.coroutines.experimental.rx2.rxFlowable
 import kotlinx.coroutines.experimental.rx2.rxObservable
 import org.openjdk.jmh.annotations.Benchmark
 import org.reactivestreams.Publisher
-import reactivity.experimental.channel.*
+import reactivity.experimental.channel.SourceInline
+import reactivity.experimental.channel.filter2
+import reactivity.experimental.channel.fold2
+import reactivity.experimental.channel.range
 import reactor.core.publisher.Flux
 import source.*
+import sourceSendOnly.*
 import srcmanbase.*
 import suspendingSequence.SuspendingSequence
 import suspendingSequence.suspendingSequence
+import java.util.stream.Collectors
+import java.util.stream.Stream
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.buildSequence
 
@@ -121,13 +127,6 @@ open class RangeFilterSumBenchmark {
 //        return sum
 //    }
 //
-//    @Benchmark
-//    fun testJavaStream(): Int =
-//        Stream
-//            .iterate(1) { it + 1 }
-//            .limit(N.toLong())
-//            .filter { it.isGood() }
-//            .collect(Collectors.summingInt { it })
 //
 //    @Benchmark
 //    fun testSequenceIntRange(): Int =
@@ -313,8 +312,6 @@ open class RangeFilterSumBenchmark {
 //            .fold(0, { a, b -> a + b })
 //    }
 //
-//
-//    l
 
 //    @Benchmark
 //    fun testSourceInlineDeepFused(): Int = runBlocking {
@@ -323,8 +320,16 @@ open class RangeFilterSumBenchmark {
 //                .filterFold2(0, { a -> a.isGood() }, { a, b -> a + b })
 //    }
 
+        @Benchmark
+    fun testJavaStream(): Int =
+        Stream
+            .iterate(1) { it + 1 }
+            .limit(N.toLong())
+            .filter { it.isGood() }
+            .collect(Collectors.summingInt { it })
+
     @Benchmark
-    fun testSourceThreadBuffer128(): Int = runBlocking {
+    fun testSourceThreadBuffer128ArrayChannel(): Int = runBlocking {
         Source
                 .range(1, N)
                 .async(buffer = 128)
@@ -333,8 +338,16 @@ open class RangeFilterSumBenchmark {
     }
 
     @Benchmark
-    fun testSourceInlineThreadBuffer128(): Int = runBlocking {
+    fun testSourceReturnPredicat(): Int = runBlocking {
         SourceInline
+                .range(1, N)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+    }
+
+    @Benchmark
+    fun testSourceReturnPredicateThreadBuffer128SpScChannel(): Int = runBlocking {
+        SourceReturnPredicate
                 .range(1, N)
                 .async(newSingleThreadContext("test"), buffer = 128)
                 .filter2 { it.isGood() }
