@@ -1,4 +1,4 @@
-package sourceInline
+package reactivity.experimental.channel
 
 /**
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,7 +64,6 @@ public open class SpScChannel<E : Any>(
      * This implementation is correct for single producer thread use only.
      */
     fun offer(item: E): Boolean {
-        println("offer $item")
         // local load of field to avoid repeated loads after volatile reads
         val buffer = this.buffer
         val mask = this.mask
@@ -85,7 +84,6 @@ public open class SpScChannel<E : Any>(
 
     private fun hasRoomLeft(buffer: AtomicReferenceArray<Element<E>?>, mask: Int, producerIndex: Long): Boolean {
         val lookAheadStep = this.lookAheadStep
-        println("hasRoomLeft prodIndex = $producerIndex lookAheadStep = $lookAheadStep")
         if (null == lvElement(buffer, calcElementOffset(producerIndex + lookAheadStep, mask))) {
             // LoadLoad
             producerLimit = producerIndex + lookAheadStep
@@ -101,9 +99,8 @@ public open class SpScChannel<E : Any>(
      */
     private fun handleEmpty(): Boolean {
         _empty.loop {empty ->
-            println("handleEmpty $empty")
             empty?.resume() ?: return false
-            _empty.lazySet(null)
+            _empty.compareAndSet(empty,null)
             return true
         }
     }
@@ -112,15 +109,15 @@ public open class SpScChannel<E : Any>(
         // fast path -- try offer non-blocking
         if (offer(item)) return
         // slow-path does suspend
-        return sendSuspend(item)
+        return sendSuspend()
     }
 
-    private suspend fun sendSuspend(element: E): Unit = suspendCoroutine { cont ->
-        println("sendSuspend")
+    private suspend fun sendSuspend(): Unit = suspendCoroutine { cont ->
         val full = Suspended(cont)
         _full.update {
             full
         }
+        handleEmpty()
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels
 //            soFull(null)
 //        }
@@ -137,14 +134,15 @@ public open class SpScChannel<E : Any>(
         val offset = calcElementOffset(producerIndex, mask)
         // StoreStore
         val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
-        println("close $closeCause offset = $offset")
         soElement(buffer, offset, Element(closeCause = closeCause))
+        // handle empty case (= suspended Consumer)
+        handleEmpty()
     }
 
     private fun handleFull(): Boolean {
         _full.loop {full ->
             full?.resume() ?: return false
-            _full.lazySet(null)
+            _full.compareAndSet(full,null)
             return true
         }
     }
@@ -161,7 +159,6 @@ public open class SpScChannel<E : Any>(
         // LoadLoad
         val value = lvElement(buffer, offset)
         if (null == value) { // empty buffer
-            println("receive : read value was null = empty buffer ")
             // check if Producer is full (for really fast operations)
             handleFull()
             receiveSuspend()
@@ -172,10 +169,8 @@ public open class SpScChannel<E : Any>(
             // before suspend, check if Closed
             val closed = value.closeCause
             if (null != closed) {
-                println("receive : closed !")
                 throw closed
             }
-            println("receive : ${value.item}")
             // ordered store -> atomic and ordered for size()
             soConsumerIndex(consumerIndex + 1)
             // we consumed the value from buffer, now check if Producer is full
@@ -185,11 +180,11 @@ public open class SpScChannel<E : Any>(
     }
 
     private suspend fun receiveSuspend(): Unit = suspendCoroutine { cont ->
-        println("receiveSuspend")
         val empty = Suspended(cont)
         _empty.update {
             empty
         }
+        handleFull()
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
 //            _empty.lazySet(null)
 //        }
@@ -315,7 +310,7 @@ data class Element<E : Any>(
 class BufferShouldNotBeEmptyException: IndexOutOfBoundsException("Buffer should not be empty")
 
 abstract class AtomicReferenceArrayQueue<E : Any>(capacity: Int) {
-    @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity + 1) // keep one slot for closed
+    @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity) // keep one slot for closed
     @JvmField protected val mask: Int = capacity - 1
 
     init {

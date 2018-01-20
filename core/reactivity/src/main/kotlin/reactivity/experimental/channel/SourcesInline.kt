@@ -1,4 +1,4 @@
-package sourceInline
+package reactivity.experimental.channel
 
 import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
@@ -54,24 +54,7 @@ inline suspend fun <E, R> SourceInline<E>.fold2(initial: R, crossinline operatio
     var acc = initial
     consume(object : Sink<E> {
         suspend override fun send(item: E) {
-            println("fold2 send = $item")
             acc = operation(acc, item)
-        }
-
-        override fun close(cause: Throwable?) {
-            println("fold2 close cause = $cause")
-            cause?.let { throw it }
-        }
-    })
-    println("fold2 retour = $acc")
-    return acc
-}
-
-inline suspend fun <E, R> SourceInline<E>.filterFold2(initial: R, crossinline predicate: (E) -> Boolean, crossinline operation: (acc: R, E) -> R): R {
-    var acc = initial
-    consume(object : Sink<E> {
-        suspend override fun send(item: E) {
-            if (predicate(item)) acc = operation(acc, item)
         }
 
         override fun close(cause: Throwable?) {
@@ -113,7 +96,6 @@ inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = 
                 }
 
                 override fun close(cause: Throwable?) {
-                    println("filter2 close cause = $cause")
                     cause?.let { throw it }
                 }
             })
@@ -124,31 +106,21 @@ inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = 
     }
 }
 
-fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceInline<E> {
+fun <E : Any> SourceInline<E>.async(context: CoroutineContext, buffer: Int = 0): SourceInline<E> {
     val channel = SpScChannel<E>(buffer)
     return object : SourceInline<E> {
         suspend override fun consume(sink: Sink<E>) {
             launch(context) {
-                //                channel.consumeEach { sink.send(it) }
-//            }
-                var sinkCause: Throwable? = null
                 try {
                     while (true) {
-                        val currentValue = channel.receive()
-                        println("async: value received = $currentValue")
-                        sink.send(currentValue)
+                        sink.send(channel.receive())
                     }
                 } catch (e: Throwable) {
-                    println("async : exception = $e")
-                    if (e is ClosedReceiveChannelException) {
-                        sinkCause = null
-                    } else {
-                        sinkCause = e
-                    }
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    else sink.close(e)
                 }
-                println("async : sink close = $sinkCause")
-                sink.close(sinkCause)
             }
+
             var cause: Throwable? = null
             try {
                 this@async.consume(object : Sink<E> {
@@ -163,7 +135,6 @@ fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatche
             } catch (e: Throwable) {
                 cause = e
             }
-            println("async : channel close = $cause")
             channel.close(cause)
         }
     }

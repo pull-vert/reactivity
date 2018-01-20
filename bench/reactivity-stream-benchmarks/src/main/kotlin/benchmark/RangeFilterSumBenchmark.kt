@@ -15,9 +15,9 @@ import kotlinx.coroutines.experimental.rx2.rxFlowable
 import kotlinx.coroutines.experimental.rx2.rxObservable
 import org.openjdk.jmh.annotations.Benchmark
 import org.reactivestreams.Publisher
+import reactivity.experimental.channel.*
 import reactor.core.publisher.Flux
 import source.*
-import sourceInline.*
 import srcmanbase.*
 import suspendingSequence.SuspendingSequence
 import suspendingSequence.suspendingSequence
@@ -297,14 +297,6 @@ open class RangeFilterSumBenchmark {
 //            .fold(0, { a, b -> a + b })
 //    }
 //
-//    @Benchmark
-//    fun testSourceThreadBuffer128(): Int = runBlocking {
-//        Source
-//            .range(1, 3)
-//            .async(buffer = 128)
-//            .filter { it.isGood() }
-//            .fold(0, { a, b -> a + b })
-//    }
 //
 //    @Benchmark
 //    fun testSource(): Int = runBlocking {
@@ -332,10 +324,19 @@ open class RangeFilterSumBenchmark {
 //    }
 
     @Benchmark
+    fun testSourceThreadBuffer128(): Int = runBlocking {
+        Source
+                .range(1, N)
+                .async(buffer = 128)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+    }
+
+    @Benchmark
     fun testSourceInlineThreadBuffer128(): Int = runBlocking {
         SourceInline
-                .range(1, 120)
-                .async(buffer = 128)
+                .range(1, N)
+                .async(newSingleThreadContext("test"), buffer = 128)
                 .filter2 { it.isGood() }
                 .fold2(0, { a, b -> a + b })
     }
@@ -343,9 +344,9 @@ open class RangeFilterSumBenchmark {
     @Benchmark
     fun testSrcManBase(): Int = SrcManBase.noSuspend { cont ->
         SrcManBase
-            .range(1, N)
-            .filter { it, _ -> it.isGood() }
-            .fold(0, { a, b, _ -> a + b }, cont)
+                .range(1, N)
+                .filter { it, _ -> it.isGood() }
+                .fold(0, { a, b, _ -> a + b }, cont)
     }
 //
 //    @Benchmark
