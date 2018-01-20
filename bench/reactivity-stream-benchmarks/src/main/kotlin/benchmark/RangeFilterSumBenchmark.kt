@@ -319,14 +319,14 @@ open class RangeFilterSumBenchmark {
 //                .range(1, N)
 //                .filterFold2(0, { a -> a.isGood() }, { a, b -> a + b })
 //    }
-
-        @Benchmark
-    fun testJavaStream(): Int =
-        Stream
-            .iterate(1) { it + 1 }
-            .limit(N.toLong())
-            .filter { it.isGood() }
-            .collect(Collectors.summingInt { it })
+//
+//        @Benchmark
+//    fun testJavaStream(): Int =
+//        Stream
+//            .iterate(1) { it + 1 }
+//            .limit(N.toLong())
+//            .filter { it.isGood() }
+//            .collect(Collectors.summingInt { it })
 
     @Benchmark
     fun testSourceThreadBuffer128ArrayChannel(): Int = runBlocking {
@@ -338,29 +338,38 @@ open class RangeFilterSumBenchmark {
     }
 
     @Benchmark
-    fun testSourceReturnPredicat(): Int = runBlocking {
-        SourceInline
-                .range(1, N)
-                .filter2 { it.isGood() }
-                .fold2(0, { a, b -> a + b })
-    }
-
-    @Benchmark
-    fun testSourceReturnPredicateThreadBuffer128SpScChannel(): Int = runBlocking {
+    fun testSourceReturnPredicate(): Int = runBlocking {
         SourceReturnPredicate
                 .range(1, N)
-                .async(newSingleThreadContext("test"), buffer = 128)
                 .filter2 { it.isGood() }
                 .fold2(0, { a, b -> a + b })
     }
 
+//    @Benchmark
+//    fun testSourceReturnPredicateThreadBuffer128SpScChannel(): Int = runBlocking {
+//        SourceReturnPredicate
+//                .range(1, N)
+//                .async(newSingleThreadContext("test"), buffer = 128)
+//                .filter2 { it.isGood() }
+//                .fold2(0, { a, b -> a + b })
+//    }
+
     @Benchmark
-    fun testSrcManBase(): Int = SrcManBase.noSuspend { cont ->
-        SrcManBase
+    fun testSourceReturnPredicateThreadBuffer128SpScChannel2(): Int = runBlocking {
+        SourceReturnPredicate
                 .range(1, N)
-                .filter { it, _ -> it.isGood() }
-                .fold(0, { a, b, _ -> a + b }, cont)
+                .async2(newSingleThreadContext("test"), buffer = 128)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
     }
+//
+//    @Benchmark
+//    fun testSrcManBase(): Int = SrcManBase.noSuspend { cont ->
+//        SrcManBase
+//                .range(1, N)
+//                .filter { it, _ -> it.isGood() }
+//                .fold(0, { a, b, _ -> a + b }, cont)
+//    }
 //
 //    @Benchmark
 //    fun testMulti(): Int = runBlocking {

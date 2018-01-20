@@ -114,7 +114,7 @@ public open class SpScChannel<E : Any>(
         if (offer(item)) return
 //        println("sendSuspend $item")
         // slow-path does suspend
-        return sendSuspend()
+        sendSuspend()
     }
 
     private suspend fun sendSuspend(): Unit = suspendCoroutine { cont ->

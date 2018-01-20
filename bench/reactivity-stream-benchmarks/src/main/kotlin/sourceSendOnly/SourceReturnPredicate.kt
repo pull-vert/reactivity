@@ -1,9 +1,9 @@
 package sourceSendOnly
 
-import kotlinx.coroutines.experimental.CoroutineStart
-import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import reactivity.experimental.channel.SpScChannel
+import reactivity.experimental.channel.SpScChannel2
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Model definitions
@@ -106,6 +106,44 @@ fun <E : Any> SourceReturnPredicate<E>.async(context: CoroutineContext, buffer: 
             channel.close(cause)
 
             return deferred.await()
+        }
+    }
+}
+
+fun <E : Any> SourceReturnPredicate<E>.async2(context: CoroutineContext, buffer: Int = 0): SourceReturnPredicate<E> {
+    val channel = SpScChannel2<E>(buffer)
+    return object : SourceReturnPredicate<E> {
+        suspend override fun consume(sink: Sink<E>, returnPredicate: (() -> Any?)?): Any? {
+            // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
+            val deferred = async(context) {
+                try {
+                    while (true) {
+                        sink.send(channel.receive())
+                    }
+                } catch (e: Throwable) {
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    else sink.close(e)
+                }
+                returnPredicate?.invoke()
+            }
+
+            var cause: Throwable? = null
+            try {
+                this@async2.consume(object : Sink<E> {
+                    suspend override fun send(item: E) {
+                        channel.send(item)
+                    }
+
+                    override fun close(cause: Throwable?) {
+                        cause?.let { throw it }
+                    }
+                })
+            } catch (e: Throwable) {
+                cause = e
+            }
+            channel.close(cause)
+
+            return deferred.await() // suspend and return the value of the Deferred
         }
     }
 }
