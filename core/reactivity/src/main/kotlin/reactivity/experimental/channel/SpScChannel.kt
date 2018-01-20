@@ -51,11 +51,25 @@ public open class SpScChannel<E : Any>(
         /**
          * Buffer capacity.
          */
-        private val capacity: Int
+        capacity: Int
 ) : SpscAtomicArrayQueueL3Pad<Element<E>>(capacity), Sink<E> {
 
     private val _full = atomic<Suspended?>(null)
     private val _empty = atomic<Suspended?>(null)
+
+    private fun handleEmpty() {
+        _empty.loop {empty ->
+            _empty.compareAndSet(empty,null)
+            empty?.resume() ?: return
+        }
+    }
+
+    private fun handleFull() {
+        _full.loop {full ->
+            _full.compareAndSet(full,null)
+            full?.resume() ?: return
+        }
+    }
 
     /**
      * Offer the value in buffer
@@ -75,6 +89,7 @@ public open class SpScChannel<E : Any>(
         soProducerIndex(producerIndex + 1)
         // handle empty case (= suspended Consumer)
         handleEmpty()
+//        println("offer $item")
         // check if buffer is full
         if (producerIndex >= producerLimit && !hasRoomLeft(buffer, mask, producerIndex)) {
             return false
@@ -94,20 +109,10 @@ public open class SpScChannel<E : Any>(
         }
     }
 
-    /**
-     * Return true if empty = suspended Consumer must resume
-     */
-    private fun handleEmpty(): Boolean {
-        _empty.loop {empty ->
-            empty?.resume() ?: return false
-            _empty.compareAndSet(empty,null)
-            return true
-        }
-    }
-
     final override suspend fun send(item: E) {
         // fast path -- try offer non-blocking
         if (offer(item)) return
+//        println("sendSuspend $item")
         // slow-path does suspend
         return sendSuspend()
     }
@@ -139,14 +144,6 @@ public open class SpScChannel<E : Any>(
         handleEmpty()
     }
 
-    private fun handleFull(): Boolean {
-        _full.loop {full ->
-            full?.resume() ?: return false
-            _full.compareAndSet(full,null)
-            return true
-        }
-    }
-
     /**
      * <p>
      * This implementation is correct for single producer thread use only.
@@ -158,6 +155,7 @@ public open class SpScChannel<E : Any>(
         val offset = calcElementOffset(consumerIndex)
         // LoadLoad
         val value = lvElement(buffer, offset)
+//        println("receive ${value}")
         if (null == value) { // empty buffer
             // check if Producer is full (for really fast operations)
             handleFull()
@@ -189,115 +187,7 @@ public open class SpScChannel<E : Any>(
 //            _empty.lazySet(null)
 //        }
     }
-
-    fun cancel(cause: Throwable? = null) =
-            close(cause).let {
-                cleanupSendQueueOnCancel()
-            }
-
-    private fun cleanupSendQueueOnCancel() { // todo cleanup for Garbage Collector
-    }
-
-//    public final operator fun iterator(): ChannelIterator<E> = Itr(this)
-//
-//    private class Itr<E : Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
-//        var result: E? = null
-//
-//        override suspend fun hasNext(): Boolean {
-//            // check for repeated hasNext
-//            if (result != null) return hasNextResult(result)
-//            // fast path -- try poll non-blocking
-//            result = channel.poll()
-//            if (hasNextResult(result)) return true
-//            // slow-path does suspend
-//            return hasNextSuspend()
-//        }
-//
-//        private fun hasNextResult(result: Any?): Boolean {
-//            if (null != result) {
-//                if (result == 119) println("polled $result")
-//                // handle the potentially suspended consumer (full buffer), one slot is free now in buffer
-//                channel.handleFull()
-//                return true
-//            } else {
-//                // maybe there is a Closed event
-//                println("no result in buffer, try to handle closed")
-//                channel.handleClosed()
-//                return false
-//            }
-//        }
-//
-//        private suspend fun hasNextSuspend(): Boolean = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
-//            println("hasNextSuspend")
-//            val empty = EmptyHasNext(this, cont)
-//            channel.soEmpty(empty)
-//            //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
-////            _empty.lazySet(null)
-////        }
-//        }
-//
-//        @Suppress("UNCHECKED_CAST")
-//        override suspend fun next(): E {
-//            val result = result
-//            if (null != result) {
-//                this.result = null
-//                return result
-//            }
-//            // rare case when hasNext was not invoked yet -- just delegate to receive (leave state as is)
-//            return channel.receive()
-//
-//        }
-//
-//        private class EmptyHasNext<E : Any>(
-//                @JvmField val iterator: SpScChannel.Itr<E>,
-//                @JvmField val cont: CancellableContinuation<Boolean>?
-//        ) : Empty<E> {
-//            override fun resumeReceive(element: E) {
-//                iterator.result = element
-//                cont?.resume(true)
-//            }
-//        }
-//    }
 }
-
-/**
- * Full element to store when suspend Producer or Consumer
- */
-private class Suspended(
-        @JvmField var cont: Continuation<Unit>?
-) {
-    fun resume() { cont?.resume(Unit) }
-    override fun toString() = "FullElement[$cont]"
-}
-
-
-/**
- * Makes sure that the given [block] consumes all elements from the given channel
- * by always invoking [cancel][SpScChannel.cancel] after the execution of the block.
- */
-public inline fun <E : Any, R> SpScChannel<E>.consume(block: SpScChannel<E>.() -> R): R =
-        try {
-            block()
-        } finally {
-            cancel()
-        }
-
-///**
-// * Performs the given [action] for each received element.
-// *
-// * This function [consumes][consume] all elements of the original [SpScChannel].
-// */
-//public inline suspend fun <E : Any> SpScChannel<E>.consumeEach(action: (E) -> Unit) =
-//            try {
-//                for (element in this) action(element)
-//            } catch (e: Throwable) {
-//                if (e !is ClosedReceiveChannelException) cancel(e)
-//                else cancel()
-//            } finally {
-//                cancel()
-//            }
-
-private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
 
 /**
  * Element stored in the buffer
@@ -307,7 +197,17 @@ data class Element<E : Any>(
         val closeCause: Throwable? = null
 )
 
-class BufferShouldNotBeEmptyException: IndexOutOfBoundsException("Buffer should not be empty")
+/**
+ * Full element to store when suspend Producer or Consumer
+ */
+internal class Suspended(
+        @JvmField var cont: Continuation<Unit>?
+) {
+    fun resume() { cont?.resume(Unit) }
+    override fun toString() = "FullElement[$cont]"
+}
+
+private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
 
 abstract class AtomicReferenceArrayQueue<E : Any>(capacity: Int) {
     @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity) // keep one slot for closed
@@ -422,3 +322,98 @@ abstract class SpscAtomicArrayQueueL3Pad<E : Any>(capacity: Int) : SpscAtomicArr
     private val p16: Long = 0
     private val p17: Long = 0
 }
+
+//    public final operator fun iterator(): ChannelIterator<E> = Itr(this)
+//
+//    private class Itr<E : Any>(val channel: SpScChannel<E>) : ChannelIterator<E> {
+//        var result: E? = null
+//
+//        override suspend fun hasNext(): Boolean {
+//            // check for repeated hasNext
+//            if (result != null) return hasNextResult(result)
+//            // fast path -- try poll non-blocking
+//            result = channel.poll()
+//            if (hasNextResult(result)) return true
+//            // slow-path does suspend
+//            return hasNextSuspend()
+//        }
+//
+//        private fun hasNextResult(result: Any?): Boolean {
+//            if (null != result) {
+//                if (result == 119) println("polled $result")
+//                // handle the potentially suspended consumer (full buffer), one slot is free now in buffer
+//                channel.handleFull()
+//                return true
+//            } else {
+//                // maybe there is a Closed event
+//                println("no result in buffer, try to handle closed")
+//                channel.handleClosed()
+//                return false
+//            }
+//        }
+//
+//        private suspend fun hasNextSuspend(): Boolean = suspendCancellableCoroutine(holdCancellability = true) sc@ { cont ->
+//            println("hasNextSuspend")
+//            val empty = EmptyHasNext(this, cont)
+//            channel.soEmpty(empty)
+//            //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
+////            _empty.lazySet(null)
+////        }
+//        }
+//
+//        @Suppress("UNCHECKED_CAST")
+//        override suspend fun next(): E {
+//            val result = result
+//            if (null != result) {
+//                this.result = null
+//                return result
+//            }
+//            // rare case when hasNext was not invoked yet -- just delegate to receive (leave state as is)
+//            return channel.receive()
+//
+//        }
+//
+//        private class EmptyHasNext<E : Any>(
+//                @JvmField val iterator: SpScChannel.Itr<E>,
+//                @JvmField val cont: CancellableContinuation<Boolean>?
+//        ) : Empty<E> {
+//            override fun resumeReceive(element: E) {
+//                iterator.result = element
+//                cont?.resume(true)
+//            }
+//        }
+//    }
+//
+//fun cancel(cause: Throwable? = null) =
+//        close(cause).let {
+//            cleanupSendQueueOnCancel()
+//        }
+//
+//private fun cleanupSendQueueOnCancel() { // todo cleanup for Garbage Collector
+//}
+//
+///**
+// * Makes sure that the given [block] consumes all elements from the given channel
+// * by always invoking [cancel][SpScChannel.cancel] after the execution of the block.
+// */
+//public inline fun <E : Any, R> SpScChannel<E>.consume(block: SpScChannel<E>.() -> R): R =
+//        try {
+//            block()
+//        } finally {
+//            cancel()
+//        }
+
+///**
+// * Performs the given [action] for each received element.
+// *
+// * This function [consumes][consume] all elements of the original [SpScChannel].
+// */
+//public inline suspend fun <E : Any> SpScChannel<E>.consumeEach(action: (E) -> Unit) =
+//            try {
+//                for (element in this) action(element)
+//            } catch (e: Throwable) {
+//                if (e !is ClosedReceiveChannelException) cancel(e)
+//                else cancel()
+//            } finally {
+//                cancel()
+//            }
