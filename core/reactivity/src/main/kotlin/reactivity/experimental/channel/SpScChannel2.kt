@@ -102,8 +102,6 @@ public open class SpScChannel2<E : Any>(
         soProducerIndex(producerIndex + 1)
         // check if buffer is full
         if (producerIndex >= producerLimit && !hasRoomLeft(buffer, mask, producerIndex)) {
-            // handle empty case (= suspended Consumer)
-            handleEmpty()
             return false
         }
         // handle empty case (= suspended Consumer)
@@ -131,13 +129,15 @@ public open class SpScChannel2<E : Any>(
         val fullBuffer = this.fullBuffer
         val fullProducerIndex = lvFullProducerIndex()
         val offset = calcElementOffset(fullProducerIndex)
-        sendSuspend(fullBuffer, offset)
         // ordered store -> atomic and ordered for size()
         soFullProducerIndex(fullProducerIndex + 1)
+        sendSuspend(fullBuffer, offset)
     }
 
     private suspend fun sendSuspend(fullBuffer: AtomicReferenceArray<Suspended?>, offset: Int): Unit = suspendCoroutine { cont ->
         soFull(fullBuffer, offset, Suspended(cont))
+        // handle empty case (= suspended Consumer)
+        handleEmpty()
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels
 //            soFull(null)
 //        }
@@ -171,15 +171,13 @@ public open class SpScChannel2<E : Any>(
         // LoadLoad
         val value = lvElement(buffer, offset)
         if (null == value) { // empty buffer
-            // check if Producer is full (for really fast operations)
-            handleFull()
             // local load of field to avoid repeated loads after volatile reads
             val emptyBuffer = this.emptyBuffer
             val emptyProducerIndex = lvEmptyProducerIndex()
             val emptyOffset = calcElementOffset(emptyProducerIndex)
-            receiveSuspend(emptyBuffer, emptyOffset)
             // ordered store -> atomic and ordered for size()
             soEmptyProducerIndex(emptyProducerIndex + 1)
+            receiveSuspend(emptyBuffer, emptyOffset)
             return receive() // re-call receive after suspension
         } else {
             // StoreStore
@@ -201,6 +199,8 @@ public open class SpScChannel2<E : Any>(
     private suspend fun receiveSuspend(emptyBuffer: AtomicReferenceArray<Suspended?>, offset: Int): Unit = suspendCoroutine { cont ->
         // StoreStore
         soEmpty(emptyBuffer, offset, Suspended(cont))
+        // check if Producer is full
+        handleFull()
 //        println("receiveSuspend $emptyOffset")
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
 //            _empty.lazySet(null)

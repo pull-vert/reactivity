@@ -87,13 +87,15 @@ public open class SpScChannel<E : Any>(
         soElement(buffer, offset, Element(item))
         // ordered store -> atomic and ordered for size()
         soProducerIndex(producerIndex + 1)
-        // handle empty case (= suspended Consumer)
-        handleEmpty()
 //        println("offer $item")
         // check if buffer is full
         if (producerIndex >= producerLimit && !hasRoomLeft(buffer, mask, producerIndex)) {
+            // handle empty case (= suspended Consumer)
+            handleEmpty()
             return false
         }
+        // handle empty case (= suspended Consumer)
+        handleEmpty()
         return true
     }
 

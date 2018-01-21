@@ -43,6 +43,7 @@ class SourceReturnPredicateTest {
     }
 
     @Test
+    @Ignore
     fun testSourceReturnPredicateAsync() = runBlocking {
         val value = SourceReturnPredicate
                 .range(1, N)
@@ -57,7 +58,7 @@ class SourceReturnPredicateTest {
     fun testSourceReturnPredicateAsync2() = runBlocking {
         val value = SourceReturnPredicate
                 .range(1, N)
-                .async2(newSingleThreadContext("test4"), buffer = 64)
+                .async2(newSingleThreadContext("test4"), buffer = 128)
                 .filter2 { it.isGood() }
                 .fold2(0, { a, b -> a + b })
         println("testSourceReturnPredicateAsync2 : value = $value run on ${Thread.currentThread().name}")
