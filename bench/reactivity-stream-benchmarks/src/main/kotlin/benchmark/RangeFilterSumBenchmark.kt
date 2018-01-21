@@ -15,18 +15,11 @@ import kotlinx.coroutines.experimental.rx2.rxFlowable
 import kotlinx.coroutines.experimental.rx2.rxObservable
 import org.openjdk.jmh.annotations.Benchmark
 import org.reactivestreams.Publisher
-import reactivity.experimental.channel.SourceInline
-import reactivity.experimental.channel.filter2
-import reactivity.experimental.channel.fold2
-import reactivity.experimental.channel.range
 import reactor.core.publisher.Flux
 import source.*
-import sourceSendOnly.*
-import srcmanbase.*
+import sourceCollector.*
 import suspendingSequence.SuspendingSequence
 import suspendingSequence.suspendingSequence
-import java.util.stream.Collectors
-import java.util.stream.Stream
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.buildSequence
 
@@ -339,28 +332,28 @@ open class RangeFilterSumBenchmark {
 
     @Benchmark
     fun testSourceReturnPredicate(): Int = runBlocking {
-        SourceReturnPredicate
+        SourceCollector
                 .range(1, N)
-                .filter2 { it.isGood() }
-                .fold2(0, { a, b -> a + b })
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
     }
 
 //    @Benchmark
 //    fun testSourceReturnPredicateThreadBuffer128SpScChannel(): Int = runBlocking {
-//        SourceReturnPredicate
+//        SourceCollector
 //                .range(1, N)
 //                .async(newSingleThreadContext("test"), buffer = 128)
-//                .filter2 { it.isGood() }
-//                .fold2(0, { a, b -> a + b })
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
 //    }
 
     @Benchmark
     fun testSourceReturnPredicateThreadBuffer128SpScChannel4(): Int = runBlocking {
-        SourceReturnPredicate
+        SourceCollector
                 .range(1, N)
                 .async4(newSingleThreadContext("test"), buffer = 128)
-                .filter2 { it.isGood() }
-                .fold2(0, { a, b -> a + b })
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
     }
 //
 //    @Benchmark
