@@ -95,7 +95,7 @@ public open class SpScChannel4<E : Any>(
         }
     }
 
-    private fun handlFullStrict() {
+    private fun handleFullStrict() {
         // Ordered get the current fullIndex
         val fullIndex = loGetAndSetFullIndex(0L)
         if (1L == fullIndex) { // then we know Producer is suspended !
@@ -221,7 +221,7 @@ public open class SpScChannel4<E : Any>(
         // StoreStore
         soEmpty(cont)
         // Must handle full case strict to avoid both Producer and Consumer are suspended
-        handlFullStrict()
+        handleFullStrict()
 //        println("receiveSuspend $emptyOffset")
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
 //            _empty.lazySet(null)
