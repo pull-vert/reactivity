@@ -4,6 +4,8 @@ import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import reactivity.experimental.channel.SpScChannel
 import reactivity.experimental.channel.spsc2.SpScChannel2
+import reactivity.experimental.channel.spsc3.SpScChannel3
+import reactivity.experimental.channel.spsc4.SpScChannel4
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Model definitions
@@ -130,6 +132,82 @@ fun <E : Any> SourceReturnPredicate<E>.async2(context: CoroutineContext, buffer:
             var cause: Throwable? = null
             try {
                 this@async2.consume(object : Sink<E> {
+                    suspend override fun send(item: E) {
+                        channel.send(item)
+                    }
+
+                    override fun close(cause: Throwable?) {
+                        cause?.let { throw it }
+                    }
+                })
+            } catch (e: Throwable) {
+                cause = e
+            }
+            channel.close(cause)
+
+            return deferred.await() // suspend and return the value of the Deferred
+        }
+    }
+}
+
+fun <E : Any> SourceReturnPredicate<E>.async3(context: CoroutineContext, buffer: Int = 0): SourceReturnPredicate<E> {
+    val channel = SpScChannel3<E>(buffer)
+    return object : SourceReturnPredicate<E> {
+        suspend override fun consume(sink: Sink<E>, returnPredicate: (() -> Any?)?): Any? {
+            // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
+            val deferred = async(context) {
+                try {
+                    while (true) {
+                        sink.send(channel.receive())
+                    }
+                } catch (e: Throwable) {
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    else sink.close(e)
+                }
+                returnPredicate?.invoke()
+            }
+
+            var cause: Throwable? = null
+            try {
+                this@async3.consume(object : Sink<E> {
+                    suspend override fun send(item: E) {
+                        channel.send(item)
+                    }
+
+                    override fun close(cause: Throwable?) {
+                        cause?.let { throw it }
+                    }
+                })
+            } catch (e: Throwable) {
+                cause = e
+            }
+            channel.close(cause)
+
+            return deferred.await() // suspend and return the value of the Deferred
+        }
+    }
+}
+
+fun <E : Any> SourceReturnPredicate<E>.async4(context: CoroutineContext, buffer: Int = 0): SourceReturnPredicate<E> {
+    val channel = SpScChannel4<E>(buffer)
+    return object : SourceReturnPredicate<E> {
+        suspend override fun consume(sink: Sink<E>, returnPredicate: (() -> Any?)?): Any? {
+            // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
+            val deferred = async(context) {
+                try {
+                    while (true) {
+                        sink.send(channel.receive())
+                    }
+                } catch (e: Throwable) {
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    else sink.close(e)
+                }
+                returnPredicate?.invoke()
+            }
+
+            var cause: Throwable? = null
+            try {
+                this@async4.consume(object : Sink<E> {
                     suspend override fun send(item: E) {
                         channel.send(item)
                     }

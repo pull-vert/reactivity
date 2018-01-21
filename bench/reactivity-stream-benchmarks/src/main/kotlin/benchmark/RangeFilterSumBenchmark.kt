@@ -355,10 +355,10 @@ open class RangeFilterSumBenchmark {
 //    }
 
     @Benchmark
-    fun testSourceReturnPredicateThreadBuffer128SpScChannel2(): Int = runBlocking {
+    fun testSourceReturnPredicateThreadBuffer128SpScChannel4(): Int = runBlocking {
         SourceReturnPredicate
                 .range(1, N)
-                .async2(newSingleThreadContext("test"), buffer = 256)
+                .async4(newSingleThreadContext("test"), buffer = 128)
                 .filter2 { it.isGood() }
                 .fold2(0, { a, b -> a + b })
     }
