@@ -104,11 +104,11 @@ public open class SpScChannel<E : Any>(
         if (null == lvElement(buffer, calcElementOffset(producerIndex + lookAheadStep, mask))) {
             // LoadLoad
             producerLimit = producerIndex + lookAheadStep
-            return true
         } else {
             val offsetNext = calcElementOffset(producerIndex + 2, mask) // always leave one free spot for Closed
             return null == lvElement(buffer, offsetNext)
         }
+        return true
     }
 
     final override suspend fun send(item: E) {
@@ -202,7 +202,7 @@ data class Element<E : Any>(
 /**
  * Full element to store when suspend Producer or Consumer
  */
-internal class Suspended(
+private class Suspended(
         @JvmField var cont: Continuation<Unit>?
 ) {
     fun resume() { cont?.resume(Unit) }

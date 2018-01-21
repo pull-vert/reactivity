@@ -60,9 +60,9 @@ inline fun <E> SrcManBase<E>.consumeEach(crossinline action: (item: E, cont: Con
 
 fun <E, R> SrcManBase<E>.fold(
     initial: R,
-    operation: (acc: R, E, Cont<R>) -> Any?, /* R | Suspended */
+    operation: (acc: R, E, Cont<R>) -> Any?, /* R | Suspended2 */
     completion: Cont<R>
-): Any? /* R | Suspended */ {
+): Any? /* R | Suspended2 */ {
     val sm = object : Cont<R> {
         var acc = initial
 

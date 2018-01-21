@@ -3,7 +3,7 @@ package sourceSendOnly
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import reactivity.experimental.channel.SpScChannel
-import reactivity.experimental.channel.SpScChannel2
+import reactivity.experimental.channel.spsc2.SpScChannel2
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Model definitions
