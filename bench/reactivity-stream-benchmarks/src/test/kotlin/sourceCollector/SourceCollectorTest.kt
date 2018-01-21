@@ -66,6 +66,17 @@ class SourceCollectorTest {
     }
 
     @Test
+    fun testSourceCollectorQuick5() = runBlocking {
+        val value = SourceCollector
+                .range(1, 10)
+                .async5(newSingleThreadContext("testSourceCollectorQuick5"), buffer = 8)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorQuick5 : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(12, value)
+    }
+
+    @Test
     @Ignore
     fun testSourceCollectorAsync() = runBlocking {
         val value = SourceCollector
@@ -109,6 +120,17 @@ class SourceCollectorTest {
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
         println("testSourceCollectorAsync4 : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(446448416, value)
+    }
+
+    @Test
+    fun testSourceCollectorAsync5() = runBlocking {
+        val value = SourceCollector
+                .range(1, N)
+                .async5(newSingleThreadContext("testSourceCollectorAsync5"), buffer = 128)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorAsync5 : value = $value run on ${Thread.currentThread().name}")
         assertEquals(446448416, value)
     }
 }
