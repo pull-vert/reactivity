@@ -320,7 +320,7 @@ open class RangeFilterSumBenchmark {
 //            .limit(N.toLong())
 //            .filter { it.isGood() }
 //            .collect(Collectors.summingInt { it })
-
+//
 //    @Benchmark
 //    fun testSourceThreadBuffer128ArrayChannel(): Int = runBlocking {
 //        Source
@@ -329,7 +329,7 @@ open class RangeFilterSumBenchmark {
 //                .filter { it.isGood() }
 //                .fold(0, { a, b -> a + b })
 //    }
-
+//
 //    @Benchmark
 //    fun testSourceReturnPredicate(): Int = runBlocking {
 //        SourceCollector
@@ -337,16 +337,7 @@ open class RangeFilterSumBenchmark {
 //                .filter { it.isGood() }
 //                .fold(0, { a, b -> a + b })
 //    }
-
-//    @Benchmark
-//    fun testSourceReturnPredicateThreadBuffer128SpScChannel(): Int = runBlocking {
-//        SourceCollector
-//                .range(1, N)
-//                .async(newSingleThreadContext("test"), buffer = 128)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//    }
-
+//
     @Benchmark
     fun testSourceCollectorThreadBuffer128SpScChannel(): Int = runBlocking {
         SourceCollector

@@ -62,8 +62,8 @@ public open class SpScChannel5<E : Any>(
         if (emptyConsumerIndex == empty.index) {
 //            println("handleEmpty Consumer is suspended")
             soEmptyIndex(0L)
-            empty.resume()
             soEmptyConsumerIndex(emptyConsumerIndex + 1)
+            empty.resume()
         }
     }
 
@@ -78,9 +78,9 @@ public open class SpScChannel5<E : Any>(
                 val empty = lvEmpty()
                 if (emptyConsumerIndex == empty.index) {
 //                    println("handleEmptyStrict empty=$empty")
-                    // we have the Empty suspended
-                    empty.resume()
+                    // Empty is suspended
                     soEmptyConsumerIndex(emptyConsumerIndex + 1)
+                    empty.resume()
                     return
                 }
             }
@@ -94,8 +94,8 @@ public open class SpScChannel5<E : Any>(
         if (fullConsumerIndex == full.index) {
 //            println("handleFull Producer is suspended")
             soFullIndex(0L)
-            full.resume()
             soFullConsumerIndex(fullConsumerIndex + 1)
+            full.resume()
         }
     }
 
@@ -110,9 +110,9 @@ public open class SpScChannel5<E : Any>(
                 val full = lvFull()
                 if (fullConsumerIndex == full.index) {
 //                    println("handleFullStrict full=$full")
-                    // we have the Full suspended
-                    full.resume()
+                    // Full is suspended
                     soFullConsumerIndex(fullConsumerIndex + 1)
+                    full.resume()
                     return
                 }
             }
@@ -161,12 +161,12 @@ public open class SpScChannel5<E : Any>(
         if (offer(item)) return
         soFullIndex(1L) // notify Producer will Suspend
         // slow-path does suspend
-        val fullProducerIndex = lvFullProducerIndex()
-        soFullProducerIndex(fullProducerIndex + 1)
-        sendSuspend(fullProducerIndex)
+        sendSuspend()
     }
 
-    private suspend fun sendSuspend(fullProducerIndex: Long): Unit = suspendCoroutine { cont ->
+    private suspend fun sendSuspend(): Unit = suspendCoroutine { cont ->
+        val fullProducerIndex = lvFullProducerIndex()
+        soFullProducerIndex(fullProducerIndex + 1)
         soFull(Suspended(cont, fullProducerIndex))
         // Must handle empty case strict to avoid both Producer and Consumer are suspended
         handleEmptyStrict()
@@ -192,24 +192,14 @@ public open class SpScChannel5<E : Any>(
         handleEmptyStrict()
     }
 
-    /**
-     * <p>
-     * This implementation is correct for single producer thread use only.
-     */
-    suspend fun receive(): E {
+    private fun poll(): E? {
         // local load of field to avoid repeated loads after volatile reads
         val buffer = this.buffer
         val consumerIndex = lvConsumerIndex()
         val offset = calcElementOffset(consumerIndex)
         // LoadLoad
         val value = lvElement(buffer, offset)
-        if (null == value) { // empty buffer
-            soEmptyIndex(1L) // notify Consumer will Suspend
-            val emptyProducerIndex = lvEmptyProducerIndex()
-            soEmptyProducerIndex(emptyProducerIndex + 1)
-            receiveSuspend(emptyProducerIndex)
-            return receive() // re-call receive after suspension
-        } else {
+        if (null != value) { // empty buffer
             // StoreStore
             soElement(buffer, offset, null)
             // before suspend, check if Closed
@@ -224,9 +214,26 @@ public open class SpScChannel5<E : Any>(
 //            println("receive ${value.item}")
             return value.item as E // if producer was full
         }
+        return null
     }
 
-    private suspend fun receiveSuspend(emptyProducerIndex: Long): Unit = suspendCoroutine { cont ->
+    /**
+     * <p>
+     * This implementation is correct for single producer thread use only.
+     */
+    suspend fun receive(): E {
+        // fast path -- try poll non-blocking
+        val result = poll()
+        if (null != result) return result
+        // slow-path does suspend
+        soEmptyIndex(1L) // notify Consumer will Suspend
+        receiveSuspend()
+        return receive() // re-call receive after suspension
+    }
+
+    private suspend fun receiveSuspend(): Unit = suspendCoroutine { cont ->
+        val emptyProducerIndex = lvEmptyProducerIndex()
+        soEmptyProducerIndex(emptyProducerIndex + 1)
         // StoreStore
         soEmpty(Suspended(cont, emptyProducerIndex))
         // Must handle full case strict to avoid both Producer and Consumer are suspended
