@@ -19,6 +19,7 @@ package reactivity.experimental.channel.spsc4
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import reactivity.experimental.channel.Element
 import reactivity.experimental.channel.Sink
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import java.util.concurrent.atomic.AtomicReferenceArray
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
@@ -60,15 +61,15 @@ public open class SpScChannel4<E : Any>(
         if (null != empty) {
 //            println("handleEmpty Consumer is suspended")
             soEmpty(null)
-            soEmptyIndex(0L)
+            soEmptyIndex(0)
             empty.resume(Unit)
         }
     }
 
     private fun handleEmptyStrict() {
         // Ordered get the current emptyIndex
-        val emptyIndex = loGetAndSetEmptyIndex(0L)
-        if (1L == emptyIndex) {// then we know Consumer is suspended !
+        val emptyIndex = loGetAndSetEmptyIndex(0)
+        if (1 == emptyIndex) {// then we know Consumer is suspended !
 //            println("handleEmptyStrict Consumer is suspended")
             while(true) {
                 // LoadLoad
@@ -90,15 +91,15 @@ public open class SpScChannel4<E : Any>(
         if (null != full) {
 //            println("handleFull Producer is suspended")
             soFull(null)
-            soFullIndex(0L)
+            soFullIndex(0)
             full.resume(Unit)
         }
     }
 
     private fun handleFullStrict() {
         // Ordered get the current fullIndex
-        val fullIndex = loGetAndSetFullIndex(0L)
-        if (1L == fullIndex) { // then we know Producer is suspended !
+        val fullIndex = loGetAndSetFullIndex(0)
+        if (1 == fullIndex) { // then we know Producer is suspended !
 //            println("handleFullStrict Producer is suspended")
             while(true) {
                 // LoadLoad
@@ -154,7 +155,7 @@ public open class SpScChannel4<E : Any>(
     final override suspend fun send(item: E) {
         // fast path -- try offer non-blocking
         if (offer(item)) return
-        soFullIndex(1L) // notify Producer will Suspend
+        soFullIndex(1) // notify Producer will Suspend
         // slow-path does suspend
         sendSuspend()
     }
@@ -197,7 +198,7 @@ public open class SpScChannel4<E : Any>(
         // LoadLoad
         val value = lvElement(buffer, offset)
         if (null == value) { // empty buffer
-            soEmptyIndex(1L) // notify Consumer will Suspend
+            soEmptyIndex(1) // notify Consumer will Suspend
             receiveSuspend()
             return receive() // re-call receive after suspension
         } else {
@@ -319,11 +320,11 @@ abstract class SpscAtomicArrayQueueL4Pad4<E : Any>(capacity: Int) : AtomicRefere
 }
 
 abstract class SpscAtomicArrayQueueEmpty4IndexField4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL4Pad4<E>(capacity) {
-    private val E_INDEX_UPDATER = AtomicLongFieldUpdater.newUpdater<SpscAtomicArrayQueueEmpty4IndexField4<*>>(SpscAtomicArrayQueueEmpty4IndexField4::class.java, "emptyIndex")
-    @Volatile private var emptyIndex: Long = 0L
+    private val E_INDEX_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicArrayQueueEmpty4IndexField4<*>>(SpscAtomicArrayQueueEmpty4IndexField4::class.java, "emptyIndex")
+    @Volatile private var emptyIndex: Int = 0
 
-    protected fun loGetAndSetEmptyIndex(newValue: Long) = E_INDEX_UPDATER.getAndSet(this, newValue)
-    protected fun soEmptyIndex(newValue: Long) = E_INDEX_UPDATER.set(this, newValue)
+    protected fun loGetAndSetEmptyIndex(newValue: Int) = E_INDEX_UPDATER.getAndSet(this, newValue)
+    protected fun soEmptyIndex(newValue: Int) = E_INDEX_UPDATER.set(this, newValue)
 }
 
 abstract class SpscAtomicArrayQueueL5Pad4<E : Any>(capacity: Int) : SpscAtomicArrayQueueEmpty4IndexField4<E>(capacity) {
@@ -348,11 +349,11 @@ abstract class SpscAtomicArrayQueueL7Pad4<E : Any>(capacity: Int) : AtomicRefere
 }
 
 abstract class SpscAtomicArrayQueueFullIndexField4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL7Pad4<E>(capacity) {
-    private val F_INDEX_UPDATER = AtomicLongFieldUpdater.newUpdater<SpscAtomicArrayQueueFullIndexField4<*>>(SpscAtomicArrayQueueFullIndexField4::class.java, "fullIndex")
-    @Volatile private var fullIndex: Long = 0L
+    private val F_INDEX_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicArrayQueueFullIndexField4<*>>(SpscAtomicArrayQueueFullIndexField4::class.java, "fullIndex")
+    @Volatile private var fullIndex: Int = 0
 
-    protected fun loGetAndSetFullIndex(newValue: Long) = F_INDEX_UPDATER.getAndSet(this, newValue)
-    protected fun soFullIndex(newValue: Long) = F_INDEX_UPDATER.set(this, newValue)
+    protected fun loGetAndSetFullIndex(newValue: Int) = F_INDEX_UPDATER.getAndSet(this, newValue)
+    protected fun soFullIndex(newValue: Int) = F_INDEX_UPDATER.set(this, newValue)
 }
 
 abstract class SpscAtomicArrayQueueL8Pad4<E : Any>(capacity: Int) : SpscAtomicArrayQueueFullIndexField4<E>(capacity) {
