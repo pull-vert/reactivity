@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import java.util.concurrent.atomic.AtomicReferenceArray
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
 import kotlin.coroutines.experimental.Continuation
+import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.math.min
 
@@ -55,29 +56,46 @@ public open class SpScChannel4<E : Any>(
         capacity: Int
 ) : SpscAtomicArrayQueueL8Pad4<Element<E>>(capacity), Sink<E> {
 
-    private fun handleEmpty() {
-        // LoadLoad
-        val empty = lvEmpty()
-        if (null != empty) {
-//            println("handleEmpty Consumer is suspended")
-            soEmpty(null)
-            soEmptyIndex(0)
+    private fun tryResumeReceive() {
+        if (1 == lvEmptyPostFlag()) { // Consumer is suspended
+//            println("tryResumeReceive : Consumer is suspended")
+            // LoadLoad
+            soPreSuspendFlag(NO_SUSPEND)
+            soEmptyPostFlag(0)
+            val empty = lvEmpty()
             empty.resume(Unit)
         }
     }
 
-    private fun handleEmptyStrict() {
-        // Ordered get the current emptyIndex
-        val emptyIndex = loGetAndSetEmptyIndex(0)
-        if (1 == emptyIndex) {// then we know Consumer is suspended !
-//            println("handleEmptyStrict Consumer is suspended")
-            while(true) {
+    /**
+     * Called when Consumer is or will be suspended
+     */
+    private fun resumeReceive() {
+//        println("resumeReceive : Consumer is or will be suspended")
+        while (true) {
+            if (1 == lvEmptyPostFlag()) { // Consumer is suspended
+//                println("resumeReceive : Consumer is suspended")
                 // LoadLoad
+                soEmptyPostFlag(0)
                 val empty = lvEmpty()
-                if (null != empty) {
-//                    println("handleEmptyStrict empty=$empty")
+                empty.resume(Unit)
+                return
+            }
+        }
+    }
+
+    private fun handleEmptyOnClose() {
+        println("handleEmptyOnClose")
+        // get current PreSuspendFlag
+        if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) { // Consumer is or will be suspended
+//            println("handleEmptyOnClose Consumer is or will be suspended")
+            while (true) {
+                if (1 == lvEmptyPostFlag()) { // Consumer is suspended
+//                    println("handleEmptyOnClose Consumer is suspended")
+                    // LoadLoad
                     // we have the Empty suspended
-                    soEmpty(null)
+                    soEmptyPostFlag(0)
+                    val empty = lvEmpty()
                     empty.resume(Unit)
                     return
                 }
@@ -85,32 +103,30 @@ public open class SpScChannel4<E : Any>(
         }
     }
 
-    private fun handleFull() {
-        // LoadLoad
-        val full = lvFull()
-        if (null != full) {
-//            println("handleFull Producer is suspended")
-            soFull(null)
-            soFullIndex(0)
+    private fun tryResumeSend() {
+        if (1 == lvFullPostFlag()) { // Producer is suspended
+//             println("tryResumeSend : Producer is suspended")
+            // LoadLoad
+            soPreSuspendFlag(0)
+            soFullPostFlag(0)
+            val full = lvFull()
             full.resume(Unit)
         }
     }
 
-    private fun handleFullStrict() {
-        // Ordered get the current fullIndex
-        val fullIndex = loGetAndSetFullIndex(0)
-        if (1 == fullIndex) { // then we know Producer is suspended !
-//            println("handleFullStrict Producer is suspended")
-            while(true) {
+    /**
+     * Called when Producer is or will be suspended
+     */
+    private fun resumeSend() {
+//        println("resumeSend : Producer is or will be suspended")
+        while (true) {
+            if (1 == lvFullPostFlag()) { // Producer is suspended
+//                println("resumeSend : Producer is suspended")
                 // LoadLoad
+                soFullPostFlag(0)
                 val full = lvFull()
-                if (null != full) {
-//                    println("handleFullStrict full=$full")
-                    // we have the Full suspended
-                    soFull(null)
-                    full.resume(Unit)
-                    return
-                }
+                full.resume(Unit)
+                return
             }
         }
     }
@@ -130,13 +146,13 @@ public open class SpScChannel4<E : Any>(
         // StoreStore
         soElement(buffer, offset, Element(item))
         // ordered store -> atomic and ordered for size()
-        soProducerIndex(producerIndex + 1)
+        soLazyProducerIndex(producerIndex + 1)
         // check if buffer is full
         if (producerIndex >= producerLimit && !hasRoomLeft(buffer, mask, producerIndex)) {
             return false
         }
         // handle empty case (= suspended Consumer)
-        handleEmpty()
+        tryResumeReceive()
         return true
     }
 
@@ -155,15 +171,14 @@ public open class SpScChannel4<E : Any>(
     final override suspend fun send(item: E) {
         // fast path -- try offer non-blocking
         if (offer(item)) return
-        soFullIndex(1) // notify Producer will Suspend
+        if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(FULL_SUSPEND)) resumeReceive() // notify Producer will Suspend
         // slow-path does suspend
         sendSuspend()
     }
 
     private suspend fun sendSuspend(): Unit = suspendCoroutine { cont ->
         soFull(cont)
-        // Must handle empty case strict to avoid both Producer and Consumer are suspended
-        handleEmptyStrict()
+        soLazyFullPostFlag(1) // lazy so we are sure coroutine is suspended when applies
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels
 //            soFull(null)
 //        }
@@ -183,25 +198,17 @@ public open class SpScChannel4<E : Any>(
         val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
         soElement(buffer, offset, Element(closeCause = closeCause))
         // handle empty case (= suspended Consumer)
-        handleEmptyStrict()
+        handleEmptyOnClose()
     }
 
-    /**
-     * <p>
-     * This implementation is correct for single producer thread use only.
-     */
-    suspend fun receive(): E {
+    private fun poll(): E? {
         // local load of field to avoid repeated loads after volatile reads
         val buffer = this.buffer
         val consumerIndex = lvConsumerIndex()
         val offset = calcElementOffset(consumerIndex)
         // LoadLoad
         val value = lvElement(buffer, offset)
-        if (null == value) { // empty buffer
-            soEmptyIndex(1) // notify Consumer will Suspend
-            receiveSuspend()
-            return receive() // re-call receive after suspension
-        } else {
+        if (null != value) { // empty buffer
             // StoreStore
             soElement(buffer, offset, null)
             // before suspend, check if Closed
@@ -210,19 +217,33 @@ public open class SpScChannel4<E : Any>(
                 throw closed
             }
             // ordered store -> atomic and ordered for size()
-            soConsumerIndex(consumerIndex + 1)
+            soLazyConsumerIndex(consumerIndex + 1)
             // we consumed the value from buffer, now check if Producer is full
-            handleFull()
+            tryResumeSend()
 //            println("receive ${value.item}")
             return value.item as E // if producer was full
         }
+        return null
+    }
+
+    /**
+     * <p>
+     * This implementation is correct for single producer thread use only.
+     */
+    suspend fun receive(): E {
+        // fast path -- try poll non-blocking
+        val result = poll()
+        if (null != result) return result
+        // slow-path does suspend
+        if (FULL_SUSPEND == loGetAndSetPreSuspendFlag(EMPTY_SUSPEND)) resumeSend() // notify Consumer will Suspend
+        receiveSuspend()
+        return receive() // re-call receive after suspension
     }
 
     private suspend fun receiveSuspend(): Unit = suspendCoroutine { cont ->
         // StoreStore
         soEmpty(cont)
-        // Must handle full case strict to avoid both Producer and Consumer are suspended
-        handleFullStrict()
+        soLazyEmptyPostFlag(1)// lazy so we are sure coroutine is suspended when applies, test without !
 //        println("receiveSuspend $emptyOffset")
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels parent
 //            _empty.lazySet(null)
@@ -230,7 +251,24 @@ public open class SpScChannel4<E : Any>(
     }
 }
 
+object TOKEN: Continuation<Unit> {
+    override val context: CoroutineContext
+        get() = throw UnsupportedOperationException()
+
+    override fun resume(value: Unit) {
+        throw UnsupportedOperationException()
+    }
+
+    override fun resumeWithException(exception: Throwable) {
+        throw UnsupportedOperationException()
+    }
+}
+
 private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
+
+private const val NO_SUSPEND = 0
+private const val FULL_SUSPEND = 1
+private const val EMPTY_SUSPEND = -1
 
 abstract class AtomicReferenceArrayQueue4<E : Any>(capacity: Int) {
     @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity)
@@ -248,7 +286,7 @@ abstract class AtomicReferenceArrayQueue4<E : Any>(capacity: Int) {
         protected fun <E : Any> lvElement(buffer: AtomicReferenceArray<E?>, offset: Int) = buffer.get(offset)
 
         @JvmStatic
-        protected fun <E : Any> soElement(buffer: AtomicReferenceArray<E?>, offset: Int, value: E?) = buffer.lazySet(offset, value)
+        protected fun <E : Any> soElement(buffer: AtomicReferenceArray<E?>, offset: Int, value: E?) { buffer.lazySet(offset, value) }
 
         @JvmStatic
         protected fun calcElementOffset(index: Long, mask: Int) = index.toInt() and mask
@@ -280,7 +318,7 @@ abstract class SpscAtomicArrayQueueProducerIndexFields4<E : Any>(capacity: Int) 
     @JvmField protected var producerLimit: Long = 0L
 
     protected fun lvProducerIndex() = producerIndex
-    protected fun soProducerIndex(newValue: Long) = P_INDEX_UPDATER.lazySet(this, newValue)
+    protected fun soLazyProducerIndex(newValue: Long) { P_INDEX_UPDATER.lazySet(this, newValue) }
 }
 
 abstract class SpscAtomicArrayQueueL2Pad4<E : Any>(capacity: Int) : SpscAtomicArrayQueueProducerIndexFields4<E>(capacity) {
@@ -295,7 +333,7 @@ abstract class SpscAtomicArrayQueueConsumerIndexField4<E : Any>(capacity: Int) :
     @Volatile private var consumerIndex: Long = 0L
 
     protected fun lvConsumerIndex() = consumerIndex
-    protected fun soConsumerIndex(newValue: Long) = C_INDEX_UPDATER.lazySet(this, newValue)
+    protected fun soLazyConsumerIndex(newValue: Long) { C_INDEX_UPDATER.lazySet(this, newValue) }
 }
 
 abstract class SpscAtomicArrayQueueL3Pad4<E : Any>(capacity: Int) : SpscAtomicArrayQueueConsumerIndexField4<E>(capacity) {
@@ -307,10 +345,10 @@ abstract class SpscAtomicArrayQueueL3Pad4<E : Any>(capacity: Int) : SpscAtomicAr
 abstract class AtomicReferenceEmptyField4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL3Pad4<E>(capacity) {
     private val EMPTY_UPDATER = AtomicReferenceFieldUpdater.newUpdater<AtomicReferenceEmptyField4<*>, Continuation<*>>(AtomicReferenceEmptyField4::class.java,
             Continuation::class.java, "empty")
-    @Volatile private var empty: Continuation<Unit>? = null
+    @Volatile private lateinit var empty: Continuation<Unit>
 
     internal fun lvEmpty() = empty
-    internal fun soEmpty(value: Continuation<Unit>?) = EMPTY_UPDATER.set(this, value)
+    internal fun soEmpty(value: Continuation<Unit>) { EMPTY_UPDATER.set(this, value) }
 }
 
 abstract class SpscAtomicArrayQueueL4Pad4<E : Any>(capacity: Int) : AtomicReferenceEmptyField4<E>(capacity) {
@@ -319,27 +357,42 @@ abstract class SpscAtomicArrayQueueL4Pad4<E : Any>(capacity: Int) : AtomicRefere
     private val p10: Long = 0L;private val p11: Long = 0L;private val p12: Long = 0L;private val p13: Long = 0L;private val p14: Long = 0L;private val p15: Long = 0L;private val p16: Long = 0L;private val p17: Long = 0L
 }
 
-abstract class SpscAtomicArrayQueueEmpty4IndexField4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL4Pad4<E>(capacity) {
-    private val E_INDEX_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicArrayQueueEmpty4IndexField4<*>>(SpscAtomicArrayQueueEmpty4IndexField4::class.java, "emptyIndex")
-    @Volatile private var emptyIndex: Int = 0
+abstract class SpscAtomicPreSuspendFlag4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL4Pad4<E>(capacity) {
+    private val P_S_FLAG_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicPreSuspendFlag4<*>>(SpscAtomicPreSuspendFlag4::class.java, "preSuspendFlag")
+    @Volatile private var preSuspendFlag: Int = NO_SUSPEND
 
-    protected fun loGetAndSetEmptyIndex(newValue: Int) = E_INDEX_UPDATER.getAndSet(this, newValue)
-    protected fun soEmptyIndex(newValue: Int) = E_INDEX_UPDATER.set(this, newValue)
+    protected fun loGetAndSetPreSuspendFlag(newValue: Int) = P_S_FLAG_UPDATER.getAndSet(this, newValue)
+    protected fun soPreSuspendFlag(newValue: Int) { P_S_FLAG_UPDATER.set(this, newValue) }
 }
 
-abstract class SpscAtomicArrayQueueL5Pad4<E : Any>(capacity: Int) : SpscAtomicArrayQueueEmpty4IndexField4<E>(capacity) {
+abstract class SpscAtomicArrayQueueL5Pad4<E : Any>(capacity: Int) : SpscAtomicPreSuspendFlag4<E>(capacity) {
     private val p01: Long = 0L;private val p02: Long = 0L;private val p03: Long = 0L;private val p04: Long = 0L;private val p05: Long = 0L;private val p06: Long = 0L;private val p07: Long = 0L
 
     private val p10: Long = 0L;private val p11: Long = 0L;private val p12: Long = 0L;private val p13: Long = 0L;private val p14: Long = 0L;private val p15: Long = 0L;private val p16: Long = 0L;private val p17: Long = 0L
 }
 
-abstract class AtomicReferenceFullField4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL5Pad4<E>(capacity) {
+abstract class SpscAtomicEmptyPostFlag4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL5Pad4<E>(capacity) {
+    private val E_POST_FLAG_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicEmptyPostFlag4<*>>(SpscAtomicEmptyPostFlag4::class.java, "emptyPostFlag")
+    @Volatile private var emptyPostFlag: Int = 0
+
+    protected fun lvEmptyPostFlag() = emptyPostFlag
+    protected fun soLazyEmptyPostFlag(newValue: Int) { E_POST_FLAG_UPDATER.lazySet(this, newValue) }
+    protected fun soEmptyPostFlag(newValue: Int) { E_POST_FLAG_UPDATER.set(this, newValue) } // todo test with only lazySet
+}
+
+abstract class SpscAtomicArrayQueueL6Pad4<E : Any>(capacity: Int) : SpscAtomicEmptyPostFlag4<E>(capacity) {
+    private val p01: Long = 0L;private val p02: Long = 0L;private val p03: Long = 0L;private val p04: Long = 0L;private val p05: Long = 0L;private val p06: Long = 0L;private val p07: Long = 0L
+
+    private val p10: Long = 0L;private val p11: Long = 0L;private val p12: Long = 0L;private val p13: Long = 0L;private val p14: Long = 0L;private val p15: Long = 0L;private val p16: Long = 0L;private val p17: Long = 0L
+}
+
+abstract class AtomicReferenceFullField4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL6Pad4<E>(capacity) {
     private val FULL_UPDATER = AtomicReferenceFieldUpdater.newUpdater<AtomicReferenceFullField4<*>, Continuation<*>>(AtomicReferenceFullField4::class.java,
             Continuation::class.java, "full")
-    @Volatile private var full: Continuation<Unit>? = null
+    @Volatile private lateinit var full: Continuation<Unit>
 
     internal fun lvFull() = full
-    internal fun soFull(value: Continuation<Unit>?) = FULL_UPDATER.set(this, value)
+    internal fun soFull(value: Continuation<Unit>) { FULL_UPDATER.set(this, value) }
 }
 
 abstract class SpscAtomicArrayQueueL7Pad4<E : Any>(capacity: Int) : AtomicReferenceFullField4<E>(capacity) {
@@ -348,15 +401,31 @@ abstract class SpscAtomicArrayQueueL7Pad4<E : Any>(capacity: Int) : AtomicRefere
     private val p10: Long = 0L;private val p11: Long = 0L;private val p12: Long = 0L;private val p13: Long = 0L;private val p14: Long = 0L;private val p15: Long = 0L;private val p16: Long = 0L;private val p17: Long = 0L
 }
 
-abstract class SpscAtomicArrayQueueFullIndexField4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL7Pad4<E>(capacity) {
-    private val F_INDEX_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicArrayQueueFullIndexField4<*>>(SpscAtomicArrayQueueFullIndexField4::class.java, "fullIndex")
-    @Volatile private var fullIndex: Int = 0
+//abstract class SpscAtomicFullPreFlag4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL7Pad4<E>(capacity) {
+//    private val F_PRE_FLAG_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicFullPreFlag4<*>>(SpscAtomicFullPreFlag4::class.java, "fullPreFlag")
+//    @Volatile private var fullPreFlag: Int = 0
+//
+//    protected fun lvFullPreFlag() = fullPreFlag
+//    protected fun loGetAndSetFullPreFlag(newValue: Int) = F_PRE_FLAG_UPDATER.getAndSet(this, newValue)
+//    protected fun soFullPreFlag(newValue: Int) = F_PRE_FLAG_UPDATER.set(this, newValue)
+//}
+//
+//abstract class SpscAtomicArrayQueueL8Pad4<E : Any>(capacity: Int) : SpscAtomicFullPreFlag4<E>(capacity) {
+//    private val p01: Long = 0L;private val p02: Long = 0L;private val p03: Long = 0L;private val p04: Long = 0L;private val p05: Long = 0L;private val p06: Long = 0L;private val p07: Long = 0L
+//
+//    private val p10: Long = 0L;private val p11: Long = 0L;private val p12: Long = 0L;private val p13: Long = 0L;private val p14: Long = 0L;private val p15: Long = 0L;private val p16: Long = 0L;private val p17: Long = 0L
+//}
 
-    protected fun loGetAndSetFullIndex(newValue: Int) = F_INDEX_UPDATER.getAndSet(this, newValue)
-    protected fun soFullIndex(newValue: Int) = F_INDEX_UPDATER.set(this, newValue)
+abstract class SpscAtomicFullPostFlag4<E : Any>(capacity: Int) : SpscAtomicArrayQueueL7Pad4<E>(capacity) {
+    private val F_POST_FLAG_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicFullPostFlag4<*>>(SpscAtomicFullPostFlag4::class.java, "fullPostFlag")
+    @Volatile private var fullPostFlag: Int = 0
+
+    protected fun lvFullPostFlag() = fullPostFlag
+    protected fun soLazyFullPostFlag(newValue: Int) { F_POST_FLAG_UPDATER.lazySet(this, newValue) }
+    protected fun soFullPostFlag(newValue: Int) { F_POST_FLAG_UPDATER.set(this, newValue) }
 }
 
-abstract class SpscAtomicArrayQueueL8Pad4<E : Any>(capacity: Int) : SpscAtomicArrayQueueFullIndexField4<E>(capacity) {
+abstract class SpscAtomicArrayQueueL8Pad4<E : Any>(capacity: Int) : SpscAtomicFullPostFlag4<E>(capacity) {
     private val p01: Long = 0L;private val p02: Long = 0L;private val p03: Long = 0L;private val p04: Long = 0L;private val p05: Long = 0L;private val p06: Long = 0L;private val p07: Long = 0L
 
     private val p10: Long = 0L;private val p11: Long = 0L;private val p12: Long = 0L;private val p13: Long = 0L;private val p14: Long = 0L;private val p15: Long = 0L;private val p16: Long = 0L;private val p17: Long = 0L
