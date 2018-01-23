@@ -56,11 +56,10 @@ public open class SpScChannel4<E : Any>(
         capacity: Int
 ) : SpscAtomicArrayQueueL8Pad4<Element<E>>(capacity), Sink<E> {
 
-    private fun tryResumeReceive() {
+    private fun tryResumeReceiveFast() {
         if (1 == lvEmptyPostFlag()) { // Consumer is suspended
 //            println("tryResumeReceive : Consumer is suspended")
-            // LoadLoad
-            soPreSuspendFlag(NO_SUSPEND)
+            if (FULL_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) return // already resuming
             soEmptyPostFlag(0)
             val empty = lvEmpty()
             empty.resume(Unit)
@@ -70,12 +69,12 @@ public open class SpScChannel4<E : Any>(
     /**
      * Called when Consumer is or will be suspended
      */
-    private fun resumeReceive() {
+    private fun tryResumeReceiveSlow() {
 //        println("resumeReceive : Consumer is or will be suspended")
         while (true) {
+            if (NO_SUSPEND == lvPreSuspendFlag()) return // already resuming
             if (1 == lvEmptyPostFlag()) { // Consumer is suspended
 //                println("resumeReceive : Consumer is suspended")
-                // LoadLoad
                 soEmptyPostFlag(0)
                 val empty = lvEmpty()
                 empty.resume(Unit)
@@ -85,7 +84,7 @@ public open class SpScChannel4<E : Any>(
     }
 
     private fun handleEmptyOnClose() {
-        println("handleEmptyOnClose")
+//        println("handleEmptyOnClose")
         // get current PreSuspendFlag
         if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) { // Consumer is or will be suspended
 //            println("handleEmptyOnClose Consumer is or will be suspended")
@@ -93,8 +92,6 @@ public open class SpScChannel4<E : Any>(
                 if (1 == lvEmptyPostFlag()) { // Consumer is suspended
 //                    println("handleEmptyOnClose Consumer is suspended")
                     // LoadLoad
-                    // we have the Empty suspended
-                    soEmptyPostFlag(0)
                     val empty = lvEmpty()
                     empty.resume(Unit)
                     return
@@ -103,11 +100,11 @@ public open class SpScChannel4<E : Any>(
         }
     }
 
-    private fun tryResumeSend() {
+    private fun tryResumeSendFast() {
         if (1 == lvFullPostFlag()) { // Producer is suspended
 //             println("tryResumeSend : Producer is suspended")
             // LoadLoad
-            soPreSuspendFlag(0)
+            if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) return // already resuming
             soFullPostFlag(0)
             val full = lvFull()
             full.resume(Unit)
@@ -117,9 +114,10 @@ public open class SpScChannel4<E : Any>(
     /**
      * Called when Producer is or will be suspended
      */
-    private fun resumeSend() {
+    private fun tryResumeSendSlow() {
 //        println("resumeSend : Producer is or will be suspended")
         while (true) {
+            if (NO_SUSPEND == lvPreSuspendFlag()) return // already resuming
             if (1 == lvFullPostFlag()) { // Producer is suspended
 //                println("resumeSend : Producer is suspended")
                 // LoadLoad
@@ -152,7 +150,7 @@ public open class SpScChannel4<E : Any>(
             return false
         }
         // handle empty case (= suspended Consumer)
-        tryResumeReceive()
+        tryResumeReceiveFast()
         return true
     }
 
@@ -171,7 +169,7 @@ public open class SpScChannel4<E : Any>(
     final override suspend fun send(item: E) {
         // fast path -- try offer non-blocking
         if (offer(item)) return
-        if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(FULL_SUSPEND)) resumeReceive() // notify Producer will Suspend
+        if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(FULL_SUSPEND)) tryResumeReceiveSlow() // notify Producer will Suspend
         // slow-path does suspend
         sendSuspend()
     }
@@ -208,22 +206,20 @@ public open class SpScChannel4<E : Any>(
         val offset = calcElementOffset(consumerIndex)
         // LoadLoad
         val value = lvElement(buffer, offset)
-        if (null != value) { // empty buffer
-            // StoreStore
-            soElement(buffer, offset, null)
-            // before suspend, check if Closed
-            val closed = value.closeCause
-            if (null != closed) {
-                throw closed
-            }
-            // ordered store -> atomic and ordered for size()
-            soLazyConsumerIndex(consumerIndex + 1)
-            // we consumed the value from buffer, now check if Producer is full
-            tryResumeSend()
-//            println("receive ${value.item}")
-            return value.item as E // if producer was full
+        if (null == value) return null // empty buffer
+        // StoreStore
+        soElement(buffer, offset, null)
+        // before suspend, check if Closed
+        val closed = value.closeCause
+        if (null != closed) {
+            throw closed
         }
-        return null
+        // ordered store -> atomic and ordered for size()
+        soLazyConsumerIndex(consumerIndex + 1)
+        // we consumed the value from buffer, now check if Producer is full
+        tryResumeSendFast()
+//      println("receive ${value.item}")
+        return value.item as E // if producer was full
     }
 
     /**
@@ -235,7 +231,7 @@ public open class SpScChannel4<E : Any>(
         val result = poll()
         if (null != result) return result
         // slow-path does suspend
-        if (FULL_SUSPEND == loGetAndSetPreSuspendFlag(EMPTY_SUSPEND)) resumeSend() // notify Consumer will Suspend
+        if (FULL_SUSPEND == loGetAndSetPreSuspendFlag(EMPTY_SUSPEND)) tryResumeSendSlow() // notify Consumer will Suspend
         receiveSuspend()
         return receive() // re-call receive after suspension
     }
@@ -361,6 +357,7 @@ abstract class SpscAtomicPreSuspendFlag4<E : Any>(capacity: Int) : SpscAtomicArr
     private val P_S_FLAG_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicPreSuspendFlag4<*>>(SpscAtomicPreSuspendFlag4::class.java, "preSuspendFlag")
     @Volatile private var preSuspendFlag: Int = NO_SUSPEND
 
+    protected fun lvPreSuspendFlag() = preSuspendFlag
     protected fun loGetAndSetPreSuspendFlag(newValue: Int) = P_S_FLAG_UPDATER.getAndSet(this, newValue)
     protected fun soPreSuspendFlag(newValue: Int) { P_S_FLAG_UPDATER.set(this, newValue) }
 }
