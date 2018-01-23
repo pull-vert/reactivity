@@ -58,9 +58,9 @@ public open class SpScChannel4<E : Any>(
 
     private fun tryResumeReceiveFast() {
         if (1 == lvEmptyPostFlag()) { // Consumer is suspended
-//            println("tryResumeReceive : Consumer is suspended")
-            if (FULL_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) return // already resuming
             soEmptyPostFlag(0)
+            println("FAST : Consumer is suspended")
+//            if (FULL_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) return // already resuming
             val empty = lvEmpty()
             empty.resume(Unit)
         }
@@ -70,12 +70,11 @@ public open class SpScChannel4<E : Any>(
      * Called when Consumer is or will be suspended
      */
     private fun tryResumeReceiveSlow() {
-//        println("resumeReceive : Consumer is or will be suspended")
+        println("resumeReceive : Consumer is or will be suspended")
         while (true) {
-            if (NO_SUSPEND == lvPreSuspendFlag()) return // already resuming
-            if (1 == lvEmptyPostFlag()) { // Consumer is suspended
-//                println("resumeReceive : Consumer is suspended")
+            if (1 == loGetAndSetEmptyPostFlag(2)) { // Consumer is suspended
                 soEmptyPostFlag(0)
+                println("SLOW : Consumer is suspended")
                 val empty = lvEmpty()
                 empty.resume(Unit)
                 return
@@ -87,7 +86,7 @@ public open class SpScChannel4<E : Any>(
 //        println("handleEmptyOnClose")
         // get current PreSuspendFlag
         if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) { // Consumer is or will be suspended
-//            println("handleEmptyOnClose Consumer is or will be suspended")
+            println("handleEmptyOnClose Consumer is or will be suspended")
             while (true) {
                 if (1 == lvEmptyPostFlag()) { // Consumer is suspended
 //                    println("handleEmptyOnClose Consumer is suspended")
@@ -104,7 +103,7 @@ public open class SpScChannel4<E : Any>(
         if (1 == lvFullPostFlag()) { // Producer is suspended
 //             println("tryResumeSend : Producer is suspended")
             // LoadLoad
-            if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) return // already resuming
+//            if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(NO_SUSPEND)) return // already resuming
             soFullPostFlag(0)
             val full = lvFull()
             full.resume(Unit)
@@ -117,7 +116,7 @@ public open class SpScChannel4<E : Any>(
     private fun tryResumeSendSlow() {
 //        println("resumeSend : Producer is or will be suspended")
         while (true) {
-            if (NO_SUSPEND == lvPreSuspendFlag()) return // already resuming
+//            if (NO_SUSPEND == lvPreSuspendFlag()) return // already resuming
             if (1 == lvFullPostFlag()) { // Producer is suspended
 //                println("resumeSend : Producer is suspended")
                 // LoadLoad
@@ -169,13 +168,14 @@ public open class SpScChannel4<E : Any>(
     final override suspend fun send(item: E) {
         // fast path -- try offer non-blocking
         if (offer(item)) return
-        if (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(FULL_SUSPEND)) tryResumeReceiveSlow() // notify Producer will Suspend
+        val mustTryResumeReceive = (EMPTY_SUSPEND == loGetAndSetPreSuspendFlag(FULL_SUSPEND)) // notify Producer will Suspend
         // slow-path does suspend
-        sendSuspend()
+        sendSuspend(mustTryResumeReceive)
     }
 
-    private suspend fun sendSuspend(): Unit = suspendCoroutine { cont ->
+    private suspend fun sendSuspend(mustTryResumeReceive: Boolean): Unit = suspendCoroutine { cont ->
         soFull(cont)
+        if (mustTryResumeReceive) tryResumeReceiveSlow()
         soLazyFullPostFlag(1) // lazy so we are sure coroutine is suspended when applies
         //        cont.invokeOnCompletion { // todo test without first and then try it with a Unit test that Cancels
 //            soFull(null)
@@ -197,6 +197,7 @@ public open class SpScChannel4<E : Any>(
         soElement(buffer, offset, Element(closeCause = closeCause))
         // handle empty case (= suspended Consumer)
         handleEmptyOnClose()
+        println("end of close")
     }
 
     private fun poll(): E? {
@@ -217,7 +218,7 @@ public open class SpScChannel4<E : Any>(
         // ordered store -> atomic and ordered for size()
         soLazyConsumerIndex(consumerIndex + 1)
         // we consumed the value from buffer, now check if Producer is full
-        tryResumeSendFast()
+//        tryResumeSendFast()
 //      println("receive ${value.item}")
         return value.item as E // if producer was full
     }
@@ -373,7 +374,8 @@ abstract class SpscAtomicEmptyPostFlag4<E : Any>(capacity: Int) : SpscAtomicArra
     @Volatile private var emptyPostFlag: Int = 0
 
     protected fun lvEmptyPostFlag() = emptyPostFlag
-    protected fun soLazyEmptyPostFlag(newValue: Int) { E_POST_FLAG_UPDATER.lazySet(this, newValue) }
+    protected fun loGetAndSetEmptyPostFlag(newValue: Int) = E_POST_FLAG_UPDATER.getAndSet(this, newValue)
+    protected fun soLazyEmptyPostFlag(newValue: Int) { E_POST_FLAG_UPDATER.set(this, newValue) }
     protected fun soEmptyPostFlag(newValue: Int) { E_POST_FLAG_UPDATER.set(this, newValue) } // todo test with only lazySet
 }
 
