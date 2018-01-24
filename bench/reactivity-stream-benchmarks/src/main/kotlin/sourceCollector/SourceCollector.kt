@@ -114,7 +114,7 @@ fun <E : Any> SourceCollector<E>.async6(context: CoroutineContext, buffer: Int =
                 cause = e
             }
             val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
-//            println("Close : $closeCause")
+            println("Close : $closeCause")
             channel.send(Element(closeCause = closeCause))
 
             return deferred.await() // suspend and return the value of the Deferred
