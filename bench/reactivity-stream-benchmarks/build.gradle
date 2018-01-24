@@ -16,7 +16,7 @@ plugins {
 dependencies {
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:$kotlinx_coroutines_version"
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinx_coroutines_version"
-    compile project(':reactivity')
+//    compile project(':reactivity')
     compile "org.openjdk.jmh:jmh-generator-annprocess:1.19"
 }
 

@@ -163,7 +163,7 @@ subprojects {
     def reactivity = platformLib("reactivity", platform)
 
     if (it.name != reactivity) {
-        dokka.dependsOn project(":$reactivity").dokka
+//        dokka.dependsOn project(":$reactivity").dokka
 
 //        tasks.withType(dokka.getClass()) {
 //            externalDocumentationLink {
@@ -174,7 +174,7 @@ subprojects {
     }
 
     if (platform == "jvm") {
-        dokkaJavadoc.dependsOn project(":$reactivity").dokka
+//        dokkaJavadoc.dependsOn project(":$reactivity").dokka
     }
 }
 

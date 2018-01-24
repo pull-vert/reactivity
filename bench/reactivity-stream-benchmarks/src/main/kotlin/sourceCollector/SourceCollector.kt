@@ -2,12 +2,12 @@ package sourceCollector
 
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
-import reactivity.experimental.channel.SpScChannel
-import reactivity.experimental.channel.spsc2.SpScChannel2
-import reactivity.experimental.channel.spsc3.SpScChannel3
-import reactivity.experimental.channel.spsc4.SpScChannel4
-import reactivity.experimental.channel.spsc5.SpScChannel5
-import reactivity.experimental.channel.spsc6.SpScChannel6
+import channel.SpScChannel
+import channel.spsc2.SpScChannel2
+import channel.spsc3.SpScChannel3
+import channel.spsc4.SpScChannel4
+import channel.spsc5.SpScChannel5
+import channel.spsc6.SpScChannel6
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Model definitions

@@ -2,11 +2,11 @@ package sourceInline
 
 import benchmark.N
 import benchmark.isGood
+import channel.*
 import kotlinx.coroutines.experimental.newSingleThreadContext
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Ignore
 import org.junit.Test
-import reactivity.experimental.channel.*
 import kotlin.test.assertEquals
 
 class SourceInlineTest {
