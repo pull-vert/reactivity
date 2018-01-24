@@ -7,6 +7,7 @@ import reactivity.experimental.channel.spsc2.SpScChannel2
 import reactivity.experimental.channel.spsc3.SpScChannel3
 import reactivity.experimental.channel.spsc4.SpScChannel4
 import reactivity.experimental.channel.spsc5.SpScChannel5
+import reactivity.experimental.channel.spsc6.SpScChannel6
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Model definitions
@@ -73,6 +74,44 @@ inline fun <E> SourceCollector<E>.filter(crossinline predicate: (E) -> Boolean) 
         }
         sink.close(cause)
         return collector?.invoke()
+    }
+}
+
+fun <E : Any> SourceCollector<E>.async6(context: CoroutineContext, buffer: Int = 0): SourceCollector<E> {
+    val channel = SpScChannel6<E>(buffer)
+    return object : SourceCollector<E> {
+        suspend override fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
+            // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
+            val deferred = async(context) {
+                try {
+                    while (true) {
+                        sink.send(channel.receive())
+                    }
+                } catch (e: Throwable) {
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    else sink.close(e)
+                }
+                collector?.invoke()
+            }
+
+            var cause: Throwable? = null
+            try {
+                this@async6.consume<Unit>(object : Sink<E> {
+                    suspend override fun send(item: E) {
+                        channel.send(item)
+                    }
+
+                    override fun close(cause: Throwable?) {
+                        cause?.let { throw it }
+                    }
+                })
+            } catch (e: Throwable) {
+                cause = e
+            }
+            channel.close(cause)
+
+            return deferred.await() // suspend and return the value of the Deferred
+        }
     }
 }
 

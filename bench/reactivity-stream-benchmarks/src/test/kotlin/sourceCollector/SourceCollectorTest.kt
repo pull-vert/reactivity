@@ -113,6 +113,7 @@ class SourceCollectorTest {
     }
 
     @Test
+    @Ignore
     fun testSourceCollectorAsync4() = runBlocking {
         val value = SourceCollector
                 .range(1, N)
@@ -132,6 +133,17 @@ class SourceCollectorTest {
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
         println("testSourceCollectorAsync5 : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(446448416, value)
+    }
+
+    @Test
+    fun testSourceCollectorAsync6() = runBlocking {
+        val value = SourceCollector
+                .range(1, N)
+                .async6(newSingleThreadContext("testSourceCollectorAsync6"), buffer = 128)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorAsync6 : value = $value run on ${Thread.currentThread().name}")
         assertEquals(446448416, value)
     }
 }
