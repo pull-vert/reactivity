@@ -351,7 +351,7 @@ open class RangeFilterSumBenchmark {
     fun testSourceCollectorThreadBuffer128SpScChannel6(): Int = runBlocking {
         SourceCollector
                 .range(1, N)
-                .async6(newSingleThreadContext("test"), buffer = 128)
+                .async7(newSingleThreadContext("test"), buffer = 128)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
     }

@@ -19,7 +19,7 @@ class SourceCollectorTest {
         assertEquals(446448416, value)
     }
 
-//    @Test
+    //    @Test
 //    fun testSourceCollectorQuick() = runBlocking {
 //        val value = SourceCollector
 //                .range(1, 10)
@@ -73,6 +73,27 @@ class SourceCollectorTest {
 //                .fold(0, { a, b -> a + b })
 //        println("testSourceCollectorQuick5 : value = $value run on ${Thread.currentThread().name}")
 //        assertEquals(12, value)
+//    }
+    @Test
+    fun testSourceCollectorAsync7() = runBlocking {
+        val value = SourceCollector
+                .range(1, N)
+                .async7(newSingleThreadContext("testSourceCollectorAsync7"), buffer = 128)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorAsync7 : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(446448416, value)
+    }
+//
+//    @Test
+//    fun testSourceCollectorAsync6() = runBlocking {
+//        val value = SourceCollector
+//                .range(1, N)
+//                .async6(newSingleThreadContext("testSourceCollectorAsync6"), buffer = 128)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//        println("testSourceCollectorAsync6 : value = $value run on ${Thread.currentThread().name}")
+//        assertEquals(446448416, value)
 //    }
 //
 //    @Test
@@ -134,15 +155,4 @@ class SourceCollectorTest {
 //        println("testSourceCollectorAsync5 : value = $value run on ${Thread.currentThread().name}")
 //        assertEquals(446448416, value)
 //    }
-
-    @Test
-    fun testSourceCollectorAsync6() = runBlocking {
-        val value = SourceCollector
-                .range(1, N)
-                .async6(newSingleThreadContext("testSourceCollectorAsync6"), buffer = 128)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-        println("testSourceCollectorAsync6 : value = $value run on ${Thread.currentThread().name}")
-        assertEquals(446448416, value)
-    }
 }
