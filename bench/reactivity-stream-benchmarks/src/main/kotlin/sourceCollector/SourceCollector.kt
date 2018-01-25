@@ -1,9 +1,8 @@
 package sourceCollector
 
+import channel.spsc7.SpScChannel7
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
-import temp.SpScChannel6
-import temp.spsc7.SpScChannel7
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Model definitions
@@ -73,21 +72,12 @@ inline fun <E> SourceCollector<E>.filter(crossinline predicate: (E) -> Boolean) 
     }
 }
 
-private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
-
-/**
- * Element stored in the buffer
- */
-data class Element<E : Any>(
-        val item: E? = null,
-        val closeCause: Throwable? = null
-)
-
 fun <E : Any> SourceCollector<E>.async7(context: CoroutineContext, buffer: Int = 0): SourceCollector<E> {
     val channel = SpScChannel7<E>(buffer)
     return object : SourceCollector<E> {
         suspend override fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
             // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
+            // 2) Return elements consumed from async buffer
             val deferred = async(context) {
                 try {
                     while (true) {
@@ -100,11 +90,12 @@ fun <E : Any> SourceCollector<E>.async7(context: CoroutineContext, buffer: Int =
                 collector?.invoke()
             }
 
+            // 1) Get input elements and put them in async buffer
             var cause: Throwable? = null
             try {
                 this@async7.consume<Unit>(object : Sink<E> {
                     suspend override fun send(item: E) {
-                        channel.send(Element(item))
+                        channel.send(item)
                     }
 
                     override fun close(cause: Throwable?) {
@@ -114,55 +105,52 @@ fun <E : Any> SourceCollector<E>.async7(context: CoroutineContext, buffer: Int =
             } catch (e: Throwable) {
                 cause = e
             }
-            val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
-            println("Close : $closeCause")
-            channel.send(Element(closeCause = closeCause))
+            println("Close : $cause")
+            channel.close(cause)
 
             return deferred.await() // suspend and return the value of the Deferred
         }
     }
 }
-
-fun <E : Any> SourceCollector<E>.async6(context: CoroutineContext, buffer: Int = 0): SourceCollector<E> {
-    val channel = SpScChannel6<E>(buffer)
-    return object : SourceCollector<E> {
-        suspend override fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
-            // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
-            val deferred = async(context) {
-                try {
-                    while (true) {
-                        sink.send(channel.receive())
-                    }
-                } catch (e: Throwable) {
-                    if (e is ClosedReceiveChannelException) sink.close(null)
-                    else sink.close(e)
-                }
-                collector?.invoke()
-            }
-
-            var cause: Throwable? = null
-            try {
-                this@async6.consume<Unit>(object : Sink<E> {
-                    suspend override fun send(item: E) {
-                        channel.send(Element(item))
-                    }
-
-                    override fun close(cause: Throwable?) {
-                        cause?.let { throw it }
-                    }
-                })
-            } catch (e: Throwable) {
-                cause = e
-            }
-            val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
-            println("Close : $closeCause")
-            channel.send(Element(closeCause = closeCause))
-
-            return deferred.await() // suspend and return the value of the Deferred
-        }
-    }
-}
-
+//
+//fun <E : Any> SourceCollector<E>.async6(context: CoroutineContext, buffer: Int = 0): SourceCollector<E> {
+//    val channel = SpScChannel6<E>(buffer)
+//    return object : SourceCollector<E> {
+//        suspend override fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
+//            // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
+//            val deferred = async(context) {
+//                try {
+//                    while (true) {
+//                        sink.send(channel.receive())
+//                    }
+//                } catch (e: Throwable) {
+//                    if (e is ClosedReceiveChannelException) sink.close(null)
+//                    else sink.close(e)
+//                }
+//                collector?.invoke()
+//            }
+//
+//            var cause: Throwable? = null
+//            try {
+//                this@async6.consume<Unit>(object : Sink<E> {
+//                    suspend override fun send(item: E) {
+//                        channel.send(item)
+//                    }
+//
+//                    override fun close(cause: Throwable?) {
+//                        cause?.let { throw it }
+//                    }
+//                })
+//            } catch (e: Throwable) {
+//                cause = e
+//            }
+//            channel.close(cause)
+//
+//            return deferred.await() // suspend and return the value of the Deferred
+//        }
+//    }
+//}
+//
 //fun <E : Any> SourceCollector<E>.async5(context: CoroutineContext, buffer: Int = 0): SourceCollector<E> {
 //    val channel = SpScChannel5<E>(buffer)
 //    return object : SourceCollector<E> {
