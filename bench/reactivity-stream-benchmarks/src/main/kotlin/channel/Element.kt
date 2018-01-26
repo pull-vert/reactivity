@@ -1,5 +1,7 @@
 package channel
 
+internal const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
+
 /**
  * Element stored in the buffer
  */

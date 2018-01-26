@@ -60,7 +60,7 @@ public open class SpScChannel6<E : Any>(
             while(true) {
                 val empty = loGetAndSetNullEmpty()
                 if (null != empty) {
-//                    println("Producer : tryResumeReceive -> Consumer is suspended, resume it")
+                    println("Producer : tryResumeReceive -> Consumer is suspended, resume it")
                     empty.resume(Unit)
                     return
                 }
@@ -127,7 +127,7 @@ public open class SpScChannel6<E : Any>(
         soElement(buffer, offset, item)
         if (null != item.closeCause) {
 //            println("Producer : produce Closed")
-            tryResumeReceive()
+            if (EMPTY_SUSPEND == loGetAndSetSuspendFlag(NO_SUSPEND)) resumeReceive()
             return true
         }
         // ordered store -> atomic and ordered for size()
@@ -137,7 +137,7 @@ public open class SpScChannel6<E : Any>(
             return false
         }
         // handle empty case (= suspended Consumer)
-//        tryResumeReceive()
+        tryResumeReceive()
         return true
     }
 

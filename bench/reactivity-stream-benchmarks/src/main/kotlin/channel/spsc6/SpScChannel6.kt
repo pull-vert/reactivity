@@ -16,6 +16,7 @@ package channel.spsc6
  * Original License: https://github.com/JCTools/JCTools/blob/master/LICENSE
  * Original location: https://github.com/JCTools/JCTools/blob/master/jctools-core/src/main/java/org/jctools/queues/atomic/SpscAtomicArrayQueue.java
  */
+import channel.DEFAULT_CLOSE_MESSAGE
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import channel.Element
 import channel.Sink
@@ -261,8 +262,6 @@ public open class SpScChannel6<E : Any>(
 //        throw UnsupportedOperationException()
 //    }
 //}
-
-private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
 
 private const val NO_SUSPEND = 0
 private const val FULL_SUSPEND = 1

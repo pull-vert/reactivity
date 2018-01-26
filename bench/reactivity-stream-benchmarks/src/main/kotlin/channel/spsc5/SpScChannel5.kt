@@ -16,6 +16,7 @@ package channel.spsc5
  * Original License: https://github.com/JCTools/JCTools/blob/master/LICENSE
  * Original location: https://github.com/JCTools/JCTools/blob/master/jctools-core/src/main/java/org/jctools/queues/atomic/SpscAtomicArrayQueue.java
  */
+import channel.DEFAULT_CLOSE_MESSAGE
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import channel.Element
 import channel.Sink
@@ -257,8 +258,6 @@ object TOKEN: Continuation<Unit> {
         throw UnsupportedOperationException()
     }
 }
-
-private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
 
 abstract class AtomicReferenceArrayQueue5<E : Any>(capacity: Int) {
     @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity)

@@ -201,8 +201,6 @@ private class Suspended(
     override fun toString() = "FullElement[$cont]"
 }
 
-private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
-
 abstract class AtomicReferenceArrayQueue<E : Any>(capacity: Int) {
     @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity) // keep one slot for closed
     @JvmField protected val mask: Int = capacity - 1

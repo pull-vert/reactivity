@@ -9,27 +9,27 @@ import kotlin.test.assertEquals
 
 class SourceCollectorTest {
 
-    @Test
-    fun testSourceCollectorSync() = runBlocking {
-        val value = SourceCollector
-                .range(1, N)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-        println("testSourceCollectorSync : value = $value run on ${Thread.currentThread().name}")
-        assertEquals(446448416, value)
-    }
-
-        @Test
-    fun testSourceCollectorQuick7() = runBlocking {
-        val value = SourceCollector
-                .range(1, 10)
-                .async7(newSingleThreadContext("testSourceCollectorQuick7"), buffer = 8)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-        println("testSourceCollectorQuick7 : value = $value run on ${Thread.currentThread().name}")
-        assertEquals(12, value)
-    }
-
+//    @Test
+//    fun testSourceCollectorSync() = runBlocking {
+//        val value = SourceCollector
+//                .range(1, N)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//        println("testSourceCollectorSync : value = $value run on ${Thread.currentThread().name}")
+//        assertEquals(446448416, value)
+//    }
+//
+//    @Test
+//    fun testSourceCollectorQuick7() = runBlocking {
+//        val value = SourceCollector
+//                .range(1, 10)
+//                .async7(newSingleThreadContext("testSourceCollectorQuick7"), buffer = 8)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//        println("testSourceCollectorQuick7 : value = $value run on ${Thread.currentThread().name}")
+//        assertEquals(12, value)
+//    }
+//
     //    @Test
 //    fun testSourceCollectorQuick5() = runBlocking {
 //        val value = SourceCollector

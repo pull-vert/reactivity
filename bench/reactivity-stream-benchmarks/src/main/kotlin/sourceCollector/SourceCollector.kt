@@ -1,5 +1,7 @@
 package sourceCollector
 
+import channel.DEFAULT_CLOSE_MESSAGE
+import channel.Element
 import channel.spsc7.SpScChannel7
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
@@ -95,7 +97,7 @@ fun <E : Any> SourceCollector<E>.async7(context: CoroutineContext, buffer: Int =
             try {
                 this@async7.consume<Unit>(object : Sink<E> {
                     suspend override fun send(item: E) {
-                        channel.send(item)
+                        channel.send(Element(item))
                     }
 
                     override fun close(cause: Throwable?) {
@@ -105,8 +107,9 @@ fun <E : Any> SourceCollector<E>.async7(context: CoroutineContext, buffer: Int =
             } catch (e: Throwable) {
                 cause = e
             }
-            println("Close : $cause")
-            channel.close(cause)
+            val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
+            println("Close : $closeCause")
+            channel.send(Element(closeCause = closeCause))
 
             return deferred.await() // suspend and return the value of the Deferred
         }

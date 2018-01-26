@@ -348,7 +348,7 @@ open class RangeFilterSumBenchmark {
 //    }
 //
     @Benchmark
-    fun testSourceCollectorThreadBuffer128SpScChannel6(): Int = runBlocking {
+    fun testSourceCollectorThreadBuffer128SpScChannel7(): Int = runBlocking {
         SourceCollector
                 .range(1, N)
                 .async7(newSingleThreadContext("test"), buffer = 128)
