@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 
 class SourceCollectorTest {
 
-//    @Test
+    //    @Test
 //    fun testSourceCollectorSync() = runBlocking {
 //        val value = SourceCollector
 //                .range(1, N)
@@ -87,14 +87,25 @@ class SourceCollectorTest {
 //    }
 //
     @Test
+    fun testSourceCollectorAsync7MediumSmallBuffer() = runBlocking {
+        val value = SourceCollector
+                .range(1, 1_000)
+                .async7(newSingleThreadContext("testSourceCollectorAsync7Medium"), buffer = 4)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorAsync7Medium : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(125500, value) // 1_000
+    }
+
+    @Test
     fun testSourceCollectorAsync7() = runBlocking {
         val value = SourceCollector
-                .range(1, 100_000)
-                .async7(newSingleThreadContext("testSourceCollectorAsync7"), buffer = 16)
+                .range(1, N)
+                .async7(newSingleThreadContext("testSourceCollectorAsync7"), buffer = 128)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
         println("testSourceCollectorAsync7 : value = $value run on ${Thread.currentThread().name}")
-        assertEquals(1250050000, value)
+        assertEquals(446448416, value)
     }
 //
 //    @Test

@@ -46,7 +46,7 @@ import kotlin.math.min
  * @param <E> Not null value
  * @author nitsanw, adapted by fmo
  */
-public open class SpScChannel7<E : Any>(
+open class SpScChannel7<E : Any>(
         /**
          * Buffer capacity.
          */
@@ -54,17 +54,15 @@ public open class SpScChannel7<E : Any>(
 ) : SpscAtomicArrayQueueL10Pad6<Element<E>>(capacity) {
 
     private fun tryResumeReceive() {
-        val emptyBuffer = this.emptyBuffer
         val mask = this.mask
         val emptyConsumerIndex = lvEmptyConsumerIndex()
         val offset = calcElementOffset(emptyConsumerIndex, mask)
         // LoadLoad
-        val empty = lvEmpty(emptyBuffer, offset)
+        val empty = loGetAndSetNullEmpty(offset)
         if (null != empty) {
-            println("Producer : tryResumeReceive -> Consumer is suspended, resume")
+//            println("Producer : tryResumeReceive -> Consumer is suspended, resume")
             soSuspendFlag(NO_SUSPEND)
             empty.resume(Unit)
-            soEmpty(emptyBuffer, offset, null)
             soEmptyConsumerIndex(emptyConsumerIndex + 1)
         }
     }
@@ -81,9 +79,8 @@ public open class SpScChannel7<E : Any>(
         while(true) {
             val empty = loGetAndSetNullEmpty(offset)
             if (null != empty) {
-                println("Producer : resumeReceive -> EXIT while loop")
+//                println("Producer : resumeReceive -> Consumer is suspended, resume")
                 empty.resume(Unit)
-                soEmpty(emptyBuffer, offset, null)
                 soEmptyConsumerIndex(emptyConsumerIndex + 1)
                 return
             }
@@ -91,17 +88,15 @@ public open class SpScChannel7<E : Any>(
     }
 
     private fun tryResumeSend() {
-        val fullBuffer = this.fullBuffer
         val mask = this.mask
         val fullConsumerIndex = lvFullConsumerIndex()
         val offset = calcElementOffset(fullConsumerIndex, mask)
         // LoadLoad
-        val full = lvFull(fullBuffer, offset)
+        val full = loGetAndSetNullFull(offset)
         if (null != full) {
-            println("Consumer : tryResumeSend -> Producer is suspended, resume")
+//            println("Consumer : tryResumeSend -> Producer is suspended, resume")
             soSuspendFlag(NO_SUSPEND)
             full.resume(Unit)
-            soFull(fullBuffer, offset, null)
             soFullConsumerIndex(fullConsumerIndex + 1)
         }
     }
@@ -118,9 +113,8 @@ public open class SpScChannel7<E : Any>(
         while(true) {
             val full = loGetAndSetNullFull(offset)
             if (null != full) {
-                println("Consumer : resumeSend -> EXIT while loop")
+//                println("Consumer : resumeSend -> Producer is suspended, resume")
                 full.resume(Unit)
-                soFull(fullBuffer, offset, null)
                 soFullConsumerIndex(fullConsumerIndex + 1)
                 return
             }
@@ -138,33 +132,16 @@ public open class SpScChannel7<E : Any>(
         val mask = this.mask
         val producerIndex = lvProducerIndex()
         val offset = calcElementOffset(producerIndex, mask)
-        soElement(offset, item)
-//        println("Producer : offer -> produced at offset=$offset")
+        if (!loCompareAndSetExpectedNullElement(offset, item)) return false
+//        println("Producer : offer -> offer offset=$offset $item")
         if (null != item.closeCause) {
             if (EMPTY_SUSPEND == loGetAndSetSuspendFlag(NO_SUSPEND)) resumeReceive()
             return true
         }
         // ordered store -> atomic and ordered for size()
         soLazyProducerIndex(producerIndex + 1)
-        // check if buffer is full
-        if (producerIndex >= producerLimit && !hasRoomLeft(buffer, mask, producerIndex)) {
-            return false
-        }
         // handle empty case (= suspended Consumer)
-//        tryResumeReceive()
-        return true
-    }
-
-    private fun hasRoomLeft(buffer: AtomicReferenceArray<Element<E>?>, mask: Int, producerIndex: Long): Boolean {
-        val lookAheadStep = this.lookAheadStep
-        if (null == lvElement(buffer, calcElementOffset(producerIndex + lookAheadStep, mask))) {
-            producerLimit = producerIndex + lookAheadStep
-        } else {
-            val offsetNext = calcElementOffset(producerIndex + 1, mask)
-            val nextEl = lvElement(buffer, offsetNext)
-            if (null != nextEl) println("Producer : suspend because value is not null offset=$offsetNext")
-            return null == nextEl
-        }
+        tryResumeReceive()
         return true
     }
 
@@ -173,45 +150,43 @@ public open class SpScChannel7<E : Any>(
         if (offer(item)) return
         // slow-path does suspend
         sendSuspend()
-        println("Producer : resume")
+//        println("Producer : resume")
+        send(item) // re-call send after suspension
     }
 
     private suspend fun sendSuspend(): Unit = suspendCoroutine { cont ->
         if (EMPTY_SUSPEND == loGetAndSetSuspendFlag(FULL_SUSPEND)) resumeReceive() // notify Producer will Suspend
 //        println("Producer : sendSuspend -> Producer suspend")
         // local load of field to avoid repeated loads after volatile reads
-        val fullBuffer = this.fullBuffer
         val fullProducerIndex = lvFullProducerIndex()
         val offset = calcElementOffset(fullProducerIndex)
         // ordered store -> atomic and ordered for size()
-        soFull(fullBuffer, offset, cont)
+        soFull(offset, cont)
         soFullProducerIndex(fullProducerIndex + 1)
-        println("Producer : suspend")
+//        println("Producer : suspend")
     }
 
     private fun poll(): E? {
         // local load of field to avoid repeated loads after volatile reads
-//        val buffer = this.buffer
         val consumerIndex = lvConsumerIndex()
         val offset = calcElementOffset(consumerIndex)
         val value = loGetAndSetNullElement(offset)
         if (null == value) {
-            println("Consumer : suspend because value is null offset=$offset")
+            // empty buffer
+//            println("Consumer : suspend because value is null offset=$offset")
             return null
         }
-        // empty buffer
-//        soElement(buffer, offset, null)
-        // before suspend, check if Closed
+        // Check if Closed
         val closed = value.closeCause
         if (null != closed) {
-            println("Consumer : poll closed, offset = $offset, closed=$closed")
+//            println("Consumer : poll closed, offset = $offset, closed=$closed")
             throw closed
         }
-        println("Consumer : poll -> poll offset=$offset $value")
+//        println("Consumer : poll -> poll offset=$offset $value")
         // ordered store -> atomic and ordered for size()
         soLazyConsumerIndex(consumerIndex + 1)
         // we consumed the value from buffer, now check if Producer is full
-//        tryResumeSend()
+        tryResumeSend()
 //      println("receive ${value.item}")
         return value.item as E
     }
@@ -226,8 +201,7 @@ public open class SpScChannel7<E : Any>(
         if (null != result) return result
         // slow-path does suspend
         receiveSuspend()
-        println("Consumer : resume")
-
+//        println("Consumer : resume")
         return receive() // re-call receive after suspension
     }
 
@@ -235,13 +209,12 @@ public open class SpScChannel7<E : Any>(
         if (FULL_SUSPEND == loGetAndSetSuspendFlag(EMPTY_SUSPEND)) resumeSend() // notify Consumer will Suspend
 //        println("Consumer : receiveSuspend -> Consumer suspend")
         // local load of field to avoid repeated loads after volatile reads
-        val emptyBuffer = this.emptyBuffer
         val emptyProducerIndex = lvEmptyProducerIndex()
         val offset = calcElementOffset(emptyProducerIndex)
         // ordered store -> atomic and ordered for size()
-        soEmpty(emptyBuffer, offset, cont)
+        soEmpty(offset, cont)
         soEmptyProducerIndex(emptyProducerIndex + 1)
-        println("Consumer : suspend")
+//        println("Consumer : suspend")
     }
 }
 
@@ -260,14 +233,11 @@ abstract class AtomicReferenceArrayQueue6<E : Any>(capacity: Int) {
 
     protected fun calcElementOffset(index: Long) = index.toInt() and mask
 
+    protected fun loCompareAndSetExpectedNullElement(offset: Int, value: E?) = buffer.compareAndSet(offset, null, value)
+
     protected fun loGetAndSetNullElement(offset: Int) = buffer.getAndSet(offset, null)
 
-    protected fun soElement(offset: Int, value: E?) { buffer.set(offset, value) }
-
     protected companion object {
-        @JvmStatic
-        protected fun <E : Any> lvElement(buffer: AtomicReferenceArray<E?>, offset: Int) = buffer.get(offset)
-
         @JvmStatic
         protected fun calcElementOffset(index: Long, mask: Int) = index.toInt() and mask
     }
@@ -325,16 +295,9 @@ abstract class SpscAtomicArrayQueueL3Pad6<E : Any>(capacity: Int) : SpscAtomicAr
 abstract class AtomicReferenceArrayEmpty6<E : Any>(capacity: Int) : SpscAtomicArrayQueueL3Pad6<E>(capacity) {
     @JvmField internal val emptyBuffer = AtomicReferenceArray<Continuation<Unit>?>(capacity)
 
-    // todo remove if possible
     internal fun loGetAndSetNullEmpty(offset: Int) = emptyBuffer.getAndSet(offset, null)
 
-    protected companion object {
-        @JvmStatic
-        internal fun lvEmpty(emptyBuffer: AtomicReferenceArray<Continuation<Unit>?>, offset: Int) = emptyBuffer.get(offset)
-
-        @JvmStatic
-        internal fun soEmpty(emptyBuffer: AtomicReferenceArray<Continuation<Unit>?>, offset: Int, value: Continuation<Unit>?) = emptyBuffer.lazySet(offset, value)
-    }
+    protected fun soEmpty(offset: Int, value: Continuation<Unit>) { emptyBuffer.set(offset, value) }
 }
 
 abstract class SpscAtomicArrayQueueL4Pad6<E : Any>(capacity: Int) : AtomicReferenceArrayEmpty6<E>(capacity) {
@@ -379,13 +342,7 @@ abstract class AtomicReferenceArrayFull6<E : Any>(capacity: Int) : SpscAtomicArr
     // todo remove if possible
     internal fun loGetAndSetNullFull(offset: Int) = fullBuffer.getAndSet(offset, null)
 
-    protected companion object {
-        @JvmStatic
-        internal fun lvFull(fullBuffer: AtomicReferenceArray<Continuation<Unit>?>, offset: Int) = fullBuffer.get(offset)
-
-        @JvmStatic
-        internal fun soFull(fullBuffer: AtomicReferenceArray<Continuation<Unit>?>, offset: Int, value: Continuation<Unit>?) = fullBuffer.lazySet(offset, value)
-    }
+    internal fun soFull(offset: Int, value: Continuation<Unit>?) = fullBuffer.set(offset, value)
 }
 
 abstract class SpscAtomicArrayQueueL7Pad6<E : Any>(capacity: Int) : AtomicReferenceArrayFull6<E>(capacity) {
