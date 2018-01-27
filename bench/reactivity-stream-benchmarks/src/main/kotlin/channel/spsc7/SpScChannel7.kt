@@ -135,7 +135,6 @@ public open class SpScChannel7<E : Any>(
      */
     private fun offer(item: Element<E>): Boolean {
         // local load of field to avoid repeated loads after volatile reads
-//        val buffer = this.buffer
         val mask = this.mask
         val producerIndex = lvProducerIndex()
         val offset = calcElementOffset(producerIndex, mask)
@@ -163,7 +162,7 @@ public open class SpScChannel7<E : Any>(
         } else {
             val offsetNext = calcElementOffset(producerIndex + 1, mask)
             val nextEl = lvElement(buffer, offsetNext)
-            if (null != nextEl) println("Producer : suspend because buffer at $offsetNext is not null")
+            if (null != nextEl) println("Producer : suspend because value is not null offset=$offsetNext")
             return null == nextEl
         }
         return true
@@ -195,7 +194,6 @@ public open class SpScChannel7<E : Any>(
 //        val buffer = this.buffer
         val consumerIndex = lvConsumerIndex()
         val offset = calcElementOffset(consumerIndex)
-//        val value = lvElement(buffer, offset)
         val value = loGetAndSetNullElement(offset)
         if (null == value) {
             println("Consumer : suspend because value is null offset=$offset")
@@ -229,6 +227,7 @@ public open class SpScChannel7<E : Any>(
         // slow-path does suspend
         receiveSuspend()
         println("Consumer : resume")
+
         return receive() // re-call receive after suspension
     }
 
@@ -268,9 +267,6 @@ abstract class AtomicReferenceArrayQueue6<E : Any>(capacity: Int) {
     protected companion object {
         @JvmStatic
         protected fun <E : Any> lvElement(buffer: AtomicReferenceArray<E?>, offset: Int) = buffer.get(offset)
-
-//        @JvmStatic
-//        protected fun <E : Any> soElement(buffer: AtomicReferenceArray<E?>, offset: Int, value: E?) { buffer.set(offset, value) }
 
         @JvmStatic
         protected fun calcElementOffset(index: Long, mask: Int) = index.toInt() and mask
