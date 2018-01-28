@@ -51,55 +51,21 @@ open class SpScChannel8<E : Any>(
          * Buffer capacity.
          */
         capacity: Int
-) : SpscAtomicArrayQueueL6Pad8<Element<E>>(capacity) {
+) : SpscAtomicArrayQueueL5Pad8<Element<E>>(capacity) {
 
     private fun tryResumeReceive() {
         val empty = loGetAndSetNullEmpty()
         if (null != empty) {
 //            println("Producer : tryResumeReceive -> Consumer is suspended, resume")
-            soSuspendFlag(NO_SUSPEND)
             empty.resume(Unit)
         }
     }
 
-    /**
-     * Called when Consumer is or will be suspended
-     */
-    private fun resumeReceive() {
-        // Consumer is suspended
-//        println("Producer : resumeReceive -> START while loop")
-        while(true) {
-            val empty = loGetAndSetNullEmpty()
-            if (null != empty) {
-//                println("Producer : resumeReceive -> Consumer is suspended, resume")
-                empty.resume(Unit)
-                return
-            }
-        }
-    }
-
     private fun tryResumeSend() {
-       val full = loGetAndSetNullFull()
+        val full = loGetAndSetNullFull()
         if (null != full) {
 //            println("Consumer : tryResumeSend -> Producer is suspended, resume")
-            soSuspendFlag(NO_SUSPEND)
             full.resume(Unit)
-        }
-    }
-
-    /**
-     * Called when Producer is or will be suspended
-     */
-    private fun resumeSend() {
-        // Producer is suspended
-//        println("Consumer : resumeSend -> START while loop")
-        while(true) {
-            val full = loGetAndSetNullFull()
-            if (null != full) {
-//                println("Consumer : resumeSend -> Producer is suspended, resume")
-                full.resume(Unit)
-                return
-            }
         }
     }
 
@@ -115,7 +81,7 @@ open class SpScChannel8<E : Any>(
         if (!loCompareAndSetExpectedNullElement(offset, item)) return false
 //        println("Producer : offer -> offer offset=$offset $item")
         if (null != item.closeCause) {
-            if (EMPTY_SUSPEND == loGetAndSetSuspendFlag(NO_SUSPEND)) resumeReceive()
+            tryResumeReceive()
             return true
         }
         // ordered store -> atomic and ordered for size()
@@ -127,7 +93,7 @@ open class SpScChannel8<E : Any>(
 
     suspend fun send(item: Element<E>, prevProducerIndex: Long? = null) {
         val producerIndex = if (null!= prevProducerIndex) prevProducerIndex
-                else lvProducerIndex()
+        else lvProducerIndex()
         // fast path -- try offer non-blocking
         if (offer(item, producerIndex)) return
         // slow-path does suspend
@@ -137,9 +103,9 @@ open class SpScChannel8<E : Any>(
     }
 
     private suspend fun sendSuspend(): Unit = suspendCoroutine { cont ->
-        if (EMPTY_SUSPEND == loGetAndSetSuspendFlag(FULL_SUSPEND)) resumeReceive() // notify Producer will Suspend
-//        println("Producer : sendSuspend -> Producer suspend")
+        //        println("Producer : sendSuspend -> Producer suspend")
         soFull(cont)
+        tryResumeReceive()
 //        println("Producer : suspend")
     }
 
@@ -184,16 +150,12 @@ open class SpScChannel8<E : Any>(
     }
 
     private suspend fun receiveSuspend(): Unit = suspendCoroutine { cont ->
-        if (FULL_SUSPEND == loGetAndSetSuspendFlag(EMPTY_SUSPEND)) resumeSend() // notify Consumer will Suspend
-//        println("Consumer : receiveSuspend -> Consumer suspend")
+        //        println("Consumer : receiveSuspend -> Consumer suspend")
         soEmpty(cont)
+        tryResumeSend()
 //        println("Consumer : suspend")
     }
 }
-
-private const val NO_SUSPEND = 0
-private const val FULL_SUSPEND = 1
-private const val EMPTY_SUSPEND = -1
 
 abstract class AtomicReferenceArrayQueue8<E : Any>(capacity: Int) {
     @JvmField protected val buffer = AtomicReferenceArray<E?>(capacity)
@@ -277,21 +239,6 @@ abstract class AtomicReferenceFullField8<E : Any>(capacity: Int) : SpscAtomicArr
 }
 
 abstract class SpscAtomicArrayQueueL5Pad8<E : Any>(capacity: Int) : AtomicReferenceFullField8<E>(capacity) {
-    private val p01: Long = 0L;private val p02: Long = 0L;private val p03: Long = 0L;private val p04: Long = 0L;private val p05: Long = 0L;private val p06: Long = 0L;private val p07: Long = 0L
-
-    private val p10: Long = 0L;private val p11: Long = 0L;private val p12: Long = 0L;private val p13: Long = 0L;private val p14: Long = 0L;private val p15: Long = 0L;private val p16: Long = 0L;private val p17: Long = 0L
-}
-
-abstract class SpscAtomicSuspendFlag8<E : Any>(capacity: Int) : SpscAtomicArrayQueueL5Pad8<E>(capacity) {
-    private val S_FLAG_UPDATER = AtomicIntegerFieldUpdater.newUpdater<SpscAtomicSuspendFlag8<*>>(SpscAtomicSuspendFlag8::class.java, "suspendFlag")
-    @Volatile private var suspendFlag: Int = NO_SUSPEND
-
-    protected fun lvSuspendFlag() = suspendFlag
-    protected fun loGetAndSetSuspendFlag(newValue: Int) = S_FLAG_UPDATER.getAndSet(this, newValue)
-    protected fun soSuspendFlag(newValue: Int) { S_FLAG_UPDATER.set(this, newValue) }
-}
-
-abstract class SpscAtomicArrayQueueL6Pad8<E : Any>(capacity: Int) : SpscAtomicSuspendFlag8<E>(capacity) {
     private val p01: Long = 0L;private val p02: Long = 0L;private val p03: Long = 0L;private val p04: Long = 0L;private val p05: Long = 0L;private val p06: Long = 0L;private val p07: Long = 0L
 
     private val p10: Long = 0L;private val p11: Long = 0L;private val p12: Long = 0L;private val p13: Long = 0L;private val p14: Long = 0L;private val p15: Long = 0L;private val p16: Long = 0L;private val p17: Long = 0L
