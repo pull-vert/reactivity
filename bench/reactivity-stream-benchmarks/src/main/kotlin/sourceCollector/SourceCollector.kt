@@ -3,6 +3,7 @@ package sourceCollector
 import channel.DEFAULT_CLOSE_MESSAGE
 import channel.Element
 import channel.spsc7.SpScChannel7
+import channel.spsc8.SpScChannel8
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import kotlin.coroutines.experimental.CoroutineContext
@@ -71,6 +72,48 @@ inline fun <E> SourceCollector<E>.filter(crossinline predicate: (E) -> Boolean) 
         }
         sink.close(cause)
         return collector?.invoke()
+    }
+}
+
+fun <E : Any> SourceCollector<E>.async8(context: CoroutineContext, buffer: Int = 0): SourceCollector<E> {
+    val channel = SpScChannel8<E>(buffer)
+    return object : SourceCollector<E> {
+        suspend override fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
+            // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
+            // 2) Return elements consumed from async buffer
+            val deferred = async(context) {
+                try {
+                    while (true) {
+                        sink.send(channel.receive())
+                    }
+                } catch (e: Throwable) {
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    else sink.close(e)
+                }
+                collector?.invoke()
+            }
+
+            // 1) Get input elements and put them in async buffer
+            var cause: Throwable? = null
+            try {
+                this@async8.consume<Unit>(object : Sink<E> {
+                    suspend override fun send(item: E) {
+                        channel.send(Element(item))
+                    }
+
+                    override fun close(cause: Throwable?) {
+                        cause?.let { throw it }
+                    }
+                })
+            } catch (e: Throwable) {
+                cause = e
+            }
+            val closeCause = cause ?: ClosedReceiveChannelException(DEFAULT_CLOSE_MESSAGE)
+//            println("Close : $closeCause")
+            channel.send(Element(closeCause = closeCause))
+
+            return deferred.await() // suspend and return the value of the Deferred
+        }
     }
 }
 

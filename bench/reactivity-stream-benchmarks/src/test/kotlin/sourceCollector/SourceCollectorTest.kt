@@ -10,26 +10,15 @@ import kotlin.test.assertEquals
 class SourceCollectorTest {
 
     //    @Test
-//    fun testSourceCollectorSync() = runBlocking {
-//        val value = SourceCollector
-//                .range(1, N)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//        println("testSourceCollectorSync : value = $value run on ${Thread.currentThread().name}")
-//        assertEquals(446448416, value)
-//    }
-//
-//    @Test
-//    fun testSourceCollectorQuick7() = runBlocking {
-//        val value = SourceCollector
-//                .range(1, 10)
-//                .async7(newSingleThreadContext("testSourceCollectorQuick7"), buffer = 8)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//        println("testSourceCollectorQuick7 : value = $value run on ${Thread.currentThread().name}")
-//        assertEquals(12, value)
-//    }
-//
+    fun testSourceCollectorSync() = runBlocking {
+        val value = SourceCollector
+                .range(1, N)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorSync : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(446448416, value)
+    }
+
     //    @Test
 //    fun testSourceCollectorQuick5() = runBlocking {
 //        val value = SourceCollector
@@ -87,13 +76,57 @@ class SourceCollectorTest {
 //    }
 //
     @Test
-    fun testSourceCollectorAsync7MediumSmallBuffer() = runBlocking {
+    fun testSourceCollectorQuick8() = runBlocking {
         val value = SourceCollector
-                .range(1, 1_000)
-                .async7(newSingleThreadContext("testSourceCollectorAsync7Medium"), buffer = 4)
+                .range(1, 10)
+                .async8(newSingleThreadContext("testSourceCollectorQuick8"), buffer = 8)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
-        println("testSourceCollectorAsync7Medium : value = $value run on ${Thread.currentThread().name}")
+        println("testSourceCollectorQuick8 : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(12, value)
+    }
+
+    @Test
+    fun testSourceCollectorAsync8MediumBuffer() = runBlocking {
+        val value = SourceCollector
+                .range(1, 1_000)
+                .async8(newSingleThreadContext("testSourceCollectorAsync8MediumBuffer"), buffer = 4)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorAsync8MediumBuffer : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(125500, value) // 1_000
+    }
+
+    @Test
+    fun testSourceCollectorAsync8() = runBlocking {
+        val value = SourceCollector
+                .range(1, N)
+                .async8(newSingleThreadContext("testSourceCollectorAsync8"), buffer = 128)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorAsync8 : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(446448416, value)
+    }
+
+    @Test
+    fun testSourceCollectorQuick7() = runBlocking {
+        val value = SourceCollector
+                .range(1, 10)
+                .async7(newSingleThreadContext("testSourceCollectorQuick7"), buffer = 8)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorQuick7 : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(12, value)
+    }
+
+    @Test
+    fun testSourceCollectorAsync7MediumBuffer() = runBlocking {
+        val value = SourceCollector
+                .range(1, 1_000)
+                .async7(newSingleThreadContext("testSourceCollectorAsync7MediumBuffer"), buffer = 4)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorAsync7MediumBuffer : value = $value run on ${Thread.currentThread().name}")
         assertEquals(125500, value) // 1_000
     }
 

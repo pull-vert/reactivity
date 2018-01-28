@@ -321,19 +321,28 @@ open class RangeFilterSumBenchmark {
 //            .filter { it.isGood() }
 //            .collect(Collectors.summingInt { it })
 //
+//    @Benchmark
+//    fun testSourceThreadBuffer128ArrayChannel(): Int = runBlocking {
+//        Source
+//                .range(1, N)
+//                .async(buffer = 128)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
+//
+//    @Benchmark
+//    fun testSourceReturnPredicate(): Int = runBlocking {
+//        SourceCollector
+//                .range(1, N)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
+//
     @Benchmark
-    fun testSourceThreadBuffer128ArrayChannel(): Int = runBlocking {
-        Source
-                .range(1, N)
-                .async(buffer = 128)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-    }
-
-    @Benchmark
-    fun testSourceReturnPredicate(): Int = runBlocking {
+    fun testSourceCollectorThreadBuffer128SpScChannel8(): Int = runBlocking {
         SourceCollector
                 .range(1, N)
+                .async8(newSingleThreadContext("test"), buffer = 128)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
     }
