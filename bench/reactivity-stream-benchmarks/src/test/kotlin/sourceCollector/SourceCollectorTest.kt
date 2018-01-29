@@ -2,6 +2,7 @@ package sourceCollector
 
 import benchmark.N
 import benchmark.isGood
+import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.newSingleThreadContext
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
@@ -101,7 +102,7 @@ class SourceCollectorTest {
     fun testSourceCollectorAsync8() = runBlocking {
         val value = SourceCollector
                 .range(1, N)
-                .async8(newSingleThreadContext("testSourceCollectorAsync8"), buffer = 128)
+                .async8(DefaultDispatcher, buffer = 128)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
         println("testSourceCollectorAsync8 : value = $value run on ${Thread.currentThread().name}")

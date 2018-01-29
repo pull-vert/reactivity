@@ -19,7 +19,7 @@ package channel.spsc5
 import channel.DEFAULT_CLOSE_MESSAGE
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import channel.Element
-import channel.Sink
+import sourcesInline.Sink
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import java.util.concurrent.atomic.AtomicReferenceArray
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater

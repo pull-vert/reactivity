@@ -18,7 +18,6 @@ package channel.spsc8
  */
 
 import channel.Element
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import java.util.concurrent.atomic.AtomicReferenceArray
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
