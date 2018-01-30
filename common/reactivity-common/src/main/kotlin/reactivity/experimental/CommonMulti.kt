@@ -47,3 +47,11 @@ inline suspend fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc:
 // -------------- Intermediate (transforming) operations
 
 expect fun <E> Multi<E>.filter(predicate: (E) -> Boolean) : Multi<E>
+
+/**
+ * Returns a [Multi] that uses the [mapper] to transform each received element from [E]
+ * to [F] and then send it when transformation is done
+ *
+ * @param mapper the mapper function
+ */
+expect fun <E, F> Multi<E>.map(mapper: (E) -> F) : Multi<F>

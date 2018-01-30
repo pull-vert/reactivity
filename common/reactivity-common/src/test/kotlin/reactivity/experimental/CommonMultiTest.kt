@@ -17,4 +17,14 @@ class CommonMultiTest : TestBase() {
         println("testMulti : value = $value")
         assertEquals(446448416, value)
     }
+
+    @Test
+    fun testMultiMap() = runTest {
+        val value = Multi
+                .range(1, 2)
+                .map { it.toString() }
+                .fold("", { a, b -> a + b })
+        println("testMultiMap : value = $value")
+        assertEquals("12", value)
+    }
 }

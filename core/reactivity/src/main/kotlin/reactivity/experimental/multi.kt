@@ -30,6 +30,26 @@ actual inline fun <E> Multi<E>.filter(crossinline predicate: (E) -> Boolean) = o
     }
 }
 
+actual inline fun <E, F> Multi<E>.map(crossinline mapper: (E) -> F) = object : Multi<F> {
+    suspend override fun consume(sink: Sink<F>) {
+        var cause: Throwable? = null
+        try {
+            this@map.consume(object : Sink<E> {
+                suspend override fun send(item: E) {
+                    sink.send(mapper(item))
+                }
+
+                override fun close(cause: Throwable?) {
+                    cause?.let { throw it }
+                }
+            })
+        } catch (e: Throwable) {
+            cause = e
+        }
+        sink.close(cause)
+    }
+}
+
 fun <E : Any> Multi<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): Multi<E> {
     val channel = SpScChannel<E>(buffer)
     return object : Multi<E> {
