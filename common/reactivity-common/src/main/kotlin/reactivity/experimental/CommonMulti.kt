@@ -4,7 +4,6 @@ package reactivity.experimental
 
 interface Multi<out E> {
     suspend fun consume(sink: Sink<E>)
-
     companion object Factory
 }
 
@@ -47,22 +46,4 @@ inline suspend fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc:
 
 // -------------- Intermediate (transforming) operations
 
-inline fun <E> Multi<E>.filter(crossinline predicate: (E) -> Boolean) = object : Multi<E> {
-    suspend override fun consume(sink: Sink<E>) {
-        var cause: Throwable? = null
-        try {
-            this@filter.consume(object : Sink<E> {
-                suspend override fun send(item: E) {
-                    if (predicate(item)) sink.send(item)
-                }
-
-                override fun close(cause: Throwable?) {
-                    cause?.let { throw it }
-                }
-            })
-        } catch (e: Throwable) {
-            cause = e
-        }
-        sink.close(cause)
-    }
-}
+expect fun <E> Multi<E>.filter(predicate: (E) -> Boolean) : Multi<E>

@@ -10,6 +10,26 @@ private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
 
 // -------------- Intermediate (transforming) operations
 
+actual inline fun <E> Multi<E>.filter(crossinline predicate: (E) -> Boolean) = object : Multi<E> {
+    suspend override fun consume(sink: Sink<E>) {
+        var cause: Throwable? = null
+        try {
+            this@filter.consume(object : Sink<E> {
+                suspend override fun send(item: E) {
+                    if (predicate(item)) sink.send(item)
+                }
+
+                override fun close(cause: Throwable?) {
+                    cause?.let { throw it }
+                }
+            })
+        } catch (e: Throwable) {
+            cause = e
+        }
+        sink.close(cause)
+    }
+}
+
 fun <E : Any> Multi<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): Multi<E> {
     val channel = SpScChannel<E>(buffer)
     return object : Multi<E> {
