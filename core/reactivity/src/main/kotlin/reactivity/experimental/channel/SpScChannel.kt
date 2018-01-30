@@ -1,3 +1,5 @@
+@file:JvmName("SpScChannel")
+
 package reactivity.experimental.channel
 
 /**
@@ -16,6 +18,7 @@ package reactivity.experimental.channel
  * Original License: https://github.com/JCTools/JCTools/blob/master/LICENSE
  * Original location: https://github.com/JCTools/JCTools/blob/master/jctools-core/src/main/java/org/jctools/queues/atomic/SpscAtomicArrayQueue.java
  */
+import reactivity.experimental.Element
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import java.util.concurrent.atomic.AtomicReferenceArray
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater

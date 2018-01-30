@@ -1,6 +1,7 @@
 package reactivity.experimental
 
 import kotlinx.coroutines.experimental.*
+import kotlin.js.Promise
 import kotlin.math.roundToLong
 
 public actual open class TestBase actual constructor() {
@@ -17,7 +18,7 @@ public actual open class TestBase actual constructor() {
      */
     public actual fun error(message: Any, cause: Throwable? = null): Nothing {
         val exception = IllegalStateException(
-            if (cause == null) message.toString() else "$message; caused by $cause")
+                if (cause == null) message.toString() else "$message; caused by $cause")
         if (error == null) error = exception
         throw exception
     }
@@ -46,38 +47,40 @@ public actual open class TestBase actual constructor() {
         finished = true
     }
 
+    // todo: The dynamic (promise) result is a work-around for missing suspend tests, see KT-22228
     public actual fun runTest(
-        expected: ((Throwable) -> Boolean)? = null,
-        unhandled: List<(Throwable) -> Boolean> = emptyList(),
-        block: suspend CoroutineScope.() -> Unit
-    ) {
+            expected: ((Throwable) -> Boolean)? = null,
+            unhandled: List<(Throwable) -> Boolean> = emptyList(),
+            block: suspend CoroutineScope.() -> Unit
+    ): dynamic {
         var exCount = 0
         var ex: Throwable? = null
-        try {
-            runBlocking (block = block, context = CoroutineExceptionHandler { context, e ->
-                if (e is CancellationException) return@CoroutineExceptionHandler // are ignored
-                exCount++
-                if (exCount > unhandled.size)
-                    error("Too many unhandled exceptions $exCount, expected ${unhandled.size}", e)
-                if (!unhandled[exCount - 1](e))
-                    error("Unhandled exception was unexpected", e)
-                context[Job]?.cancel(e)
-            })
-        } catch (e: Throwable) {
+        return promise(block = block, context = CoroutineExceptionHandler { context, e ->
+            if (e is CancellationException) return@CoroutineExceptionHandler // are ignored
+            exCount++
+            if (exCount > unhandled.size)
+                error("Too many unhandled exceptions $exCount, expected ${unhandled.size}", e)
+            if (!unhandled[exCount - 1](e))
+                error("Unhandled exception was unexpected", e)
+            context[Job]?.cancel(e)
+        }).catch { e ->
             ex = e
             if (expected != null) {
                 if (!expected(e))
                     error("Unexpected exception", e)
             } else
                 throw e
-        } finally {
-            if (ex == null && expected != null) error("Exception was expected but none produced")
-        }
-        if (exCount < unhandled.size)
-            error("Too few unhandled exceptions $exCount, expected ${unhandled.size}")
-        error?.let { throw it }
-        check(actionIndex == 0 || finished) { "Expecting that 'finish(...)' was invoked, but it was not" }
+        }.finally {
+                    if (ex == null && expected != null) error("Exception was expected but none produced")
+                    if (exCount < unhandled.size)
+                        error("Too few unhandled exceptions $exCount, expected ${unhandled.size}")
+                    error?.let { throw it }
+                    check(actionIndex == 0 || finished) { "Expecting that 'finish(...)' was invoked, but it was not" }
+                }
     }
 
     actual public fun currentTimeMillis() = (js("Date.now()") as Double).roundToLong()
 }
+
+private fun <T> Promise<T>.finally(block: () -> Unit): Promise<T> =
+        then(onFulfilled = { value -> block(); value }, onRejected = { ex -> block(); throw ex })

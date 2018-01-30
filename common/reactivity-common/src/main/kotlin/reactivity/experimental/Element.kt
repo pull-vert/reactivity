@@ -1,6 +1,4 @@
-package reactivity.experimental.channel
-
-internal const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"
+package reactivity.experimental
 
 /**
  * Element stored in the buffer
