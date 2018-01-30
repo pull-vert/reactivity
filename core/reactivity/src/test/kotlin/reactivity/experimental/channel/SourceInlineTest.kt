@@ -1,13 +1,12 @@
-package sourceInline
+package reactivity.experimental.channel
 
-import benchmark.N
-import benchmark.isGood
-import kotlinx.coroutines.experimental.DefaultDispatcher
-import kotlinx.coroutines.experimental.newSingleThreadContext
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
-import sourcesInline.*
 import kotlin.test.assertEquals
+
+fun Int.isGood() = this % 4 == 0
+
+const val N = 1_000_000
 
 class SourceInlineTest {
 

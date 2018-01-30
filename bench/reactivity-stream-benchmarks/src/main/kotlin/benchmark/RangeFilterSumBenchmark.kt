@@ -18,9 +18,9 @@ import kotlinx.coroutines.experimental.rx2.rxFlowable
 import kotlinx.coroutines.experimental.rx2.rxObservable
 import org.openjdk.jmh.annotations.Benchmark
 import org.reactivestreams.Publisher
+import reactivity.experimental.channel.*
 import reactor.core.publisher.Flux
 import source.*
-import sourcesInline.*
 import srcmanbase.*
 import suspendingSequence.SuspendingSequence
 import suspendingSequence.suspendingSequence

@@ -2,24 +2,25 @@ rootProject.name = 'reactivity-root'
 
 include 'reactivity-stream-benchmarks'
 
-//include 'reactivity-common'
-//
-//include 'reactivity'
-//include 'reactivity-jdk8'
-//
-//include 'reactivity-extra-android'
-//include 'reactivity-extra-javafx'
-//include 'reactivity-extra-swing'
-//include 'reactivity-extra-nio'
-// include 'reactivity-http2'
+include 'reactivity-common'
+
+include 'reactivity'
+include 'reactivity-jdk8'
+
+include 'reactivity-extra-android'
+include 'reactivity-extra-javafx'
+include 'reactivity-extra-swing'
+include 'reactivity-extra-nio'
 //include 'reactivity-js'
 
+// include 'reactivity-http2'
+
 project(':reactivity-stream-benchmarks').projectDir = file('bench/reactivity-stream-benchmarks')
-//project(':reactivity-common').projectDir = file('common/reactivity-common')
-//project(':reactivity').projectDir = file('core/reactivity')
-//project(':reactivity-jdk8').projectDir = file('core/reactivity-jdk8')
-//project(':reactivity-extra-android').projectDir = file('core/extras/ui/reactivity-extra-android')
-//project(':reactivity-extra-javafx').projectDir = file('core/extras/ui/reactivity-extra-javafx')
-//project(':reactivity-extra-swing').projectDir = file('core/extras/ui/reactivity-extra-swing')
-//project(':reactivity-extra-nio').projectDir = file('core/extras/nio/reactivity-extra-nio')
+project(':reactivity-common').projectDir = file('common/reactivity-common')
+project(':reactivity').projectDir = file('core/reactivity')
+project(':reactivity-jdk8').projectDir = file('core/reactivity-jdk8')
+project(':reactivity-extra-android').projectDir = file('core/extras/ui/reactivity-extra-android')
+project(':reactivity-extra-javafx').projectDir = file('core/extras/ui/reactivity-extra-javafx')
+project(':reactivity-extra-swing').projectDir = file('core/extras/ui/reactivity-extra-swing')
+project(':reactivity-extra-nio').projectDir = file('core/extras/nio/reactivity-extra-nio')
 //project(':reactivity-js').projectDir = file('js/reactivity-js')

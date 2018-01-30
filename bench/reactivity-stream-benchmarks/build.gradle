@@ -1,22 +1,11 @@
 plugins {
-//    id "me.champeau.gradle.jmh" version "0.4.5"
     id "io.morethan.jmhreport" version "0.7.0"
 }
-
-//repositories {
-//    maven { url "http://repo.typesafe.com/typesafe/releases/" }
-//}
-
-//dependencies {
-//    jmh "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:$kotlinx_coroutines_version"
-//    jmh "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinx_coroutines_version"
-//    jmh project(':reactivity')
-//}
 
 dependencies {
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-rx2:$kotlinx_coroutines_version"
     compile "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinx_coroutines_version"
-//    compile project(':reactivity')
+    compile project(':reactivity')
     compile "org.openjdk.jmh:jmh-generator-annprocess:1.19"
 }
 
@@ -40,12 +29,3 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
-
-//jmh.jmhVersion = '1.19'
-
-//jmhJar.archiveName = 'StreamBenchmarks.jar'
-
-//jmh {
-//    include = ['.*Channel.*Benchmark']
-//    exclude = ['.*Guice.*', '.*PingPong.*']
-//}
