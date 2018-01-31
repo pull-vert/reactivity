@@ -90,10 +90,10 @@ open class SpScChannelClose<E : Any>(
         val offset = calcElementOffset(producerIndex, mask)
         if (!loCompareAndSetExpectedNullElement(offset, Element(item))) return false
 //        println("Producer : offer -> offer offset=$offset $item")
-        if (null != item.closeCause) {
-            tryResumeReceive()
-            return true
-        }
+//        if (null != item.closeCause) {
+//            tryResumeReceive()
+//            return true
+//        }
         // ordered store -> atomic and ordered for size()
         soLazyProducerIndex(producerIndex + 1)
         // handle empty case (= suspended Consumer)

@@ -16,10 +16,7 @@ import org.openjdk.jmh.annotations.Benchmark
 import org.reactivestreams.Publisher
 import reactivity.experimental.*
 import reactor.core.publisher.Flux
-import sourceInline.SourceInline
-import sourceInline.filter
-import sourceInline.fold
-import sourceInline.range
+import sourceInline.*
 import suspendingSequence.SuspendingSequence
 import suspendingSequence.suspendingSequence
 import kotlin.coroutines.experimental.CoroutineContext
@@ -343,12 +340,13 @@ open class RangeFilterSumBenchmark {
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
 
-    @Benchmark
-    fun testSourceInlineThreadBuffer128(): Int =
-            SourceInline
-                    .range(1, N)
-                    .filter { it.isGood() }
-                    .fold(0, { a, b -> a + b })
+//    @Benchmark
+//    fun testSourceInlineThreadBuffer128(): Int =
+//            SourceInline
+//                    .range(1, N)
+//                    .async(buffer = 128)
+//                    .filter { it.isGood() }
+//                    .fold(0, { a, b -> a + b })
 
     @Benchmark
     fun testMulti(): Int = runBlocking {
