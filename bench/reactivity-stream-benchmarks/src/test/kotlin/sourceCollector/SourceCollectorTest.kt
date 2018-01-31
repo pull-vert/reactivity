@@ -1,24 +1,22 @@
-//package sourceCollector
-//
-//import benchmark.N
-//import benchmark.isGood
-//import kotlinx.coroutines.experimental.DefaultDispatcher
-//import kotlinx.coroutines.experimental.newSingleThreadContext
-//import kotlinx.coroutines.experimental.runBlocking
-//import org.junit.Test
-//import kotlin.test.assertEquals
-//
-//class SourceCollectorTest {
-//
-//    //    @Test
-//    fun testSourceCollectorSync() = runBlocking {
-//        val value = SourceCollector
-//                .range(1, N)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//        println("testSourceCollectorSync : value = $value run on ${Thread.currentThread().name}")
-//        assertEquals(446448416, value)
-//    }
+package sourceCollector
+
+import benchmark.N
+import benchmark.isGood
+import kotlinx.coroutines.experimental.runBlocking
+import org.junit.Test
+import kotlin.test.assertEquals
+
+class SourceCollectorTest {
+
+    @Test
+    fun testSourceCollectorSync() = runBlocking {
+        val value = SourceCollector
+                .range(1, 10)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorSync : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(12, value)
+    }
 //
 //    //    @Test
 ////    fun testSourceCollectorQuick5() = runBlocking {
@@ -212,4 +210,4 @@
 ////        println("testSourceCollectorAsync5 : value = $value run on ${Thread.currentThread().name}")
 ////        assertEquals(446448416, value)
 ////    }
-//}
+}
