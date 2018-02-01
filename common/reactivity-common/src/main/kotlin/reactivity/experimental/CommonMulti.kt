@@ -46,6 +46,27 @@ inline suspend fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc:
 
 // -------------- Intermediate (transforming) operations
 
+fun <E> Multi<E>.delay(time: Int) = object : Multi<E> {
+    override suspend fun consume(sink: Sink<E>) {
+        var cause: Throwable? = null
+        try {
+            this@delay.consume(object : Sink<E> {
+                suspend override fun send(item: E) {
+                    kotlinx.coroutines.experimental.delay(time)
+                    sink.send(item)
+                }
+
+                override fun close(cause: Throwable?) {
+                    cause?.let { throw it }
+                }
+            })
+        } catch (e: Throwable) {
+            cause = e
+        }
+        sink.close(cause)
+    }
+}
+
 expect fun <E> Multi<E>.filter(predicate: (E) -> Boolean) : Multi<E>
 
 /**

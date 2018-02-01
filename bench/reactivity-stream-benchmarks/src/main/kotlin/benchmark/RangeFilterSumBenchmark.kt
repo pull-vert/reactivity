@@ -332,7 +332,7 @@ open class RangeFilterSumBenchmark {
 //                .filter { it.isGood() }
 //                .fold(0, { a, b -> a + b })
 //    }
-
+//
     @Benchmark
     fun testSourceInline(): Int =
         SourceInline
@@ -356,14 +356,14 @@ open class RangeFilterSumBenchmark {
                 .fold(0, { a, b -> a + b })
     }
 
-    @Benchmark
-    fun testMultiThreadBuffer128(): Int = runBlocking {
-        Multi
-                .range(1, N)
-                .async(buffer = 128)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-    }
+//    @Benchmark
+//    fun testMultiThreadBuffer128(): Int = runBlocking {
+//        Multi
+//                .range(1, N)
+//                .async(buffer = 128)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
 //
 //        @Benchmark
 //    fun testSourceCollector(): Int = runBlocking {

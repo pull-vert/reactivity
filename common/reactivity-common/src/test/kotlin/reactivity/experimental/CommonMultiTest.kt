@@ -27,4 +27,15 @@ class CommonMultiTest : TestBase() {
         println("testMultiMap : value = $value")
         assertEquals("12", value)
     }
+
+    @Test
+    fun testMultiDelay() = runTest {
+        val value = Multi
+                .range(1, 10)
+                .delay(100) // 100ms delay for each item
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testMultiDelay : value = $value")
+        assertEquals(12, value)
+    }
 }

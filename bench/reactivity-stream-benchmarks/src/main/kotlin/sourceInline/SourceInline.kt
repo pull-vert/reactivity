@@ -75,6 +75,27 @@ inline fun <E> SourceInline<E>.filter(crossinline predicate: (E) -> Boolean) = o
     }
 }
 
+fun <E> SourceInline<E>.delay(time: Int) = object : SourceInline<E> {
+    override fun consume(sink: Sink<E>) {
+        var cause: Throwable? = null
+        try {
+            this@delay.consume(object : Sink<E> {
+                suspend override fun send(item: E) {
+                    kotlinx.coroutines.experimental.delay(time)
+                    sink.send(item)
+                }
+
+                override fun close(cause: Throwable?) {
+                    cause?.let { throw it }
+                }
+            })
+        } catch (e: Throwable) {
+            cause = e
+        }
+        sink.close(cause)
+    }
+}
+
 fun <E : Any> SourceInline<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceInline<E> {
     val channel = SpScChannelClose<E>(buffer)
     return object : SourceInline<E> {
