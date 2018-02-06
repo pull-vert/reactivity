@@ -14,7 +14,7 @@ interface Sink<in E> {
 
 // -------------- Factory (initial/producing) operations
 
-fun Multi.Factory.range(start: Int, count: Int): Multi<Int> = object : Multi<Int> {
+fun Multi.Factory.range(start: Int, count: Int) = object : Multi<Int> {
     suspend override fun consume(sink: Sink<Int>) {
         var cause: Throwable? = null
         try {
@@ -47,7 +47,7 @@ inline suspend fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc:
 // -------------- Intermediate (transforming) operations
 
 fun <E> Multi<E>.delay(time: Int) = object : Multi<E> {
-    override suspend fun consume(sink: Sink<E>) {
+    suspend override fun consume(sink: Sink<E>) {
         var cause: Throwable? = null
         try {
             this@delay.consume(object : Sink<E> {
