@@ -12,15 +12,47 @@ interface Sink<in E> {
     fun close(cause: Throwable?)
 }
 
+// -------------- Top level extensions
+
+fun <T> Iterable<T>.toMulti() = object : Multi<T> {
+    suspend override fun consume(sink: Sink<T>) {
+        var cause: Throwable? = null
+        try {
+            for (x in this@toMulti) { sink.send(x) }
+        } catch (e: Throwable) {
+            cause = e
+        }
+        sink.close(cause)
+    }
+}
+fun BooleanArray.toMulti() = this.toList().toMulti()
+fun ByteArray.toMulti() = this.toList().toMulti()
+fun CharArray.toMulti() = this.toList().toMulti()
+fun DoubleArray.toMulti() = this.toList().toMulti()
+fun FloatArray.toMulti() = this.toList().toMulti()
+fun IntArray.toMulti() = this.toList().toMulti()
+fun LongArray.toMulti() = this.toList().toMulti()
+fun ShortArray.toMulti() = this.toList().toMulti()
+fun <T> Array<T>.toMulti() = this.toList().toMulti()
+fun <T> Sequence<T>.toMulti() = object : Multi<T> {
+    suspend override fun consume(sink: Sink<T>) {
+        var cause: Throwable? = null
+        try {
+            for (x in this@toMulti) { sink.send(x) }
+        } catch (e: Throwable) {
+            cause = e
+        }
+        sink.close(cause)
+    }
+}
+
 // -------------- Factory (initial/producing) operations
 
 fun Multi.Factory.range(start: Int, count: Int) = object : Multi<Int> {
     suspend override fun consume(sink: Sink<Int>) {
         var cause: Throwable? = null
         try {
-            for (i in start until (start + count)) {
-                sink.send(i)
-            }
+            for (i in start until (start + count)) { sink.send(i) }
         } catch (e: Throwable) {
             cause = e
         }
@@ -37,12 +69,21 @@ inline suspend fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc:
             acc = operation(acc, item)
         }
 
-        override fun close(cause: Throwable?) {
-            cause?.let { throw it }
-        }
+        override fun close(cause: Throwable?) { cause?.let { throw it } }
     })
     return acc
 }
+
+/**
+ * Performs the given [action] for each received element.
+ *
+ * This function [consumes][consume] all elements of the original [Multi].
+ */
+inline suspend fun <E> Multi<E>.consumeEach(crossinline action: (E) -> Unit) =
+        consume(object : Sink<E> {
+            suspend override fun send(item: E) = action(item)
+            override fun close(cause: Throwable?) { cause?.let { throw it } }
+        })
 
 // -------------- Intermediate (transforming) operations
 
@@ -56,9 +97,7 @@ fun <E> Multi<E>.delay(time: Int) = object : Multi<E> {
                     sink.send(item)
                 }
 
-                override fun close(cause: Throwable?) {
-                    cause?.let { throw it }
-                }
+                override fun close(cause: Throwable?) { cause?.let { throw it } }
             })
         } catch (e: Throwable) {
             cause = e

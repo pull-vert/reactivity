@@ -1,16 +1,16 @@
 package reactivity.experimental
 
-// -------------- Top level extensions
-
-fun <E> E.toSolo() = object : Solo<E> {
-    suspend override fun await(): E = this@toSolo
-}
-
 // -------------- Interface definitions
 
 interface Solo<out E> {
     suspend fun await(): E
 //    companion object Factory
+}
+
+// -------------- Top level extensions
+
+fun <E> E.toSolo() = object : Solo<E> {
+    suspend override fun await(): E = this@toSolo
 }
 
 // -------------- Factory (initial/producing) operations
