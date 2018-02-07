@@ -22,7 +22,7 @@ fun <E> E.toSolo() = object : Solo<E> {
 // -------------- Terminal (final/consuming) operations
 
 /**
- * Subscribes to this [Solo] and performs the specified action for the unique received element.
+ * Performs the given [action] for the unique element.
  */
 inline suspend fun <T> Solo<T>.consumeUnique(crossinline action: (T) -> Unit) {
     action(this@consumeUnique.await())
