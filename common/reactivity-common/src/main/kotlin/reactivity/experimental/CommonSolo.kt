@@ -19,6 +19,15 @@ fun <E> E.toSolo() = object : Solo<E> {
 //    suspend override fun await(): E = value
 //}
 
+// -------------- Terminal (final/consuming) operations
+
+/**
+ * Subscribes to this [Solo] and performs the specified action for the unique received element.
+ */
+inline suspend fun <T> Solo<T>.consumeUnique(crossinline action: (T) -> Unit) {
+    action(this@consumeUnique.await())
+}
+
 // -------------- Intermediate (transforming) operations
 
 fun <E> Solo<E>.delay(time: Int) = object : Solo<E> {
@@ -27,8 +36,6 @@ fun <E> Solo<E>.delay(time: Int) = object : Solo<E> {
         return this@delay.await()
     }
 }
-
-// -------------- Intermediate (transforming) operations
 
 /**
  * Returns a [Solo] that uses the [mapper] to transform the element from [E]

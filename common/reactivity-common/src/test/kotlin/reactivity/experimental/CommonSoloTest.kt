@@ -21,4 +21,10 @@ class CommonSoloTest : TestBase() {
         println("testSoloDelay : value = $value")
         assertEquals(12, value)
     }
+
+    @Test
+    fun testSoloConsumeUnique() = runTest {
+        12.toSolo()
+                .consumeUnique { assertEquals(12, it) }
+    }
 }
