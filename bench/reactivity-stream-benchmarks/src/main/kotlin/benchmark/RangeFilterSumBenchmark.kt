@@ -333,13 +333,13 @@ open class RangeFilterSumBenchmark {
 //                .fold(0, { a, b -> a + b })
 //    }
 //
-    @Benchmark
-    fun testSourceInline(): Int =
-        SourceInline
-                .range(1, N)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-
+//    @Benchmark
+//    fun testSourceInline(): Int =
+//        SourceInline
+//                .range(1, N)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//
 //    @Benchmark
 //    fun testSourceInlineThreadBuffer128(): Int =
 //            SourceInline
