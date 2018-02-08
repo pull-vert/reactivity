@@ -16,7 +16,7 @@ interface KHttp2Server {
         fun newHttp2Server() = Http2ServerBuilderImpl().build()
 
         /**
-         * Creates a new `HttpClient` builder.
+         * Creates a new `HttpClient` coroutine.
          *
          * @return a `HttpClient.Builder`
          */
@@ -31,9 +31,9 @@ interface KHttp2Server {
 
         /**
          * Returns a [KHttp2Server] built from the current state of this
-         * builder.
+         * coroutine.
          *
-         * @return this builder
+         * @return this coroutine
          */
         fun build(): KHttp2Server
 
@@ -41,7 +41,7 @@ interface KHttp2Server {
          * The address to listen for (e.g. 0.0.0.0 or 127.0.0.1)
          *
          * @param bindAddress address to listen for (e.g. 0.0.0.0 or 127.0.0.1)
-         * @return this builder
+         * @return this coroutine
          */
         fun bindAddress(bindAddress: String): Builder
 
@@ -49,7 +49,7 @@ interface KHttp2Server {
          * The port to listen to, or 0 to dynamically attribute one.
          *
          * @param port the port to listen to, or 0 to dynamically attribute one.
-         * @return this builder
+         * @return this coroutine
          */
         fun port(port: Int): Builder
 
@@ -72,7 +72,7 @@ interface KHttp2Server {
 
     /**
      * Returns an {@code Optional} containing the {@link SSLParameters} set on
-     * this server. If no {@code SSLParameters} were set in the client's builder,
+     * this server. If no {@code SSLParameters} were set in the client's coroutine,
      * then the {@code Optional} is empty.
      *
      * @return this server's {@code SSLParameters}
@@ -81,7 +81,7 @@ interface KHttp2Server {
 
     /**
      * Returns the {@code Executor} set on this server. If an {@code
-     * Executor} was not set on the client's builder, then a default
+     * Executor} was not set on the client's coroutine, then a default
      * object is returned. The default {@code Executor} is created independently
      * for each server.
      *

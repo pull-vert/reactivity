@@ -93,7 +93,7 @@ fun <E> Multi<E>.delay(time: Int) = object : Multi<E> {
         try {
             this@delay.consume(object : Sink<E> {
                 suspend override fun send(item: E) {
-                    kotlinx.coroutines.experimental.delay(time)
+                    reactivity.experimental.coroutine.delay(time)
                     sink.send(item)
                 }
 
