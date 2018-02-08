@@ -1,4 +1,4 @@
 dependencies {
     // https://github.com/Kotlin/kotlinx.coroutines/tree/master/common/kotlinx-coroutines-core-common
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$kotlinx_coroutines_version"
+    testCompile "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$kotlinx_coroutines_version"
 }
