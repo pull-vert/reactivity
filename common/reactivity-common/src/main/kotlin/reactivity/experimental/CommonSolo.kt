@@ -1,10 +1,14 @@
 package reactivity.experimental
 
+import kotlinx.coroutines.experimental.DefaultDispatcher
+import kotlinx.coroutines.experimental.Deferred
+import kotlinx.coroutines.experimental.async
+import kotlin.coroutines.experimental.CoroutineContext
+
 // -------------- Interface definitions
 
 interface Solo<out E> {
     suspend fun await(): E
-//    companion object Factory
 }
 
 // -------------- Top level extensions
@@ -13,11 +17,9 @@ fun <E> E.toSolo() = object : Solo<E> {
     suspend override fun await(): E = this@toSolo
 }
 
-// -------------- Factory (initial/producing) operations
-
-//fun <E> Solo.Factory.fromValue(value: E) = object : Solo<E> {
-//    suspend override fun await(): E = value
-//}
+fun <E> Deferred<E>.toSolo() = object : Solo<E> {
+    suspend override fun await(): E = this@toSolo.await()
+}
 
 // -------------- Terminal (final/consuming) operations
 
@@ -26,6 +28,10 @@ fun <E> E.toSolo() = object : Solo<E> {
  */
 inline suspend fun <T> Solo<T>.consumeUnique(crossinline action: (T) -> Unit) {
     action(this@consumeUnique.await())
+}
+
+fun <E> Solo<E>.toDeferred(coroutineContext: CoroutineContext = DefaultDispatcher) = async(coroutineContext) {
+    this@toDeferred.await()
 }
 
 // -------------- Intermediate (transforming) operations

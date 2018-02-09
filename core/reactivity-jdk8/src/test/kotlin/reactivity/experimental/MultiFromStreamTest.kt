@@ -1,21 +1,17 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.delay
 import org.junit.Test
 import reactivity.experimental.jdk8.toMulti
 import java.util.stream.IntStream
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 class MultiFromStreamTest: TestBase() {
     @Test
-    fun `multi from Stream inline subscription`() = runTest {
-        var finally = false
-        val source = IntStream.of(1, 2 ,7, 12).toMulti() // a list of Ints
-                .doOnSubscribe { println("OnSubscribe") } // provide some insight
-                .doFinally { finally = true; println("Finally") } // ... into what's going on
-        // iterate over the source fully
-        source.consumeEach { println(it) }
-        delay(100)
-        assertTrue(finally)
+    fun `multi from Stream`() = runTest {
+        val value = IntStream.of(1, 2 , 3, 4, 5, 6, 7, 8, 9, 10).toMulti() // a list of Ints
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("multi from Stream : value = $value")
+        assertEquals(12, value)
     }
 }
