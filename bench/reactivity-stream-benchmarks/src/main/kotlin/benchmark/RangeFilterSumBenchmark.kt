@@ -333,38 +333,49 @@ open class RangeFilterSumBenchmark {
 //                .fold(0, { a, b -> a + b })
 //    }
 //
-//    @Benchmark
-//    fun testSourceInline(): Int =
-//        SourceInline
-//                .range(1, N)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//
-//    @Benchmark
-//    fun testSourceInlineThreadBuffer128(): Int =
-//            SourceInline
-//                    .range(1, N)
-//                    .async(buffer = 128)
-//                    .filter { it.isGood() }
-//                    .fold(0, { a, b -> a + b })
+    @Benchmark
+    fun testSourceInline(): Int = runBlocking {
+        SourceInline
+                .range(1, N)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+    }
 
     @Benchmark
-    fun testMulti(): Int = runBlocking {
+    fun testSourceInlineThreadBuffer128MpMc(): Int = runBlocking {
+        SourceInline
+                .range(1, N)
+                .asyncMpMc(buffer = 128)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+    }
+
+    @Benchmark
+    fun testSourceInlineThreadBuffer128SpSc(): Int = runBlocking {
+        SourceInline
+                .range(1, N)
+                .asyncSpSc(buffer = 128)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+    }
+
+    @Benchmark
+    fun testzMulti(): Int = runBlocking {
         Multi
                 .range(1, N)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
     }
 
-//    @Benchmark
-//    fun testMultiThreadBuffer128(): Int = runBlocking {
-//        Multi
-//                .range(1, N)
-//                .async(buffer = 128)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//    }
-//
+    @Benchmark
+    fun testzMultiThreadBuffer128(): Int = runBlocking {
+        Multi
+                .range(1, N)
+                .async(buffer = 128)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+    }
+
 //        @Benchmark
 //    fun testSourceCollector(): Int = runBlocking {
 //        SourceCollector

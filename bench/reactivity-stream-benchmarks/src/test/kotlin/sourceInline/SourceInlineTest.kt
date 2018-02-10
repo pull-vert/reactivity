@@ -2,29 +2,43 @@ package sourceInline
 
 import benchmark.N
 import benchmark.isGood
+import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
+import reactivity.experimental.filter
+import reactivity.experimental.fold
 import kotlin.test.assertEquals
 
 class SourceInlineTest {
 
     @Test
-    fun testSourceInline() {
+    fun testSourceInline() = runBlocking {
         val value = SourceInline
                 .range(1, N)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
         println("testSourceInline : value = $value run on ${Thread.currentThread().name}")
         assertEquals(446448416, value)
     }
 
     @Test
-    fun testSourceInlineDelay() {
+    fun testSourceInlineMpMc() = runBlocking {
         val value = SourceInline
-                .range(1, 10)
-                .filter { it.isGood() }
-                .delay(100)
-                .fold(0, { a, b -> a + b })
+                .range(1, N)
+                .asyncMpMc(buffer = 128)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
         println("testSourceInlineDelay : value = $value run on ${Thread.currentThread().name}")
-        assertEquals(12, value)
+        assertEquals(446448416, value)
+    }
+
+    @Test
+    fun testSourceInlineSpSc() = runBlocking {
+        val value = SourceInline
+                .range(1, N)
+                .asyncSpSc(buffer = 128)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+        println("testSourceInlineDelay : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(446448416, value)
     }
 }
