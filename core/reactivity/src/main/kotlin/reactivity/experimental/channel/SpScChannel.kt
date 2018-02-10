@@ -44,7 +44,7 @@ import kotlin.coroutines.experimental.suspendCoroutine
  * </i> This implementation is wait free.
  *
  * @param <E> Not null value
- * @author nitsanw, adapted by fmo
+ * @author nitsanw, adapted by pull-vert
  */
 open class SpScChannel<E : Any>(
         /**
@@ -56,7 +56,6 @@ open class SpScChannel<E : Any>(
     private fun tryResumeReceive() {
         val empty = loGetAndSetNullEmpty()
         if (null != empty) {
-//            println("Producer : tryResumeReceive -> Consumer is suspended, resume")
             empty.resume(Unit)
         }
     }
@@ -64,22 +63,20 @@ open class SpScChannel<E : Any>(
     private fun tryResumeSend() {
         val full = loGetAndSetNullFull()
         if (null != full) {
-//            println("Consumer : tryResumeSend -> Producer is suspended, resume")
             full.resume(Unit)
         }
     }
 
     /**
      * Offer the value in buffer
-     * Return true if there is room left in buffer, false if just 1 spot left in the buffer
+     * Return true if there is room left in buffer, false otherwise
      * <p>
-     * This implementation is correct for single producer thread use only.
+     * This implementation is correct for single producer use only.
      */
     private fun offer(item: Element<E>, producerIndex: Long): Boolean {
         val mask = this.mask
         val offset = calcElementOffset(producerIndex, mask)
         if (!loCompareAndSetExpectedNullElement(offset, item)) return false
-//        println("Producer : offer -> offer offset=$offset $item")
         if (null != item.closeCause) {
             tryResumeReceive()
             return true
@@ -98,45 +95,36 @@ open class SpScChannel<E : Any>(
         if (offer(item, producerIndex)) return
         // slow-path does suspend
         sendSuspend()
-//        println("Producer : resume")
         send(item, producerIndex) // re-call send after suspension
     }
 
     private suspend fun sendSuspend(): Unit = suspendCoroutine { cont ->
-        //        println("Producer : sendSuspend -> Producer suspend")
         soFull(cont)
         tryResumeReceive()
-//        println("Producer : suspend")
     }
 
+    /**
+     * Poll a value from buffer
+     * Return the value if present, null otherwise
+     * <p>
+     * This implementation is correct for single consumer use only.
+     */
     private fun poll(consumerIndex: Long): E? {
-        // local load of field to avoid repeated loads after volatile reads
         val offset = calcElementOffset(consumerIndex)
         val value = loGetAndSetNullElement(offset)
-        if (null == value) {
-            // empty buffer
-//            println("Consumer : suspend because value is null offset=$offset")
-            return null
-        }
+        if (null == value) return null // empty buffer
         // Check if Closed
         val closed = value.closeCause
         if (null != closed) {
-//            println("Consumer : poll closed, offset = $offset, closed=$closed")
             throw closed
         }
-//        println("Consumer : poll -> poll offset=$offset $value")
         // ordered store -> atomic and ordered for size()
         soLazyConsumerIndex(consumerIndex + 1)
         // we consumed the value from buffer, now check if Producer is full
         tryResumeSend()
-//      println("receive ${value.item}")
         return value.item as E
     }
 
-    /**
-     * <p>
-     * This implementation is correct for single producer thread use only.
-     */
     suspend fun receive(prevConsumerIndex: Long? = null): E {
         val consumerIndex = if (null != prevConsumerIndex) prevConsumerIndex
         else lvConsumerIndex()
@@ -145,15 +133,12 @@ open class SpScChannel<E : Any>(
         if (null != result) return result
         // slow-path does suspend
         receiveSuspend()
-//        println("Consumer : resume")
         return receive(consumerIndex) // re-call receive after suspension
     }
 
     private suspend fun receiveSuspend(): Unit = suspendCoroutine { cont ->
-        //        println("Consumer : receiveSuspend -> Consumer suspend")
         soEmpty(cont)
         tryResumeSend()
-//        println("Consumer : suspend")
     }
 }
 
@@ -185,7 +170,6 @@ abstract class SpscAtomicArrayQueueL1Pad<E : Any>(capacity: Int) : AtomicReferen
 }
 
 abstract class SpscAtomicArrayQueueProducerIndexField<E : Any>(capacity: Int) : SpscAtomicArrayQueueL1Pad<E>(capacity) {
-    // TODO test with LongAdder with jdk8 !
     private val P_INDEX_UPDATER = AtomicLongFieldUpdater.newUpdater<SpscAtomicArrayQueueProducerIndexField<*>>(SpscAtomicArrayQueueProducerIndexField::class.java, "producerIndex")
     @Volatile private var producerIndex: Long = 0L
 
@@ -200,7 +184,6 @@ abstract class SpscAtomicArrayQueueL2Pad<E : Any>(capacity: Int) : SpscAtomicArr
 }
 
 abstract class SpscAtomicArrayQueueConsumerIndexField<E : Any>(capacity: Int) : SpscAtomicArrayQueueL2Pad<E>(capacity) {
-    // TODO test with LongAdder with jdk8 !
     private val C_INDEX_UPDATER  = AtomicLongFieldUpdater.newUpdater<SpscAtomicArrayQueueConsumerIndexField<*>>(SpscAtomicArrayQueueConsumerIndexField::class.java, "consumerIndex")
     @Volatile private var consumerIndex: Long = 0L
 
@@ -219,6 +202,7 @@ abstract class AtomicReferenceEmptyField<E : Any>(capacity: Int) : SpscAtomicArr
             Continuation::class.java, "empty")
     @Volatile private var empty: Continuation<Unit>? = null
 
+    @Suppress("UNCHECKED_CAST")
     internal fun loGetAndSetNullEmpty() = EMPTY_UPDATER.getAndSet(this, null) as Continuation<Unit>?
     internal fun soEmpty(value: Continuation<Unit>) { EMPTY_UPDATER.set(this, value) }
 }
@@ -234,6 +218,7 @@ abstract class AtomicReferenceFullField<E : Any>(capacity: Int) : SpscAtomicArra
             Continuation::class.java, "full")
     @Volatile private var full: Continuation<Unit>? = null
 
+    @Suppress("UNCHECKED_CAST")
     internal fun loGetAndSetNullFull(): Continuation<Unit>? = FULL_UPDATER.getAndSet(this, null) as Continuation<Unit>?
     internal fun soFull(value: Continuation<Unit>) { FULL_UPDATER.set(this, value) }
 }

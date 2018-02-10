@@ -360,7 +360,7 @@ open class RangeFilterSumBenchmark {
     }
 
     @Benchmark
-    fun testzMulti(): Int = runBlocking {
+    fun testMulti(): Int = runBlocking {
         Multi
                 .range(1, N)
                 .filter { it.isGood() }
@@ -368,7 +368,7 @@ open class RangeFilterSumBenchmark {
     }
 
     @Benchmark
-    fun testzMultiThreadBuffer128(): Int = runBlocking {
+    fun testMultiThreadBuffer128(): Int = runBlocking {
         Multi
                 .range(1, N)
                 .async(buffer = 128)
