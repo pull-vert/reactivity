@@ -8,14 +8,14 @@ buildscript {
     repositories {
         jcenter()
         // needed for atomicfu dependency
-        maven { url "http://kotlin.bintray.com/kotlinx" }
+//        maven { url "http://kotlin.bintray.com/kotlinx" }
         maven { url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
-        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicFU_version"
+//        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicFU_version"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintray_version"
         classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
     }
@@ -73,7 +73,7 @@ subprojects {
 
     repositories {
         jcenter()
-        maven { url "http://kotlin.bintray.com/kotlinx" }
+//        maven { url "http://kotlin.bintray.com/kotlinx" }
         maven { url "https://dl.bintray.com/devexperts/Maven/" }
     }
 
@@ -99,33 +99,33 @@ subprojects {
     }
 }
 
-// --------------- Configure sub-projects that use atomicFU ---------------
-def withAtomicFU = 'reactivity'
-
-configure(subprojects.findAll { it.name.contains(withAtomicFU) && platformOf(it) == "jvm"}) {
-    apply plugin: 'kotlinx-atomicfu'
-
-    dependencies {
-        compileOnly "org.jetbrains.kotlinx:atomicfu:$atomicFU_version"
-        testCompile "org.jetbrains.kotlinx:atomicfu:$atomicFU_version"
-    }
-
-    atomicFU {
-        inputFiles = sourceSets.main.output.classesDirs
-        outputDir = file("$buildDir/classes-atomicfu/main")
-        classPath = sourceSets.main.runtimeClasspath
-    }
-
-    jar {
-        mainSpec.sourcePaths.clear() // hack to clear existing paths
-        from files(atomicFU.outputs, sourceSets.main.output.resourcesDir)
-    }
-
-    test {
-        classpath = files(configurations.testRuntime, atomicFU.outputs, sourceSets.test.output.classesDirs,
-                sourceSets.main.output.resourcesDir)
-    }
-}
+//// --------------- Configure sub-projects that use atomicFU ---------------
+//def withAtomicFU = 'reactivity'
+//
+//configure(subprojects.findAll { it.name.contains(withAtomicFU) && platformOf(it) == "jvm"}) {
+//    apply plugin: 'kotlinx-atomicfu'
+//
+//    dependencies {
+//        compileOnly "org.jetbrains.kotlinx:atomicfu:$atomicFU_version"
+//        testCompile "org.jetbrains.kotlinx:atomicfu:$atomicFU_version"
+//    }
+//
+//    atomicFU {
+//        inputFiles = sourceSets.main.output.classesDirs
+//        outputDir = file("$buildDir/classes-atomicfu/main")
+//        classPath = sourceSets.main.runtimeClasspath
+//    }
+//
+//    jar {
+//        mainSpec.sourcePaths.clear() // hack to clear existing paths
+//        from files(atomicFU.outputs, sourceSets.main.output.resourcesDir)
+//    }
+//
+//    test {
+//        classpath = files(configurations.testRuntime, atomicFU.outputs, sourceSets.test.output.classesDirs,
+//                sourceSets.main.output.resourcesDir)
+//    }
+//}
 
 // --------------- Configure between subprojects dependencies ---------------
 configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8' || it.name == 'reactivity' || it.name == 'reactivity-js' && it.name != 'reactivity-common'}) {
