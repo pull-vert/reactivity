@@ -31,7 +31,7 @@ inline suspend fun <T> Solo<T>.consumeUnique(crossinline action: (T) -> Unit) {
 }
 
 fun <E> Solo<E>.toDeferred(coroutineContext: CoroutineContext = DefaultDispatcher) = async(coroutineContext) {
-    this@toDeferred.await()
+    return@async  this@toDeferred.await()
 }
 
 // -------------- Intermediate (transforming) operations

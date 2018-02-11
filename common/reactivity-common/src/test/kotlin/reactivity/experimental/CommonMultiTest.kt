@@ -32,10 +32,17 @@ class CommonMultiTest : TestBase() {
     fun testMultiDelay() = runTest {
         val value = Multi
                 .range(1, 10)
-                .delay(100) // 100ms delay for each item
+                .delay(10)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
         println("testMultiDelay : value = $value")
         assertEquals(12, value)
+    }
+
+    @Test
+    fun multiFromSequenceAndConsumeEach() = runTest {
+        val source = sequenceOf("58").toMulti()
+        // iterate over the source fully
+        source.consumeEach { assertEquals("58", it) }
     }
 }

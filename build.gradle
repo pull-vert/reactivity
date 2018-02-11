@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
+
 allprojects {
     group 'io.reactivity'
     def deployVersion = properties['DeployVersion']
@@ -22,7 +24,7 @@ buildscript {
 }
 
 // Report Kotlin compiler version when building project
-println("Using Kotlin compiler version: $org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION")
+println("Using Kotlin compiler version: $KotlinCompilerVersion.VERSION")
 
 // --------------- Configure sub-projects with Kotlin sources ---------------
 
@@ -128,7 +130,7 @@ subprojects {
 //}
 
 // --------------- Configure between subprojects dependencies ---------------
-configure(subprojects.findAll { it.name.contains('extra') || it.name == 'reactivity-jdk8' || it.name == 'reactivity' || it.name == 'reactivity-js' && it.name != 'reactivity-common'}) {
+configure(subprojects.findAll { it.name.contains('reactivity') && it.name != 'reactivity-common'}) {
     def platform = platformOf(it)
     def reactivity = platformLib("reactivity", platform)
 

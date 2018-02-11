@@ -16,5 +16,5 @@ fun <E> CompletableFuture<E>.toSolo() = object : Solo<E> {
 // -------------- Terminal (final/consuming) operations
 
 fun <E> Solo<E>.toCompletableFuture(coroutineContext: CoroutineContext = DefaultDispatcher) = future(coroutineContext) {
-    this@toCompletableFuture.await()
+    return@future this@toCompletableFuture.await()
 }

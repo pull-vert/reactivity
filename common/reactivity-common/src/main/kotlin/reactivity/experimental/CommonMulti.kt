@@ -77,7 +77,7 @@ inline suspend fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc:
 /**
  * Performs the given [action] for each received element.
  *
- * This function [consumes][consume] all elements of the original [Multi].
+ * This function consumes all elements of the original [Multi].
  */
 inline suspend fun <E> Multi<E>.consumeEach(crossinline action: (E) -> Unit) =
         consume(object : Sink<E> {

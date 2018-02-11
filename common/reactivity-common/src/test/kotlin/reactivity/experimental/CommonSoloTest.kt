@@ -16,7 +16,7 @@ class CommonSoloTest : TestBase() {
     @Test
     fun testSoloDelay() = runTest {
         val value = 12.toSolo()
-                .delay(100) // 100ms delay for the item
+                .delay(10)
                 .await()
         println("testSoloDelay : value = $value")
         assertEquals(12, value)
