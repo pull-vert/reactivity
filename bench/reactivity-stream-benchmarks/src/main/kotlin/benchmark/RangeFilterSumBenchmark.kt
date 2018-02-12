@@ -23,6 +23,7 @@ import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.buildSequence
 
 fun Int.isGood() = this % 4 == 0
+const val N = 1_000_000
 
 fun Channel.Factory.range(start: Int, count: Int, context: CoroutineContext = DefaultDispatcher) =
         produce(context) {
@@ -105,8 +106,6 @@ suspend fun <E, R> SuspendingSequence<E>.fold(initial: R, operation: suspend (ac
 }
 
 data class IntBox(var v: Int)
-
-const val N = 1_000_000
 
 open class RangeFilterSumBenchmark {
 
