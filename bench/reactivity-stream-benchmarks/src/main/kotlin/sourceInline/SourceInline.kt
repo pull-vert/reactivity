@@ -1,5 +1,7 @@
 package sourceInline
 
+import coroutines.ForkJoinPool
+import coroutines.launchSimple
 import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
@@ -98,7 +100,7 @@ inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = 
     }
 }
 
-fun <E : Any> SourceInline<E>.asyncSpSc(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceInline<E> {
+fun <E : Any> SourceInline<E>.asyncSpSc(buffer: Int, context: CoroutineContext = DefaultDispatcher): SourceInline<E> {
     val channel = SpScChannel<E>(buffer)
     return object : SourceInline<E> {
         suspend override fun consume(sink: Sink<E>) {
@@ -116,6 +118,76 @@ fun <E : Any> SourceInline<E>.asyncSpSc(context: CoroutineContext = DefaultDispa
             var cause: Throwable? = null
             try {
                 this@asyncSpSc.consume(object : Sink<E> {
+                    suspend override fun send(item: E) {
+                        channel.send(Element(item))
+                    }
+
+                    override fun close(cause: Throwable?) {
+                        cause?.let { throw it }
+                    }
+                })
+            } catch (e: Throwable) {
+                cause = e
+            }
+            val closeCause = cause ?: ClosedReceiveChannelException("Close")
+            channel.send(Element(closeCause = closeCause))
+        }
+    }
+}
+
+fun <E : Any> SourceInline<E>.asyncSpScLaunchSimple(buffer: Int, context: CoroutineContext = DefaultDispatcher): SourceInline<E> {
+    val channel = SpScChannel<E>(buffer)
+    return object : SourceInline<E> {
+        suspend override fun consume(sink: Sink<E>) {
+            launchSimple(context) {
+                try {
+                    while (true) {
+                        sink.send(channel.receive())
+                    }
+                } catch (e: Throwable) {
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    else sink.close(e)
+                }
+            }
+
+            var cause: Throwable? = null
+            try {
+                this@asyncSpScLaunchSimple.consume(object : Sink<E> {
+                    suspend override fun send(item: E) {
+                        channel.send(Element(item))
+                    }
+
+                    override fun close(cause: Throwable?) {
+                        cause?.let { throw it }
+                    }
+                })
+            } catch (e: Throwable) {
+                cause = e
+            }
+            val closeCause = cause ?: ClosedReceiveChannelException("Close")
+            channel.send(Element(closeCause = closeCause))
+        }
+    }
+}
+
+fun <E : Any> SourceInline<E>.asyncSpScLaunchSimpleFjp(buffer: Int, context: CoroutineContext = ForkJoinPool(16)): SourceInline<E> {
+    val channel = SpScChannel<E>(buffer)
+    return object : SourceInline<E> {
+        suspend override fun consume(sink: Sink<E>) {
+            launchSimple(context) {
+                try {
+                    while (true) {
+                        sink.send(channel.receive())
+                    }
+                } catch (e: Throwable) {
+                    if (e is ClosedReceiveChannelException) sink.close(null)
+                    else sink.close(e)
+                }
+            }
+
+            var cause: Throwable? = null
+            try {
+                this@asyncSpScLaunchSimpleFjp.consume(object : Sink<E> {
                     suspend override fun send(item: E) {
                         channel.send(Element(item))
                     }
@@ -166,4 +238,6 @@ fun <E : Any> SourceInline<E>.asyncMpMc(context: CoroutineContext = DefaultDispa
         }
     }
 }
+
+
 
