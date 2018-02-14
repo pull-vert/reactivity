@@ -15,7 +15,7 @@ fun ForkJoinPool(parallel: Int) = Pool(ForkJoinPool.commonPool(), parallel)
  */
 class Pool(
         val pool: ForkJoinPool,
-        parallel: Int
+        val parallel: Int
 ) : AbstractCoroutineContextElement(ContinuationInterceptor), ContinuationInterceptor {
 
     private val RA_CONTINUATION_UPDATER = AtomicReferenceFieldUpdater.newUpdater(Pool::class.java,
@@ -45,7 +45,9 @@ class Pool(
         val offset = calcElementOffset(index)
         soLazyIndex(index + 1)
         // create and return a new parent RecursiveActionContinuation
+//        println("index=$index")
         if (0 == offset) {
+//            println("offset = 0, index=$index, creating a new RecursiveActionContinuation and set it")
             val newRAContinuation = RecursiveActionContinuation(index, continuation.context.fold(continuation, { cont, element ->
                 if (element != this@Pool && element is ContinuationInterceptor)
                     element.interceptContinuation(cont) else cont
@@ -56,10 +58,14 @@ class Pool(
         // otherwise create a new child RecursiveActionContinuation
         // todo handle already computed parent
         val raContinuation = this.raContinuation
+        var execute = false
+        if ((parallel - 1) == offset) {
+            execute= true
+        }
         return RecursiveActionContinuation(index, continuation.context.fold(continuation, { cont, element ->
             if (element != this@Pool && element is ContinuationInterceptor)
                 element.interceptContinuation(cont) else cont
-        }), raContinuation)
+        }), raContinuation, pool, execute)
     }
 }
 
@@ -67,7 +73,8 @@ private class RecursiveActionContinuation<T>(
         val index: Long,
         val continuation: Continuation<T>,
         val parent: RecursiveActionContinuation<*>? = null,
-        val forkJoinPool: ForkJoinPool? = null
+        val forkJoinPool: ForkJoinPool? = null,
+        val execute: Boolean = false
 ) : RecursiveAction(), Continuation<T> by continuation {
 
     var result: Any? = null // T | Throwable
@@ -78,22 +85,22 @@ private class RecursiveActionContinuation<T>(
     }
 
     override fun resume(value: T) {
-        println("resume index=$index value=$value")
+//        println("resume index=$index value=$value")
         result = value
-        forkJoinPool?.execute(this) ?: compute()
+        forkJoinPool?.execute(this)
     }
 
     override fun resumeWithException(exception: Throwable) {
-        println("resumeWithException index=$index exception=$exception")
+//        println("resumeWithException index=$index exception=$exception")
         result = exception
-        forkJoinPool?.execute(this) ?: compute()
+        forkJoinPool?.execute(this)
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun compute() {
         // handle parent
         parent?.join()
-        println("compute index=$index result=$result")
+//        println("compute index=$index result=$result thread=${Thread.currentThread().name}")
         if (result is Throwable) continuation.resumeWithException(result as Throwable)
         continuation.resume(result as T)
     }

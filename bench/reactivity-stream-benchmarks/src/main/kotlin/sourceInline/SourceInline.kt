@@ -46,6 +46,7 @@ suspend fun <E, R> SourceInline<E>.fold(initial: R, operation: suspend (acc: R, 
     var acc = initial
     consume(object : Sink<E> {
         suspend override fun send(item: E) {
+            println("fold $item on thread=${Thread.currentThread().name}")
             acc = operation(acc, item)
         }
         override fun close(cause: Throwable?) { cause?.let { throw it } }
@@ -72,6 +73,7 @@ fun <E> SourceInline<E>.filter(predicate: suspend (E) -> Boolean) = object : Sou
         try {
             this@filter.consume(object : Sink<E> {
                 suspend override fun send(item: E) {
+                    println("filter $item on thread=${Thread.currentThread().name}")
                     if (predicate(item)) sink.send(item)
                 }
                 override fun close(cause: Throwable?) { cause?.let { throw it } }
@@ -170,7 +172,7 @@ fun <E : Any> SourceInline<E>.asyncSpScLaunchSimple(buffer: Int, context: Corout
     }
 }
 
-fun <E : Any> SourceInline<E>.asyncSpScLaunchSimpleFjp(buffer: Int, context: CoroutineContext = ForkJoinPool(16)): SourceInline<E> {
+fun <E : Any> SourceInline<E>.asyncSpScLaunchSimpleFjp(buffer: Int, context: CoroutineContext = ForkJoinPool(4)): SourceInline<E> {
     val channel = SpScChannel<E>(buffer)
     return object : SourceInline<E> {
         suspend override fun consume(sink: Sink<E>) {
