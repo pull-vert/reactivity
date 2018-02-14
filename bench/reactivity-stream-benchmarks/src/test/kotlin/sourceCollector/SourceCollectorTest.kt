@@ -12,11 +12,11 @@ class SourceCollectorTest: TestBase() {
     @Test
     fun testSourceCollectorSync() = runTest {
         val value = SourceCollector
-                .range(1, 10)
+                .range(1, 5)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
         println("testSourceCollectorSync : value = $value run on ${Thread.currentThread().name}")
-        assertEquals(12, value)
+        assertEquals(4, value)
     }
 
     @Test
@@ -34,7 +34,7 @@ class SourceCollectorTest: TestBase() {
     fun testSourceCollectorAsync() = runBlocking {
         val value = SourceCollector
                 .range(1, N)
-                .async(buffer = 128)
+                .async(buffer = 32)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
         println("testSourceCollectorAsync : value = $value run on ${Thread.currentThread().name}")

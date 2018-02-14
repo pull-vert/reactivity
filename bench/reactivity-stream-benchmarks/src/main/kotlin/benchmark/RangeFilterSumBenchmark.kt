@@ -333,14 +333,14 @@ open class RangeFilterSumBenchmark {
 //                .fold(0, { a, b -> a + b })
 //    }
 //
-//    @Benchmark
-//    fun testSourceInline(): Int = runBlocking {
-//        SourceInline
-//                .range(1, N)
-//                .filter2 { it.isGood() }
-//                .fold2(0, { a, b -> a + b })
-//    }
-//
+    @Benchmark
+    fun testSourceInline(): Int = runBlocking {
+        SourceInline
+                .range(1, N)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+    }
+
 //    @Benchmark
 //    fun testSourceInlineThreadBuffer128MpMc(): Int = runBlocking {
 //        SourceInline
@@ -378,6 +378,14 @@ open class RangeFilterSumBenchmark {
 //    }
 
     @Benchmark
+    fun testSourceCollector(): Int = runBlocking {
+        SourceCollector
+                .range(1, N)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+    }
+
+    @Benchmark
     fun testSourceCollectorThreadBuffer128SpScChannel(): Int = runBlocking {
         SourceCollector
                 .range(1, N)
@@ -402,15 +410,6 @@ open class RangeFilterSumBenchmark {
 //                .filter { it.isGood() }
 //                .fold(0, { a, b -> a + b })
 //    }
-
-//        @Benchmark
-//    fun testSourceCollector(): Int = runBlocking {
-//        SourceCollector
-//                .range(1, N)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//    }
-//
 //
 //    @Benchmark
 //    fun testSrcManBase(): Int = SrcManBase.noSuspend { cont ->

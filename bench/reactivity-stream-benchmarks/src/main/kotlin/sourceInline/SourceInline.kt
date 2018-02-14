@@ -54,15 +54,20 @@ suspend fun <E, R> SourceInline<E>.fold(initial: R, operation: suspend (acc: R, 
     return acc
 }
 
+inline suspend fun <E, T> SourceInline<E>.collect(sink: Sink<E>, crossinline collector: (Unit.() -> T)): T {
+    return collector(this@collect.consume(sink))
+}
+
 inline suspend fun <E, R> SourceInline<E>.fold2(initial: R, crossinline operation: (acc: R, E) -> R): R {
     var acc = initial
-    consume(object : Sink<E> {
+    return collect(object : Sink<E> {
         suspend override fun send(item: E) {
             acc = operation(acc, item)
         }
         override fun close(cause: Throwable?) { cause?.let { throw it } }
+    }, collector = {
+        return@collect acc
     })
-    return acc
 }
 
 // -------------- Intermediate (transforming) operations
