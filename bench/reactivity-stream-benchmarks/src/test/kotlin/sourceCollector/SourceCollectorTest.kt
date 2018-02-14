@@ -4,12 +4,13 @@ import benchmark.N
 import benchmark.isGood
 import kotlinx.coroutines.experimental.runBlocking
 import org.junit.Test
+import reactivity.experimental.TestBase
 import kotlin.test.assertEquals
 
-class SourceCollectorTest {
+class SourceCollectorTest: TestBase() {
 
     @Test
-    fun testSourceCollectorSync() = runBlocking {
+    fun testSourceCollectorSync() = runTest {
         val value = SourceCollector
                 .range(1, 10)
                 .filter { it.isGood() }
@@ -19,16 +20,27 @@ class SourceCollectorTest {
     }
 
     @Test
-    fun testSourceCollectorQuick() = runBlocking {
+    fun testSourceCollectorAsyncQuick() = runTest {
         val value = SourceCollector
                 .range(1, 10)
-                .async(buffer = 8)
+                .async(buffer = 2)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
-        println("testSourceCollectorQuick : value = $value run on ${Thread.currentThread().name}")
+        println("testSourceCollectorAsyncQuick : value = $value run on ${Thread.currentThread().name}")
         assertEquals(12, value)
     }
-//
+
+    @Test
+    fun testSourceCollectorAsync() = runBlocking {
+        val value = SourceCollector
+                .range(1, N)
+                .async(buffer = 128)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("testSourceCollectorAsync : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(446448416, value)
+    }
+
     //    @Test
 //    fun testSourceCollectorQuick() = runBlocking {
 //        val value = SourceCollector

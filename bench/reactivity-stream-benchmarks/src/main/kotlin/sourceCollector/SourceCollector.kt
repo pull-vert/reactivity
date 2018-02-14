@@ -47,7 +47,9 @@ inline suspend fun <E, R> SourceCollector<E>.fold(initial: R, crossinline operat
         override fun close(cause: Throwable?) {
             cause?.let { throw it }
         }
-    }, collector = { return@consume acc})!!
+    }, collector = {
+        return@consume acc
+    })!!
 }
 
 // -------------- Intermediate (transforming) operations
@@ -111,7 +113,7 @@ fun <E : Any> SourceCollector<E>.async(context: CoroutineContext = DefaultDispat
             val closeCause = cause ?: ClosedReceiveChannelException("close")
             channel.send(Element(closeCause = closeCause))
 
-            return null// deferred.await() // suspend and return the value of the Deferred
+            return deferred.await() // suspend and return the value of the Deferred
         }
     }
 }
