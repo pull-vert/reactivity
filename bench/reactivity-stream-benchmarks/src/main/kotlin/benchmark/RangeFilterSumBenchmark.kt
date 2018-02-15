@@ -2,6 +2,7 @@ package benchmark
 
 import io.reactivex.Flowable
 import io.reactivex.Observable
+import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.produce
@@ -358,41 +359,41 @@ open class RangeFilterSumBenchmark {
                 .filter2 { it.isGood() }
                 .fold2(0, { a, b -> a + b })
     }
-//
-//    @Benchmark
-//    fun testSourceInlineThreadBuffer128SpScLaunchSimple(): Int = runBlocking {
-//        SourceInline
-//                .range(1, N)
-//                .asyncSpScLaunchSimple(buffer = 128)
-//                .filter2 { it.isGood() }
-//                .fold2(0, { a, b -> a + b })
-//    }
-//
-//    @Benchmark
-//    fun testSourceInlineThreadBuffer128SpScLaunchSimpleFjp(): Int = runBlocking {
-//        SourceInline
-//                .range(1, N)
-//                .asyncSpScLaunchSimpleFjp(buffer = 128)
-//                .filter2 { it.isGood() }
-//                .fold2(0, { a, b -> a + b })
-//    }
 
     @Benchmark
-    fun testSourceCollector(): Int = runBlocking {
-        SourceCollector
+    fun testSourceInlineThreadBuffer128SpScLaunchSimpleCommon(): Int = runBlocking {
+        SourceInline
                 .range(1, N)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
+                .asyncSpScLaunchSimple(buffer = 128, context = CommonPool)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
     }
 
     @Benchmark
-    fun testSourceCollectorThreadBuffer128SpScChannel(): Int = runBlocking {
-        SourceCollector
+    fun testSourceInlineThreadBuffer128SpScLaunchSimpleQuasar(): Int = runBlocking {
+        SourceInline
                 .range(1, N)
-                .async(buffer = 128)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
+                .asyncSpScLaunchSimple(buffer = 128)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
     }
+
+//    @Benchmark
+//    fun testSourceCollector(): Int = runBlocking {
+//        SourceCollector
+//                .range(1, N)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
+
+//    @Benchmark
+//    fun testSourceCollectorThreadBuffer128SpScChannel(): Int = runBlocking {
+//        SourceCollector
+//                .range(1, N)
+//                .async(buffer = 128)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
 
 //    @Benchmark
 //    fun testMulti(): Int = runBlocking {

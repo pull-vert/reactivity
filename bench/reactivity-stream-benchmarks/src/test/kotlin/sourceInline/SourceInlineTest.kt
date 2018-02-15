@@ -43,26 +43,25 @@ class SourceInlineTest {
         assertEquals(446448416, value)
     }
 
-    @Test
-    fun testSourceInlineSpScQuick() = runBlocking {
-        val value = SourceInline
-                .range(1, 10)
-                .asyncSpSc(buffer = 128)
-                .filter2 { it.isGood() }
-                .fold2(0, { a, b -> a + b })
-        println("testSourceInlineSpScQuick : value = $value run on ${Thread.currentThread().name}")
-        assertEquals(12, value)
-    }
-
 //    @Test
-//    fun testSourceInlineThreadBuffer128SpScLaunchSimpleFjp() = runBlocking {
+//    fun testSourceInlineSpScQuick() = runBlocking {
 //        val value = SourceInline
 //                .range(1, 10)
-//                .asyncSpScLaunchSimpleFjp(buffer = 128)
+//                .asyncSpSc(buffer = 128)
 //                .filter2 { it.isGood() }
 //                .fold2(0, { a, b -> a + b })
-//        delay(1000)
-//        println("testSourceInlineThreadBuffer128SpScLaunchSimpleFjp : value = $value run on ${Thread.currentThread().name}")
+//        println("testSourceInlineSpScQuick : value = $value run on ${Thread.currentThread().name}")
 //        assertEquals(12, value)
 //    }
+
+    @Test
+    fun testSourceInlineSpScLaunchSimpleQuasar() = runBlocking {
+        val value = SourceInline
+                .range(1, N)
+                .asyncSpScLaunchSimple(buffer = 128)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+        println("testSourceInlineSpScLaunchSimpleQuasar : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(446448416, value)
+    }
 }
