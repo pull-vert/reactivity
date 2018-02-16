@@ -25,7 +25,7 @@ interface Sink<in E> {
 // -------------- Factory (initial/producing) operations
 
 fun SourceInline.Factory.range(start: Int, count: Int): SourceInline<Int> = object : SourceInline<Int> {
-    suspend override fun consume(sink: Sink<Int>) {
+    override suspend fun consume(sink: Sink<Int>) {
         var cause: Throwable? = null
         try {
             for (i in start until (start + count)) {
