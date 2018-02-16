@@ -19,6 +19,16 @@ class SourceInlineTest {
     }
 
     @Test
+    fun testSourceInlineQuick() = runBlocking {
+        val value = SourceInline
+                .range(1, 10)
+                .filter2 { it.isGood() }
+                .fold2(0, { a, b -> a + b })
+        println("testSourceInlineQuick : value = $value run on ${Thread.currentThread().name}")
+        assertEquals(12, value)
+    }
+
+    @Test
     fun testSourceInlineMpMc() = runBlocking {
         val value = SourceInline
                 .range(1, N)

@@ -21,7 +21,7 @@ interface Sink<in E> {
 // -------------- Factory (initial/producing) operations
 
 fun SourceCollector.Factory.range(start: Int, count: Int): SourceCollector<Int> = object : SourceCollector<Int> {
-    suspend override fun <T> consume(sink: Sink<Int>, collector: (() -> T)?): T? {
+    override suspend fun <T> consume(sink: Sink<Int>, collector: (() -> T)?): T? {
         var cause: Throwable? = null
         try {
             for (i in start until (start + count)) {
@@ -40,7 +40,7 @@ fun SourceCollector.Factory.range(start: Int, count: Int): SourceCollector<Int> 
 inline suspend fun <E, R> SourceCollector<E>.fold(initial: R, crossinline operation: (acc: R, E) -> R): R {
     var acc = initial
     return consume(object : Sink<E> {
-        suspend override fun send(item: E) {
+        override suspend fun send(item: E) {
             acc = operation(acc, item)
         }
 
@@ -55,11 +55,11 @@ inline suspend fun <E, R> SourceCollector<E>.fold(initial: R, crossinline operat
 // -------------- Intermediate (transforming) operations
 
 inline fun <E> SourceCollector<E>.filter(crossinline predicate: (E) -> Boolean) = object : SourceCollector<E> {
-    suspend override fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
+    override suspend fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
         var cause: Throwable? = null
         try {
             this@filter.consume<Unit>(object : Sink<E> {
-                suspend override fun send(item: E) {
+                override suspend fun send(item: E) {
                     if (predicate(item)) sink.send(item)
                 }
 
@@ -80,7 +80,7 @@ inline fun <E> SourceCollector<E>.filter(crossinline predicate: (E) -> Boolean) 
 fun <E : Any> SourceCollector<E>.async(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceCollector<E> {
     val channel = SpScChannel<E>(buffer)
     return object : SourceCollector<E> {
-        suspend override fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
+        override suspend fun <T> consume(sink: Sink<E>, collector: (() -> T)?): T? {
             // Get return value of async coroutine as a Deferred (work as JDK Future or JS Promise)
             // 2) Return elements consumed from async buffer
             val deferred = kotlinx.coroutines.experimental.async(context) {
@@ -99,7 +99,7 @@ fun <E : Any> SourceCollector<E>.async(context: CoroutineContext = DefaultDispat
             var cause: Throwable? = null
             try {
                 this@async.consume<Unit>(object : Sink<E> {
-                    suspend override fun send(item: E) {
+                    override suspend fun send(item: E) {
                         channel.send(Element(item))
                     }
 
