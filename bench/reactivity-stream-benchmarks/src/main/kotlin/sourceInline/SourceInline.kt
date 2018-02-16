@@ -43,7 +43,7 @@ fun SourceInline.Factory.range(start: Int, count: Int): SourceInline<Int> = obje
 suspend fun <E, R> SourceInline<E>.fold(initial: R, operation: suspend (acc: R, E) -> R): R {
     var acc = initial
     consume(object : Sink<E> {
-        suspend override fun send(item: E) {
+        override suspend fun send(item: E) {
             println("fold $item on thread=${Thread.currentThread().name}")
             acc = operation(acc, item)
         }
@@ -52,14 +52,10 @@ suspend fun <E, R> SourceInline<E>.fold(initial: R, operation: suspend (acc: R, 
     return acc
 }
 
-//inline suspend fun <E, T> SourceInline<E>.collect(sink: Sink<E>, crossinline collector: (Unit.() -> T)): T {
-//    return collector(this@collect.consume(sink))
-//}
-
-inline suspend fun <E, R> SourceInline<E>.fold2(initial: R, crossinline operation: (acc: R, E) -> R): R {
+suspend inline fun <E, R> SourceInline<E>.fold2(initial: R, crossinline operation: (acc: R, E) -> R): R {
     var acc = initial
     consume(object : Sink<E> {
-        suspend override fun send(item: E) {
+        override suspend fun send(item: E) {
             acc = operation(acc, item)
         }
         override fun close(cause: Throwable?) { cause?.let { throw it } }
@@ -70,11 +66,11 @@ inline suspend fun <E, R> SourceInline<E>.fold2(initial: R, crossinline operatio
 // -------------- Intermediate (transforming) operations
 
 fun <E> SourceInline<E>.filter(predicate: suspend (E) -> Boolean) = object : SourceInline<E> {
-    suspend override fun consume(sink: Sink<E>) {
+    override suspend fun consume(sink: Sink<E>) {
         var cause: Throwable? = null
         try {
             this@filter.consume(object : Sink<E> {
-                suspend override fun send(item: E) {
+                override suspend fun send(item: E) {
                     println("filter $item on thread=${Thread.currentThread().name}")
                     if (predicate(item)) sink.send(item)
                 }
@@ -88,11 +84,11 @@ fun <E> SourceInline<E>.filter(predicate: suspend (E) -> Boolean) = object : Sou
 }
 
 inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = object : SourceInline<E> {
-    suspend override fun consume(sink: Sink<E>) {
+    override suspend fun consume(sink: Sink<E>) {
         var cause: Throwable? = null
         try {
             this@filter2.consume(object : Sink<E> {
-                suspend override fun send(item: E) {
+                override suspend fun send(item: E) {
                     if (predicate(item)) sink.send(item)
                 }
                 override fun close(cause: Throwable?) { cause?.let { throw it } }
@@ -107,7 +103,7 @@ inline fun <E> SourceInline<E>.filter2(crossinline predicate: (E) -> Boolean) = 
 fun <E : Any> SourceInline<E>.asyncSpSc(buffer: Int, context: CoroutineContext = DefaultDispatcher): SourceInline<E> {
     val channel = SpScChannel<E>(buffer)
     return object : SourceInline<E> {
-        suspend override fun consume(sink: Sink<E>) {
+        override suspend fun consume(sink: Sink<E>) {
             launch(context) {
                 try {
                     while (true) {
@@ -122,7 +118,7 @@ fun <E : Any> SourceInline<E>.asyncSpSc(buffer: Int, context: CoroutineContext =
             var cause: Throwable? = null
             try {
                 this@asyncSpSc.consume(object : Sink<E> {
-                    suspend override fun send(item: E) {
+                    override suspend fun send(item: E) {
                         channel.send(Element(item))
                     }
 
@@ -142,7 +138,7 @@ fun <E : Any> SourceInline<E>.asyncSpSc(buffer: Int, context: CoroutineContext =
 fun <E : Any> SourceInline<E>.asyncSpScLaunchSimple(buffer: Int, context: CoroutineContext = QuasarFiber): SourceInline<E> {
     val channel = SpScChannel<E>(buffer)
     return object : SourceInline<E> {
-        suspend override fun consume(sink: Sink<E>) {
+        override suspend fun consume(sink: Sink<E>) {
             launchSimple(context) {
                 try {
                     while (true) {
@@ -157,7 +153,7 @@ fun <E : Any> SourceInline<E>.asyncSpScLaunchSimple(buffer: Int, context: Corout
             var cause: Throwable? = null
             try {
                 this@asyncSpScLaunchSimple.consume(object : Sink<E> {
-                    suspend override fun send(item: E) {
+                    override suspend fun send(item: E) {
                         channel.send(Element(item))
                     }
 
@@ -177,7 +173,7 @@ fun <E : Any> SourceInline<E>.asyncSpScLaunchSimple(buffer: Int, context: Corout
 fun <E : Any> SourceInline<E>.asyncMpMc(context: CoroutineContext = DefaultDispatcher, buffer: Int = 0): SourceInline<E> {
     val channel = Channel<E>(buffer)
     return object : SourceInline<E> {
-        suspend override fun consume(sink: Sink<E>) {
+        override suspend fun consume(sink: Sink<E>) {
             launch(context) {
                 try {
                     while (true) {
@@ -192,7 +188,7 @@ fun <E : Any> SourceInline<E>.asyncMpMc(context: CoroutineContext = DefaultDispa
             var cause: Throwable? = null
             try {
                 this@asyncMpMc.consume(object : Sink<E> {
-                    suspend override fun send(item: E) {
+                    override suspend fun send(item: E) {
                         channel.send(item)
                     }
 

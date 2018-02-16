@@ -21,6 +21,10 @@ jmhReport {
     jmhReportOutput = project.file(buildDir)
 }
 
+tasks.withType(JavaExec) {
+    jvmArgs "-javaagent:${configurations.quasar.iterator().next()}"
+}
+
 task runJMH(type: JavaExec) {
     main = "benchmark.BenchJava"
     classpath sourceSets.main.runtimeClasspath
