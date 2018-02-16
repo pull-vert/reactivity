@@ -4,13 +4,15 @@ include 'reactivity-common'
 
 include 'reactivity'
 
-include 'reactivity-stream-benchmarks'
-
 include 'reactivity-js'
+
+//include 'reactivity-native'
 
 include 'reactivity-jdk8'
 include 'reactivity-javafx'
 include 'reactivity-swing'
+
+include 'reactivity-stream-benchmarks'
 //include 'reactivity-extra-nio'
 
 // include 'reactivity-http2'
@@ -23,3 +25,4 @@ project(':reactivity-javafx').projectDir = file('samples/reactivity-javafx')
 project(':reactivity-swing').projectDir = file('samples/reactivity-swing')
 //project(':reactivity-extra-nio').projectDir = file('core/extras/nio/reactivity-extra-nio')
 project(':reactivity-js').projectDir = file('js/reactivity-js')
+//project(':reactivity-native').projectDir = file('native/reactivity-native')

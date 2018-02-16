@@ -12,6 +12,7 @@ buildscript {
         // needed for atomicfu dependency
 //        maven { url "http://kotlin.bintray.com/kotlinx" }
         maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://dl.bintray.com/jetbrains/kotlin-native-dependencies" }
     }
 
     dependencies {
@@ -20,6 +21,7 @@ buildscript {
 //        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicFU_version"
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:$bintray_version"
         classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
+        classpath "org.jetbrains.kotlin:kotlin-native-gradle-plugin:$kotlin_native_version"
     }
 }
 
@@ -31,6 +33,7 @@ println("Using Kotlin compiler version: $KotlinCompilerVersion.VERSION")
 static def platformOf(project) {
     if (project.name.endsWith("-common")) return "common"
     if (project.name.endsWith("-js")) return "js"
+    if (project.name.endsWith("-native")) return "native"
     return "jvm"
 }
 
@@ -39,7 +42,7 @@ static def platformLib(base, platform) {
     return "$base-$platform"
 }
 
-subprojects {
+configure(subprojects.findAll { !it.name.endsWith("-native") }) {
     def platform = platformOf(it)
     apply plugin: "kotlin-platform-$platform"
 
@@ -69,8 +72,8 @@ subprojects {
             showStandardStreams = true
             events "passed", "failed"
         }
-        def stressTest = project.properties['stressTest']
-        if (stressTest != null) systemProperties['stressTest'] = stressTest
+//        def stressTest = project.properties['stressTest']
+//        if (stressTest != null) systemProperties['stressTest'] = stressTest
     }
 
     repositories {
@@ -130,7 +133,7 @@ subprojects {
 //}
 
 // --------------- Configure between subprojects dependencies ---------------
-configure(subprojects.findAll { it.name.contains('reactivity') && it.name != 'reactivity-common'}) {
+configure(subprojects.findAll { it.name.contains('reactivity') && !it.name.endsWith("-common") && !it.name.endsWith("-native") }) {
     def platform = platformOf(it)
     def reactivity = platformLib("reactivity", platform)
 
@@ -155,30 +158,30 @@ configure(subprojects.findAll { it.name.contains('reactivity') && it.name != 're
 
 // --------------- Configure sub-projects that are published ---------------
 
-subprojects {
+configure(subprojects.findAll { !it.name.endsWith("-native") }) {
     apply from: rootProject.file('gradle/dokka.gradle')
     apply from: rootProject.file('gradle/publish-bintray.gradle')
 }
 
-subprojects {
-    def platform = platformOf(it)
-    def reactivity = platformLib("reactivity", platform)
-
-    if (it.name != reactivity) {
+//subprojects {
+//    def platform = platformOf(it)
+//    def reactivity = platformLib("reactivity", platform)
+//
+//    if (it.name != reactivity) {
 //        dokka.dependsOn project(":$reactivity").dokka
-
+//
 //        tasks.withType(dokka.getClass()) {
 //            externalDocumentationLink {
 //                url = new URL(core_docs_url)
 //                packageListUrl = new URL("file://$core_docs_file")
 //            }
 //        }
-    }
-
-    if (platform == "jvm") {
+//    }
+//
+//    if (platform == "jvm") {
 //        dokkaJavadoc.dependsOn project(":$reactivity").dokka
-    }
-}
+//    }
+//}
 
 apply plugin: 'base'
 
