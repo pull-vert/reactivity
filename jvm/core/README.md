@@ -15,7 +15,7 @@ It contains also extras reactivity dependencies to use for special needs :
 
 ## Modules
 
-For JDK6 and JDK7, use [reactivity-core](reactivity-core/README.md)<br />
+For JDK6 and JDK7, use [reactivity-core](reactivity/README.md)<br />
 For JDK8 and JDK9, use [reactivity-jdk8](reactivity-jdk8/README.md)<br />
 
 **Inspirations :**<br />
