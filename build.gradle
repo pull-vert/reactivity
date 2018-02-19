@@ -150,12 +150,6 @@ configure(subprojects.findAll { it.name.contains('reactivity') && !it.name.endsW
     }
 }
 
-//project(':reactivity-http2') {
-//    dependencies {
-//        compile project(':core:nio:reactivity-nio-jdk8')
-//    }
-//}
-
 // --------------- Configure sub-projects that are published ---------------
 
 configure(subprojects.findAll { !it.name.endsWith("-native") }) {
