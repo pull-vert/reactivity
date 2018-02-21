@@ -2,9 +2,13 @@ package benchmark
 
 import io.reactivex.Flowable
 import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.experimental.CommonPool
 import kotlinx.coroutines.experimental.DefaultDispatcher
+import kotlinx.coroutines.experimental.Unconfined
 import kotlinx.coroutines.experimental.channels.Channel
+import kotlinx.coroutines.experimental.channels.filter
+import kotlinx.coroutines.experimental.channels.fold
 import kotlinx.coroutines.experimental.channels.produce
 import kotlinx.coroutines.experimental.reactive.consumeEach
 import kotlinx.coroutines.experimental.reactive.publish
@@ -19,8 +23,11 @@ import reactivity.experimental.*
 import reactor.core.publisher.Flux
 import sourceCollector.*
 import sourceInline.*
+import srcmanbase.*
 import suspendingSequence.SuspendingSequence
 import suspendingSequence.suspendingSequence
+import java.util.stream.Collectors
+import java.util.stream.Stream
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.buildSequence
 
@@ -110,24 +117,6 @@ suspend fun <E, R> SuspendingSequence<E>.fold(initial: R, operation: suspend (ac
 data class IntBox(var v: Int)
 
 open class RangeFilterSumBenchmark {
-
-    //    @Benchmark
-//    fun testSourceCollectorThreadBuffer128SpScChannel7(): Int = runBlocking {
-//        SourceCollector
-//                .range(1, N)
-//                .async7(newSingleThreadContext("test3"), buffer = 128)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//    }
-    //    @Benchmark
-//    fun testSourceCollectorThreadBuffer128SpScChannel4(): Int = runBlocking {
-//        SourceCollector
-//                .range(1, N)
-//                .async4(newSingleThreadContext("test"), buffer = 128)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//    }
-//
 
 //    @Benchmark
 //    fun testBaselineLoop(): Int {
@@ -297,26 +286,6 @@ open class RangeFilterSumBenchmark {
 //            .fold(0, { a, b -> a + b })
 //    }
 //
-//
-//    @Benchmark
-//    fun testSourceThread(): Int = runBlocking {
-//        Source
-//            .range(1, N)
-//            .async()
-//            .filter { it.isGood() }
-//            .fold(0, { a, b -> a + b })
-//    }
-//
-//
-//    @Benchmark
-//    fun testSource(): Int = runBlocking {
-//        Source
-//            .range(1, N)
-//            .filter{ it.isGood() }
-//            .fold(0, { a, b -> a + b })
-//    }
-//
-//
 //        @Benchmark
 //    fun testJavaStream(): Int =
 //        Stream
@@ -325,23 +294,15 @@ open class RangeFilterSumBenchmark {
 //            .filter { it.isGood() }
 //            .collect(Collectors.summingInt { it })
 //
+//
 //    @Benchmark
-//    fun testSourceThreadBuffer128ArrayChannel(): Int = runBlocking {
-//        Source
+//    fun testSourceInline(): Int = runBlocking {
+//        SourceInline
 //                .range(1, N)
-//                .async(buffer = 128)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
+//                .filter2 { it.isGood() }
+//                .fold2(0, { a, b -> a + b })
 //    }
 //
-    @Benchmark
-    fun testSourceInline(): Int = runBlocking {
-        SourceInline
-                .range(1, N)
-                .filter2 { it.isGood() }
-                .fold2(0, { a, b -> a + b })
-    }
-
 //    @Benchmark
 //    fun testSourceInlineThreadBuffer128MpMc(): Int = runBlocking {
 //        SourceInline
@@ -377,15 +338,15 @@ open class RangeFilterSumBenchmark {
 //                .filter2 { it.isGood() }
 //                .fold2(0, { a, b -> a + b })
 //    }
-
-    @Benchmark
-    fun testSourceCollector(): Int = runBlocking {
-        SourceCollector
-                .range(1, N)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-    }
-
+//
+//    @Benchmark
+//    fun testSourceCollector(): Int = runBlocking {
+//        SourceCollector
+//                .range(1, N)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
+//
 //    @Benchmark
 //    fun testSourceCollectorThreadBuffer128SpScChannel(): Int = runBlocking {
 //        SourceCollector
@@ -394,7 +355,7 @@ open class RangeFilterSumBenchmark {
 //                .filter { it.isGood() }
 //                .fold(0, { a, b -> a + b })
 //    }
-
+//
 //    @Benchmark
 //    fun testMulti(): Int = runBlocking {
 //        Multi
@@ -402,16 +363,16 @@ open class RangeFilterSumBenchmark {
 //                .filter { it.isGood() }
 //                .fold(0, { a, b -> a + b })
 //    }
-//
-//    @Benchmark
-//    fun testMultiThreadBuffer128(): Int = runBlocking {
-//        Multi
-//                .range(1, N)
-//                .async(buffer = 128)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//    }
-//
+
+    @Benchmark
+    fun testMultiThreadBuffer128(): Int = runBlocking {
+        Multi
+                .range(1, N)
+                .async(buffer = 128)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+    }
+
 //    @Benchmark
 //    fun testSrcManBase(): Int = SrcManBase.noSuspend { cont ->
 //        SrcManBase
