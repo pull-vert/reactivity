@@ -133,7 +133,7 @@ configure(subprojects.findAll { !it.name.endsWith("-native") }) {
 //}
 
 // --------------- Configure between subprojects dependencies ---------------
-configure(subprojects.findAll { it.name.contains('reactivity') && !it.name.endsWith("-common") && !it.name.endsWith("-native") }) {
+configure(subprojects.findAll { it.name.contains('reactivity') && !it.name.endsWith("-common") && !it.name.endsWith("-native") && !it.name.endsWith("-http2") }) {
     def platform = platformOf(it)
     def reactivity = platformLib("reactivity", platform)
 
