@@ -12,11 +12,14 @@ object TcpServerMain {
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
         TcpServer(doOnNewSocketChannel = { client ->
-            val buffer = ByteBuffer.allocate(BUFFER_SIZE)
-            val bytes = withTimeout(CLIENT_READ_TIMEOUT) { client.aRead(buffer) }
-            buffer.flip()
-            logger.debug("Reading $bytes bytes : ${Charsets.UTF_8.decode(buffer)}")
-            buffer.clear()
+            // will finally close the client
+            client.use {
+                val buffer = ByteBuffer.allocate(BUFFER_SIZE)
+                val bytes = withTimeout(CLIENT_READ_TIMEOUT) { it.aRead(buffer) }
+                buffer.flip()
+                logger.debug("Reading $bytes bytes : ${Charsets.UTF_8.decode(buffer)}")
+                buffer.clear()
+            }
         }).launch(coroutineContext)
     }
 }

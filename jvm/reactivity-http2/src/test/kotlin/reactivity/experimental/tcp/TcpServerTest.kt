@@ -14,18 +14,21 @@ import java.nio.channels.AsynchronousSocketChannel
 
 private val logger = KotlinLogging.logger {}
 
-class TcpServerTest: TestBase() {
+class TcpServerTest : TestBase() {
     @Test
     fun tcpServerReadAndWrite() = runTest {
         val server = TcpServer(doOnNewSocketChannel = { client ->
-            val buffer = ByteBuffer.allocate(2)
-            client.aRead(buffer)
-            buffer.flip()
-            val received = Charsets.UTF_8.decode(buffer).toString()
-            logger.debug { "server received $received" }
-            Assert.assertEquals("OK", received)
+            // will finally close the client
+            client.use {
+                val buffer = ByteBuffer.allocate(2)
+                it.aRead(buffer)
+                buffer.flip()
+                val received = Charsets.UTF_8.decode(buffer).toString()
+                logger.debug { "server received $received" }
+                Assert.assertEquals("OK", received)
 
-            client.aWrite(Charsets.UTF_8.encode("123"))
+                it.aWrite(Charsets.UTF_8.encode("123"))
+            }
         })
         server.launch(coroutineContext)
 
@@ -33,7 +36,7 @@ class TcpServerTest: TestBase() {
             val connection =
                     AsynchronousSocketChannel.open()
             // async calls
-            connection.aConnect(InetSocketAddress("127.0.0.1", DEFAULT_SERVER_PORT))
+            connection.aConnect(InetSocketAddress("127.0.0.1", DEFAULT_TCP_SERVER_PORT))
             connection.aWrite(Charsets.UTF_8.encode("OK"))
             logger.debug { "writing OK" }
 
@@ -45,7 +48,7 @@ class TcpServerTest: TestBase() {
             val received = Charsets.UTF_8.decode(buffer).toString()
             logger.debug { "client received $received" }
             Assert.assertEquals("123", received)
-            server.shutdown()
+            server.shutdown() // shutdown TcpServer
         }
 
         server.serverJob.join()
