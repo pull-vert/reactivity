@@ -1,15 +1,15 @@
 package reactivity.experimental.http2.ssl
 
-import java.nio.ByteBuffer
-import java.nio.channels.SocketChannel
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLEngine
-import javax.net.ssl.SSLEngineResult.HandshakeStatus
-import javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_UNWRAP
+import org.eclipse.jetty.alpn.ALPN
 import java.io.FileInputStream
+import java.nio.ByteBuffer
 import java.security.KeyStore
 import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLEngine
+import javax.net.ssl.SSLEngineResult
 import javax.net.ssl.TrustManagerFactory
+
 
 // https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#SSLSocketFactory
 // http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html
@@ -42,26 +42,145 @@ fun createSSLEngine(
     // Create the engine
     val engine = sslContext.createSSLEngine("localhost", port)
     engine.useClientMode = false
-    engine.needClientAuth = true
+//    engine.needClientAuth = true // really needed ?
 }
 
-fun doHandshake(socketChannel: SocketChannel, engine: SSLEngine,
-                myNetData: ByteBuffer, peerNetData: ByteBuffer) {
-    // Create byte buffers to use for holding application data
-    val appBufferSize = engine.session.applicationBufferSize
-    val myAppData = ByteBuffer.allocate(appBufferSize)
-    val peerAppData = ByteBuffer.allocate(appBufferSize)
+class SSLEnginAlpn {
 
-    // Begin handshake
-    engine.beginHandshake()
-    val hs = engine.handshakeStatus
+    fun performTLSHandshake(serverSSLEngine: SSLEngine) {
+        val encrypted = ByteBuffer.allocate(serverSSLEngine.session.packetBufferSize)
+        val decrypted = ByteBuffer.allocate(serverSSLEngine.session.applicationBufferSize)
 
-    // Process handshaking message
-    while (hs != HandshakeStatus.FINISHED &&
-            hs != HandshakeStatus.NOT_HANDSHAKING) {
-        when (hs) {
+        ALPN.put(serverSSLEngine, object : ALPN.ServerProvider {
+            override fun unsupported() {
+                ALPN.remove(serverSSLEngine)
+            }
 
-            NEED_UNWRAP -> {
+            override fun select(protocols: List<String>): String {
+                ALPN.remove(serverSSLEngine)
+                return protocols[0]
+            }
+        })
+        serverSSLEngine.beginHandshake()
+//    Assert.assertSame(SSLEngineResult.HandshakeStatus.NEED_UNWRAP, serverSSLEngine.getHandshakeStatus());
+
+        // Read the ClientHello
+        unwrap(serverSSLEngine, encrypted, decrypted)
+        // Generate and write ServerHello (and other messages)
+        wrap(serverSSLEngine, decrypted, encrypted)
+        // Read ClientKeyExchange, ChangeCipherSpec and Finished
+        unwrap(serverSSLEngine, encrypted, decrypted)
+        // Generate and write ChangeCipherSpec and Finished
+        wrap(serverSSLEngine, decrypted, encrypted)
+
+//        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus());
+
+    }
+
+    protected fun performTLSClose(serverSSLEngine: SSLEngine) {
+        val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
+        val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
+
+        unwrap(serverSSLEngine, encrypted, decrypted)
+        wrap(serverSSLEngine, decrypted, encrypted)
+
+//        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus())
+    }
+
+    protected fun performDataExchange(serverSSLEngine: SSLEngine) {
+        val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
+        val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
+
+//        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus())
+
+        // Write the data.
+        encrypted.clear()
+        decrypted.clear()
+
+        // Read the data.
+        encrypted.flip()
+        decrypted.clear()
+        var result = serverSSLEngine.unwrap(encrypted, decrypted)
+//        Assert.assertSame(SSLEngineResult.Status.OK, result.getStatus())
+
+        // Write the data back =
+        encrypted.clear()
+        decrypted.flip()
+        result = serverSSLEngine.wrap(decrypted, encrypted)
+//        Assert.assertSame(SSLEngineResult.Status.OK, result.getStatus())
+    }
+
+    protected fun performTLSRenegotiation(serverSSLEngine: SSLEngine) {
+        val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
+        val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
+
+        serverSSLEngine.beginHandshake()
+//            Assert.assertSame(SSLEngineResult.HandshakeStatus.NEED_WRAP, serverSSLEngine.getHandshakeStatus())
+
+         wrap(serverSSLEngine, decrypted, encrypted)
+        unwrap(serverSSLEngine, encrypted, decrypted)
+        wrap(serverSSLEngine, decrypted, encrypted)
+        unwrap(serverSSLEngine, encrypted, decrypted)
+
+//        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus())
+    }
+
+    private fun wrap(sslEngine: SSLEngine, decrypted: ByteBuffer, encrypted: ByteBuffer) {
+        encrypted.clear()
+        val tmp = ByteBuffer.allocate(encrypted.capacity())
+        while (true) {
+            encrypted.clear()
+            val result = sslEngine.wrap(decrypted, encrypted)
+            val status = result.status
+            if (status != SSLEngineResult.Status.OK && status != SSLEngineResult.Status.CLOSED)
+                throw AssertionError(status.toString())
+            encrypted.flip()
+            tmp.put(encrypted)
+            if (result.handshakeStatus != SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+                tmp.flip()
+                encrypted.clear()
+                encrypted.put(tmp).flip()
+                return
+            }
+        }
+    }
+
+    private fun unwrap(sslEngine: SSLEngine, encrypted: ByteBuffer, decrypted: ByteBuffer) {
+        decrypted.clear()
+        while (true) {
+            decrypted.clear()
+            val result = sslEngine.unwrap(encrypted, decrypted)
+            val status = result.status
+            if (status != SSLEngineResult.Status.OK && status != SSLEngineResult.Status.CLOSED)
+                throw AssertionError(status.toString())
+            var handshakeStatus: SSLEngineResult.HandshakeStatus = result.handshakeStatus
+            if (handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+                sslEngine.delegatedTask.run()
+                handshakeStatus = sslEngine.handshakeStatus
+            }
+            if (handshakeStatus != SSLEngineResult.HandshakeStatus.NEED_UNWRAP)
+                return
+        }
+    }
+}
+
+//fun doHandshake(socketChannel: SocketChannel, engine: SSLEngine,
+//                myNetData: ByteBuffer, peerNetData: ByteBuffer) {
+//    // Create byte buffers to use for holding application data
+//    val appBufferSize = engine.session.applicationBufferSize
+//    val myAppData = ByteBuffer.allocate(appBufferSize)
+//    val peerAppData = ByteBuffer.allocate(appBufferSize)
+//
+//    // Begin handshake
+//    engine.beginHandshake()
+//    val hs = engine.handshakeStatus
+//
+//    // Process handshaking message
+//    while (hs != HandshakeStatus.FINISHED &&
+//            hs != HandshakeStatus.NOT_HANDSHAKING) {
+//        when (hs) {
+//
+//            NEED_UNWRAP -> {
                 // Receive handshaking data from peer
 //            if (socketChannel.read(peerNetData) < 0) {
 //                // The channel has reached end-of-stream
@@ -82,7 +201,7 @@ fun doHandshake(socketChannel: SocketChannel, engine: SSLEngine,
 //                // Handle other status: BUFFER_UNDERFLOW, BUFFER_OVERFLOW, CLOSED
 //                ...
 //            }
-            }
+//            }
             // Receive handshaking data from peer
 //            if (socketChannel.read(peerNetData) < 0) {
 //                // The channel has reached end-of-stream
@@ -141,4 +260,4 @@ fun doHandshake(socketChannel: SocketChannel, engine: SSLEngine,
 //    // Processes after handshaking
 //    ...
 //}
-}
+//}

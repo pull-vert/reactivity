@@ -20,16 +20,7 @@ class Http2Server(
         backlog: Int = BACKLOG,
         sslEngine: SSLEngine
 ) : TcpServer(hostname, port, backlog, { client ->
-        ALPN.put(sslEngine, object : ALPN.ServerProvider {
-                override fun unsupported() {
-                        ALPN.remove(sslEngine)
-                }
 
-                override fun select(protocols: List<String>): String {
-                        ALPN.remove(sslEngine)
-                        return protocols[0]
-                }
-        })
         object: Multi<ByteBuffer> {
                 suspend override fun consume(sink: Sink<ByteBuffer>) {
                         var cause: Throwable? = null
