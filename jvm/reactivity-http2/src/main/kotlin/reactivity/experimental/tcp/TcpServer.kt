@@ -12,8 +12,6 @@ import kotlin.coroutines.experimental.CoroutineContext
 
 val DEFAULT_TCP_SERVER_PORT = 12345
 val BACKLOG = 0
-val CLIENT_READ_TIMEOUT = 30000L // 30 sec
-val CLIENT_WRITE_TIMEOUT = 1000L // 1 sec
 val BUFFER_SIZE = 1024
 
 open class TcpServer(hostname: String? = null,

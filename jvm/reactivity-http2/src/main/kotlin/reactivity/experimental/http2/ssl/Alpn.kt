@@ -1,14 +1,16 @@
 package reactivity.experimental.http2.ssl
 
 import org.eclipse.jetty.alpn.ALPN
+import reactivity.experimental.CLIENT_READ_TIMEOUT
+import reactivity.experimental.TIMEOUT_UNIT
+import reactivity.experimental.aReadWithTimeout
+import reactivity.experimental.aWriteWithTimeout
 import java.io.FileInputStream
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousSocketChannel
 import java.security.KeyStore
-import javax.net.ssl.KeyManagerFactory
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLEngine
-import javax.net.ssl.SSLEngineResult
-import javax.net.ssl.TrustManagerFactory
+import java.util.concurrent.TimeUnit
+import javax.net.ssl.*
 
 
 // https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#SSLSocketFactory
@@ -47,7 +49,12 @@ fun createSSLEngine(
 
 class SSLEnginAlpn {
 
-    fun performTLSHandshake(serverSSLEngine: SSLEngine) {
+    suspend fun performTLSHandshake(
+            serverSSLEngine: SSLEngine,
+            client: AsynchronousSocketChannel,
+            clientReadTimeout: Long = CLIENT_READ_TIMEOUT,
+            timeUnit: TimeUnit = TIMEOUT_UNIT
+    ) {
         val encrypted = ByteBuffer.allocate(serverSSLEngine.session.packetBufferSize)
         val decrypted = ByteBuffer.allocate(serverSSLEngine.session.applicationBufferSize)
 
@@ -65,13 +72,24 @@ class SSLEnginAlpn {
 //    Assert.assertSame(SSLEngineResult.HandshakeStatus.NEED_UNWRAP, serverSSLEngine.getHandshakeStatus());
 
         // Read the ClientHello
+        client.aReadWithTimeout(encrypted, clientReadTimeout, timeUnit)
+        encrypted.flip()
         unwrap(serverSSLEngine, encrypted, decrypted)
         // Generate and write ServerHello (and other messages)
         wrap(serverSSLEngine, decrypted, encrypted)
+        client.aWriteWithTimeout(encrypted)
         // Read ClientKeyExchange, ChangeCipherSpec and Finished
+        encrypted.clear()
+        client.aReadWithTimeout(encrypted, clientReadTimeout, timeUnit)
+        encrypted.flip()
         unwrap(serverSSLEngine, encrypted, decrypted)
         // Generate and write ChangeCipherSpec and Finished
         wrap(serverSSLEngine, decrypted, encrypted)
+        client.aWriteWithTimeout(encrypted)
+
+        // clear buffers
+        encrypted.clear()
+        decrypted.clear()
 
 //        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus());
 
