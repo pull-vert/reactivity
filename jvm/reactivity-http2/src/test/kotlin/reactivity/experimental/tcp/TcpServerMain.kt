@@ -4,6 +4,7 @@ import kotlinx.coroutines.experimental.nio.aRead
 import kotlinx.coroutines.experimental.runBlocking
 import kotlinx.coroutines.experimental.withTimeout
 import mu.KotlinLogging
+import reactivity.experimental.CLIENT_READ_TIMEOUT
 import java.nio.ByteBuffer
 
 private val logger = KotlinLogging.logger {}

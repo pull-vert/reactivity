@@ -1,5 +1,7 @@
 package reactivity.experimental.http2.ssl
 
+import mu.KLogging
+import mu.KotlinLogging
 import org.eclipse.jetty.alpn.ALPN
 import reactivity.experimental.CLIENT_READ_TIMEOUT
 import reactivity.experimental.TIMEOUT_UNIT
@@ -12,11 +14,12 @@ import java.security.KeyStore
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.*
 
-
-// https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#SSLSocketFactory
 // http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html
 // http://atetric.com/atetric/javadoc/org.apache.tomcat/tomcat-coyote/8.0.26/src-html/org/apache/tomcat/util/net/Nio2Channel.html le plus intéressant pour le moment !
 // https://github.com/ThreaT/WebServers/blob/master/src/main/java/com/webservers/HttpsServer.java
+
+// Place definition above class declaration to make field static
+private val logger = KotlinLogging.logger {}
 
 fun createSSLEngine(
         port: Int
@@ -47,138 +50,140 @@ fun createSSLEngine(
 //    engine.needClientAuth = true // really needed ?
 }
 
-class SSLEnginAlpn {
+internal suspend fun performTLSHandshake(
+        serverSSLEngine: SSLEngine,
+        client: AsynchronousSocketChannel,
+        clientReadTimeout: Long = CLIENT_READ_TIMEOUT,
+        timeUnit: TimeUnit = TIMEOUT_UNIT
+) {
+    val encrypted = ByteBuffer.allocate(serverSSLEngine.session.packetBufferSize)
+    val decrypted = ByteBuffer.allocate(serverSSLEngine.session.applicationBufferSize)
 
-    suspend fun performTLSHandshake(
-            serverSSLEngine: SSLEngine,
-            client: AsynchronousSocketChannel,
-            clientReadTimeout: Long = CLIENT_READ_TIMEOUT,
-            timeUnit: TimeUnit = TIMEOUT_UNIT
-    ) {
-        val encrypted = ByteBuffer.allocate(serverSSLEngine.session.packetBufferSize)
-        val decrypted = ByteBuffer.allocate(serverSSLEngine.session.applicationBufferSize)
+    ALPN.put(serverSSLEngine, object : ALPN.ServerProvider {
+        override fun unsupported() {
+            ALPN.remove(serverSSLEngine)
+        }
 
-        ALPN.put(serverSSLEngine, object : ALPN.ServerProvider {
-            override fun unsupported() {
-                ALPN.remove(serverSSLEngine)
-            }
-
-            override fun select(protocols: List<String>): String {
-                ALPN.remove(serverSSLEngine)
-                return protocols[0]
-            }
-        })
-        serverSSLEngine.beginHandshake()
+        override fun select(protocols: List<String>): String {
+            ALPN.remove(serverSSLEngine)
+            protocols.forEachIndexed { index, protocol -> logger.debug { "supported protocol $index = $protocol" } }
+            return protocols[0]
+        }
+    })
+    serverSSLEngine.beginHandshake()
 //    Assert.assertSame(SSLEngineResult.HandshakeStatus.NEED_UNWRAP, serverSSLEngine.getHandshakeStatus());
 
-        // Read the ClientHello
-        client.aReadWithTimeout(encrypted, clientReadTimeout, timeUnit)
-        encrypted.flip()
-        unwrap(serverSSLEngine, encrypted, decrypted)
-        // Generate and write ServerHello (and other messages)
-        wrap(serverSSLEngine, decrypted, encrypted)
-        client.aWriteWithTimeout(encrypted)
-        // Read ClientKeyExchange, ChangeCipherSpec and Finished
-        encrypted.clear()
-        client.aReadWithTimeout(encrypted, clientReadTimeout, timeUnit)
-        encrypted.flip()
-        unwrap(serverSSLEngine, encrypted, decrypted)
-        // Generate and write ChangeCipherSpec and Finished
-        wrap(serverSSLEngine, decrypted, encrypted)
-        client.aWriteWithTimeout(encrypted)
+    // Read the ClientHello
+    logger.debug { "Read the ClientHello" }
+    client.aReadWithTimeout(encrypted, clientReadTimeout, timeUnit)
+    encrypted.flip()
+    unwrap(serverSSLEngine, encrypted, decrypted)
+    // Generate and write ServerHello (and other messages)
+    logger.debug { "Generate and write ServerHello (and other messages)" }
+    wrap(serverSSLEngine, decrypted, encrypted)
+    client.aWriteWithTimeout(encrypted)
+    // Read ClientKeyExchange, ChangeCipherSpec and Finished
+    logger.debug { "Read ClientKeyExchange, ChangeCipherSpec and Finished" }
+    encrypted.clear()
+    client.aReadWithTimeout(encrypted, clientReadTimeout, timeUnit)
+    encrypted.flip()
+    unwrap(serverSSLEngine, encrypted, decrypted)
+    // Generate and write ChangeCipherSpec and Finished
+    logger.debug { "Generate and write ChangeCipherSpec and Finished" }
+    wrap(serverSSLEngine, decrypted, encrypted)
+    client.aWriteWithTimeout(encrypted)
 
-        // clear buffers
-        encrypted.clear()
-        decrypted.clear()
+    // clear buffers
+    encrypted.clear()
+    decrypted.clear()
 
 //        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus());
 
-    }
+}
 
-    protected fun performTLSClose(serverSSLEngine: SSLEngine) {
-        val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
-        val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
+internal fun performTLSClose(serverSSLEngine: SSLEngine) {
+    val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
+    val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
 
-        unwrap(serverSSLEngine, encrypted, decrypted)
-        wrap(serverSSLEngine, decrypted, encrypted)
-
-//        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus())
-    }
-
-    protected fun performDataExchange(serverSSLEngine: SSLEngine) {
-        val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
-        val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
+    unwrap(serverSSLEngine, encrypted, decrypted)
+    wrap(serverSSLEngine, decrypted, encrypted)
 
 //        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus())
+}
 
-        // Write the data.
-        encrypted.clear()
-        decrypted.clear()
+internal fun performDataExchange(serverSSLEngine: SSLEngine) {
+    val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
+    val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
 
-        // Read the data.
-        encrypted.flip()
-        decrypted.clear()
-        var result = serverSSLEngine.unwrap(encrypted, decrypted)
+//        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus())
+
+    // Write the data.
+    encrypted.clear()
+    decrypted.clear()
+
+    // Read the data.
+    encrypted.flip()
+    decrypted.clear()
+    var result = serverSSLEngine.unwrap(encrypted, decrypted)
 //        Assert.assertSame(SSLEngineResult.Status.OK, result.getStatus())
 
-        // Write the data back =
-        encrypted.clear()
-        decrypted.flip()
-        result = serverSSLEngine.wrap(decrypted, encrypted)
+    // Write the data back =
+    encrypted.clear()
+    decrypted.flip()
+    result = serverSSLEngine.wrap(decrypted, encrypted)
 //        Assert.assertSame(SSLEngineResult.Status.OK, result.getStatus())
-    }
+}
 
-    protected fun performTLSRenegotiation(serverSSLEngine: SSLEngine) {
-        val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
-        val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
+internal fun performTLSRenegotiation(serverSSLEngine: SSLEngine) {
+    val encrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getPacketBufferSize())
+    val decrypted = ByteBuffer.allocate(serverSSLEngine.getSession().getApplicationBufferSize())
 
-        serverSSLEngine.beginHandshake()
+    serverSSLEngine.beginHandshake()
 //            Assert.assertSame(SSLEngineResult.HandshakeStatus.NEED_WRAP, serverSSLEngine.getHandshakeStatus())
 
-         wrap(serverSSLEngine, decrypted, encrypted)
-        unwrap(serverSSLEngine, encrypted, decrypted)
-        wrap(serverSSLEngine, decrypted, encrypted)
-        unwrap(serverSSLEngine, encrypted, decrypted)
+    wrap(serverSSLEngine, decrypted, encrypted)
+    unwrap(serverSSLEngine, encrypted, decrypted)
+    wrap(serverSSLEngine, decrypted, encrypted)
+    unwrap(serverSSLEngine, encrypted, decrypted)
 
 //        Assert.assertSame(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING, serverSSLEngine.getHandshakeStatus())
-    }
+}
 
-    private fun wrap(sslEngine: SSLEngine, decrypted: ByteBuffer, encrypted: ByteBuffer) {
+private fun wrap(sslEngine: SSLEngine, decrypted: ByteBuffer, encrypted: ByteBuffer) {
+    encrypted.clear()
+    val tmp = ByteBuffer.allocate(encrypted.capacity())
+    while (true) {
         encrypted.clear()
-        val tmp = ByteBuffer.allocate(encrypted.capacity())
-        while (true) {
+        val result = sslEngine.wrap(decrypted, encrypted)
+        val status = result.status
+        if (status != SSLEngineResult.Status.OK && status != SSLEngineResult.Status.CLOSED)
+            throw AssertionError(status.toString())
+        encrypted.flip()
+        tmp.put(encrypted)
+        if (result.handshakeStatus != SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+            tmp.flip()
             encrypted.clear()
-            val result = sslEngine.wrap(decrypted, encrypted)
-            val status = result.status
-            if (status != SSLEngineResult.Status.OK && status != SSLEngineResult.Status.CLOSED)
-                throw AssertionError(status.toString())
-            encrypted.flip()
-            tmp.put(encrypted)
-            if (result.handshakeStatus != SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-                tmp.flip()
-                encrypted.clear()
-                encrypted.put(tmp).flip()
-                return
-            }
+            encrypted.put(tmp).flip()
+            return
         }
     }
+}
 
-    private fun unwrap(sslEngine: SSLEngine, encrypted: ByteBuffer, decrypted: ByteBuffer) {
+private fun unwrap(sslEngine: SSLEngine, encrypted: ByteBuffer, decrypted: ByteBuffer) {
+    decrypted.clear()
+    while (true) {
         decrypted.clear()
-        while (true) {
-            decrypted.clear()
-            val result = sslEngine.unwrap(encrypted, decrypted)
-            val status = result.status
-            if (status != SSLEngineResult.Status.OK && status != SSLEngineResult.Status.CLOSED)
-                throw AssertionError(status.toString())
-            var handshakeStatus: SSLEngineResult.HandshakeStatus = result.handshakeStatus
-            if (handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
-                sslEngine.delegatedTask.run()
-                handshakeStatus = sslEngine.handshakeStatus
-            }
-            if (handshakeStatus != SSLEngineResult.HandshakeStatus.NEED_UNWRAP)
-                return
+        val result = sslEngine.unwrap(encrypted, decrypted)
+        val status = result.status
+        if (status != SSLEngineResult.Status.OK && status != SSLEngineResult.Status.CLOSED)
+            throw AssertionError(status.toString())
+        var handshakeStatus: SSLEngineResult.HandshakeStatus = result.handshakeStatus
+        if (handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+            sslEngine.delegatedTask.run()
+            handshakeStatus = sslEngine.handshakeStatus
         }
+        if (handshakeStatus != SSLEngineResult.HandshakeStatus.NEED_UNWRAP)
+            return
     }
 }
 
@@ -199,7 +204,7 @@ class SSLEnginAlpn {
 //        when (hs) {
 //
 //            NEED_UNWRAP -> {
-                // Receive handshaking data from peer
+// Receive handshaking data from peer
 //            if (socketChannel.read(peerNetData) < 0) {
 //                // The channel has reached end-of-stream
 //            }
@@ -220,7 +225,7 @@ class SSLEnginAlpn {
 //                ...
 //            }
 //            }
-            // Receive handshaking data from peer
+// Receive handshaking data from peer
 //            if (socketChannel.read(peerNetData) < 0) {
 //                // The channel has reached end-of-stream
 //            }
