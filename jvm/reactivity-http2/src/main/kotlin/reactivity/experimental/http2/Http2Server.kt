@@ -6,7 +6,7 @@ import reactivity.experimental.tcp.TcpServer
 import javax.net.ssl.SSLEngine
 
 
-internal val DEFAULT_HTTP2_SERVER_PORT = 8080
+internal val DEFAULT_HTTP2_SERVER_PORT = 8085
 
 class Http2Server(
         hostname: String? = null,

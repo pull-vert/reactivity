@@ -1,6 +1,5 @@
 package reactivity.experimental.http2.ssl
 
-import mu.KLogging
 import mu.KotlinLogging
 import org.eclipse.jetty.alpn.ALPN
 import reactivity.experimental.CLIENT_READ_TIMEOUT
@@ -21,9 +20,7 @@ import javax.net.ssl.*
 // Place definition above class declaration to make field static
 private val logger = KotlinLogging.logger {}
 
-fun createSSLEngine(
-        port: Int
-) {
+fun createSSLEngine(): SSLEngine {
     // Create and initialize the SSLContext with key material
     val passphrase = "passphrase".toCharArray()
 
@@ -45,9 +42,10 @@ fun createSSLEngine(
     sslContext.init(kmf.keyManagers, tmf.trustManagers, null)
 
     // Create the engine
-    val engine = sslContext.createSSLEngine("localhost", port)
+    val engine = sslContext.createSSLEngine()
     engine.useClientMode = false
 //    engine.needClientAuth = true // really needed ?
+    return engine
 }
 
 internal suspend fun performTLSHandshake(
