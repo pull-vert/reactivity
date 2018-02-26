@@ -1,5 +1,11 @@
 package reactivity.experimental
 
+import kotlinx.coroutines.experimental.AbstractCoroutine
+import kotlinx.coroutines.experimental.CoroutineStart
+import kotlinx.coroutines.experimental.DefaultDispatcher
+import kotlinx.coroutines.experimental.Job
+import kotlin.coroutines.experimental.CoroutineContext
+
 // -------------- Interface definitions
 
 interface Multi<out E> {
@@ -10,6 +16,35 @@ interface Multi<out E> {
 interface Sink<in E> {
     suspend fun send(item: E)
     fun close(cause: Throwable?)
+}
+
+// cold Multi
+
+public fun <T> multi(
+        context: CoroutineContext = DefaultDispatcher,
+        parent: Job? = null,
+        block: suspend Sink<T>.() -> Unit
+): Multi<T> = object : Multi<T> {
+    suspend override fun consume(sink: Sink<T>) {
+        val newContext = newCoroutineContext(context, parent)
+        val coroutine = MultiCoroutine(newContext, sink)
+        coroutine.start(CoroutineStart.DEFAULT, coroutine, block)
+    }
+}
+
+private class MultiCoroutine<in T>(
+        parentContext: CoroutineContext,
+        private val sink: Sink<T>
+) : AbstractCoroutine<Unit>(parentContext, true), Sink<T> {
+    suspend override fun send(item: T) {
+        println("sending $item")
+        sink.send(item)
+    }
+
+    override fun close(cause: Throwable?) {
+        sink.close(cause)
+    }
+
 }
 
 // -------------- Top level extensions
