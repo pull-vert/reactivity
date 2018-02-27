@@ -2,7 +2,7 @@ package sourceCollector
 
 import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
-import reactivity.experimental.Element
+import reactivity.experimental.channel.Element
 import reactivity.experimental.channel.SpScChannel
 import kotlin.coroutines.experimental.CoroutineContext
 

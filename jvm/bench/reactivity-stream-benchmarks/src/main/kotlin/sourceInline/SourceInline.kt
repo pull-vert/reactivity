@@ -6,7 +6,7 @@ import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.experimental.launch
 import quasar.QuasarFiber
-import reactivity.experimental.Element
+import reactivity.experimental.channel.Element
 import reactivity.experimental.channel.SpScChannel
 import kotlin.coroutines.experimental.CoroutineContext
 

@@ -1,4 +1,4 @@
-package reactivity.experimental
+package reactivity.experimental.channel
 
 /**
  * Element stored in the buffer

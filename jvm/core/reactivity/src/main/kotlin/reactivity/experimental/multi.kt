@@ -4,6 +4,7 @@ import kotlinx.coroutines.experimental.DefaultDispatcher
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.experimental.launch
 import reactivity.experimental.channel.SpScChannel
+import reactivity.experimental.channel.Element
 import kotlin.coroutines.experimental.CoroutineContext
 
 private const val DEFAULT_CLOSE_MESSAGE = "SpScChannel was closed"

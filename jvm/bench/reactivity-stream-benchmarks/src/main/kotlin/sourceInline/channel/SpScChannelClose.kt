@@ -19,7 +19,7 @@ package sourceInline.channel
  * Original location: https://github.com/JCTools/JCTools/blob/master/jctools-core/src/main/java/org/jctools/queues/atomic/SpscAtomicArrayQueue.java
  */
 import kotlinx.coroutines.experimental.channels.ClosedReceiveChannelException
-import reactivity.experimental.Element
+import reactivity.experimental.channel.Element
 import sourceInline.Sink
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import java.util.concurrent.atomic.AtomicReferenceArray
