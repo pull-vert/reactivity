@@ -18,7 +18,7 @@ repositories {
 Only one dependency is required :
 
 ```groovy
-compile "io.reactivity:reactivity-common:0.0.1"
+compile "io.reactivity:reactivity-common:0.0.4"
 ```
 
 ### With maven
