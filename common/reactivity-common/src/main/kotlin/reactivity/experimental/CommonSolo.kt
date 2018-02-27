@@ -1,8 +1,6 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.DefaultDispatcher
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.*
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Interface definitions
@@ -11,14 +9,34 @@ interface Solo<out E> {
     suspend fun await(): E
 }
 
+// cold Solo Coroutine
+
+fun <T> solo(
+        context: CoroutineContext = DefaultDispatcher,
+        parent: Job? = null,
+        block: suspend () -> T
+): Solo<T> = object : Solo<T> {
+    override suspend fun await(): T {
+        val newContext = newCoroutineContext(context, parent)
+        val coroutine = SoloCoroutine(newContext)
+        coroutine.start(CoroutineStart.DEFAULT, coroutine, block)
+    }
+}
+
+private class SoloCoroutine<in T>(
+        parentContext: CoroutineContext
+) : AbstractCoroutine<T>(parentContext, true), Solo<T> {
+    override suspend fun await(): T = awaitInternal() as T
+}
+
 // -------------- Top level extensions
 
 fun <E> E.toSolo() = object : Solo<E> {
-    suspend override fun await(): E = this@toSolo
+    override suspend fun await(): E = this@toSolo
 }
 
 fun <E> Deferred<E>.toSolo() = object : Solo<E> {
-    suspend override fun await(): E = this@toSolo.await()
+    override suspend fun await(): E = this@toSolo.await()
 }
 
 // -------------- Terminal (final/consuming) operations
@@ -26,7 +44,7 @@ fun <E> Deferred<E>.toSolo() = object : Solo<E> {
 /**
  * Performs the given [action] for the unique element.
  */
-inline suspend fun <T> Solo<T>.consumeUnique(crossinline action: (T) -> Unit) {
+suspend inline fun <T> Solo<T>.consumeUnique(crossinline action: (T) -> Unit) {
     action(this@consumeUnique.await())
 }
 

@@ -18,14 +18,14 @@ interface Sink<in E> {
     fun close(cause: Throwable?)
 }
 
-// cold Multi
+// cold Multi Coroutine
 
-public fun <T> multi(
+fun <T> multi(
         context: CoroutineContext = DefaultDispatcher,
         parent: Job? = null,
         block: suspend Sink<T>.() -> Unit
 ): Multi<T> = object : Multi<T> {
-    suspend override fun consume(sink: Sink<T>) {
+    override suspend fun consume(sink: Sink<T>) {
         val newContext = newCoroutineContext(context, parent)
         val coroutine = MultiCoroutine(newContext, sink)
         coroutine.start(CoroutineStart.DEFAULT, coroutine, block)
@@ -36,7 +36,7 @@ private class MultiCoroutine<in T>(
         parentContext: CoroutineContext,
         private val sink: Sink<T>
 ) : AbstractCoroutine<Unit>(parentContext, true), Sink<T> {
-    suspend override fun send(item: T) {
+    override suspend fun send(item: T) {
         println("sending $item")
         sink.send(item)
     }
@@ -44,13 +44,12 @@ private class MultiCoroutine<in T>(
     override fun close(cause: Throwable?) {
         sink.close(cause)
     }
-
 }
 
 // -------------- Top level extensions
 
 fun <T> Iterable<T>.toMulti() = object : Multi<T> {
-    suspend override fun consume(sink: Sink<T>) {
+    override suspend fun consume(sink: Sink<T>) {
         var cause: Throwable? = null
         try {
             for (x in this@toMulti) { sink.send(x) }
@@ -70,7 +69,7 @@ fun LongArray.toMulti() = this.toList().toMulti()
 fun ShortArray.toMulti() = this.toList().toMulti()
 fun <T> Array<T>.toMulti() = this.toList().toMulti()
 fun <T> Sequence<T>.toMulti() = object : Multi<T> {
-    suspend override fun consume(sink: Sink<T>) {
+    override suspend fun consume(sink: Sink<T>) {
         var cause: Throwable? = null
         try {
             for (x in this@toMulti) { sink.send(x) }
@@ -84,7 +83,7 @@ fun <T> Sequence<T>.toMulti() = object : Multi<T> {
 // -------------- Factory (initial/producing) operations
 
 fun Multi.Factory.range(start: Int, count: Int) = object : Multi<Int> {
-    suspend override fun consume(sink: Sink<Int>) {
+    override suspend fun consume(sink: Sink<Int>) {
         var cause: Throwable? = null
         try {
             for (i in start until (start + count)) { sink.send(i) }
@@ -97,10 +96,10 @@ fun Multi.Factory.range(start: Int, count: Int) = object : Multi<Int> {
 
 // -------------- Terminal (final/consuming) operations
 
-inline suspend fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc: R, E) -> R): R {
+suspend inline fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc: R, E) -> R): R {
     var acc = initial
     consume(object : Sink<E> {
-        suspend override fun send(item: E) {
+        override suspend fun send(item: E) {
             acc = operation(acc, item)
         }
 
@@ -114,20 +113,20 @@ inline suspend fun <E, R> Multi<E>.fold(initial: R, crossinline operation: (acc:
  *
  * This function consumes all elements of the original [Multi].
  */
-inline suspend fun <E> Multi<E>.consumeEach(crossinline action: (E) -> Unit) =
+suspend inline fun <E> Multi<E>.consumeEach(crossinline action: (E) -> Unit) =
         consume(object : Sink<E> {
-            suspend override fun send(item: E) = action(item)
+            override suspend fun send(item: E) = action(item)
             override fun close(cause: Throwable?) { cause?.let { throw it } }
         })
 
 // -------------- Intermediate (transforming) operations
 
 fun <E> Multi<E>.delay(time: Int) = object : Multi<E> {
-    suspend override fun consume(sink: Sink<E>) {
+    override suspend fun consume(sink: Sink<E>) {
         var cause: Throwable? = null
         try {
             this@delay.consume(object : Sink<E> {
-                suspend override fun send(item: E) {
+                override suspend fun send(item: E) {
                     kotlinx.coroutines.experimental.delay(time)
                     sink.send(item)
                 }
