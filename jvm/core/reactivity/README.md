@@ -22,9 +22,17 @@ compile "io.reactivity:reactivity:0.0.1"
 
 TODO explain the steps with maven project
 
+## Coroutine builder functions
+
+| **Name**      | **Result**    | **Scope**        | **Description**
+| ------------- | ------------- | ---------------- | ---------------
+| [multi]       | [Multi]       | [MultiScope]     | Cold producer of a stream of elements
+| [solo]        | [Solo]        | [CoroutineScope] | Cold producer a single elements
+
 ## Code samples
 
 ### Multi cold publisher
+
 ```kotlin
 Multi
     .range(1, N)
@@ -32,3 +40,20 @@ Multi
     .fold(0, { a, b -> a + b })
 ```
 
+```kotlin
+sequenceOf("lower", "case").toMulti()
+    // delay each element
+    .delay(10)
+    .map { it.toUpperCase() }
+    // iterate over the source fully
+    .consumeEach { println(it) }
+```
+
+### Solo cold publisher
+
+```kotlin
+val han = 12.toSolo()
+    .map { it.toString() }
+    .delay(10)
+    .await()
+```
