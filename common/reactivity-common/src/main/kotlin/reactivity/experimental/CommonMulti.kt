@@ -1,9 +1,6 @@
 package reactivity.experimental
 
-import kotlinx.coroutines.experimental.AbstractCoroutine
-import kotlinx.coroutines.experimental.CoroutineStart
-import kotlinx.coroutines.experimental.DefaultDispatcher
-import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.*
 import kotlin.coroutines.experimental.CoroutineContext
 
 // -------------- Interface definitions
@@ -23,7 +20,7 @@ interface Sink<in E> {
 fun <T> multi(
         context: CoroutineContext = DefaultDispatcher,
         parent: Job? = null,
-        block: suspend Sink<T>.() -> Unit
+        block: suspend MultiScope<T>.() -> Unit
 ): Multi<T> = object : Multi<T> {
     override suspend fun consume(sink: Sink<T>) {
         val newContext = newCoroutineContext(context, parent)
@@ -32,18 +29,23 @@ fun <T> multi(
     }
 }
 
+interface MultiScope<in E> : CoroutineScope, Sink<E> {
+    /**
+     * A reference to the Sink that this coroutine [sends][send] elements to.
+     * It is provided for convenience, so that the code in the coroutine can refer
+     * to the sink as `sink` as apposed to `this`.
+     * All the [Sink] functions on this interface delegate to
+     * the sink instance returned by this function.
+     */
+    val sink: Sink<E>
+}
+
 private class MultiCoroutine<in T>(
         parentContext: CoroutineContext,
-        private val sink: Sink<T>
-) : AbstractCoroutine<Unit>(parentContext, true), Sink<T> {
-    override suspend fun send(item: T) {
-        println("sending $item")
-        sink.send(item)
-    }
-
-    override fun close(cause: Throwable?) {
-        sink.close(cause)
-    }
+        private val inSink: Sink<T>
+) : AbstractCoroutine<Unit>(parentContext, true), MultiScope<T>, Sink<T> by inSink {
+    override val sink: Sink<T>
+        get() = this
 }
 
 // -------------- Top level extensions

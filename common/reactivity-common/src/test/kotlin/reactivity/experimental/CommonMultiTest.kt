@@ -41,8 +41,9 @@ class CommonMultiTest : TestBase() {
 
     @Test
     fun multiFromSequenceAndConsumeEach() = runTest {
-        val source = sequenceOf("58").toMulti()
-        // iterate over the source fully
-        source.consumeEach { assertEquals("58", it) }
+        sequenceOf("lower", "case").toMulti()
+                .map { it.toUpperCase() }
+                // iterate over the source fully
+                .consumeEach { println(it) }
     }
 }

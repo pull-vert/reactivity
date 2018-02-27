@@ -4,7 +4,7 @@ import kotlinx.coroutines.experimental.delay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class CommonMultiBuilder : TestBase() {
+class CommonMultiBuilderTest : TestBase() {
     @Test
     fun multiNoConsumer() = runTest {
         var value: String? = null
@@ -24,7 +24,7 @@ class CommonMultiBuilder : TestBase() {
     }
 
     @Test
-    fun multiConsumer() = runTest {
+    fun multiWithConsumer() = runTest {
         var value: String? = null
         multi(coroutineContext) {
             var cause: Throwable? = null

@@ -14,19 +14,11 @@ interface Solo<out E> {
 fun <T> solo(
         context: CoroutineContext = DefaultDispatcher,
         parent: Job? = null,
-        block: suspend () -> T
+        block: suspend CoroutineScope.() -> T
 ): Solo<T> = object : Solo<T> {
     override suspend fun await(): T {
-        val newContext = newCoroutineContext(context, parent)
-        val coroutine = SoloCoroutine(newContext)
-        coroutine.start(CoroutineStart.DEFAULT, coroutine, block)
+        return async(context, CoroutineStart.DEFAULT, parent, block).await()
     }
-}
-
-private class SoloCoroutine<in T>(
-        parentContext: CoroutineContext
-) : AbstractCoroutine<T>(parentContext, true), Solo<T> {
-    override suspend fun await(): T = awaitInternal() as T
 }
 
 // -------------- Top level extensions
