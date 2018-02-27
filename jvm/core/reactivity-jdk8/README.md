@@ -1,6 +1,6 @@
 # Reactivity for JDK8
 
-Work In Progress, all operators are not implemented yet.
+Specific extensions and operators for JDK8 (Stream to Multi, Solo to CompletableFuture...)
 
 <!--- TOC -->
 
@@ -37,18 +37,9 @@ TODO explain the steps with maven project
 
 ## Code samples
 
-### In Kotlin
+### Solo cold publisher
 ```kotlin
-(1..3).toMulti()
-    .map{it * 2}
-    .subscribe {println("Processed $it")}
-```
-### In Java
-```java
-Multi.fromRange(1, 3)
-    .map(value -> value * 2)
-    .subscribe(value -> {
-        System.out.println("Processed  " + value);
-        return null;
-    });
+12
+    .toSolo()
+    .toCompletableFuture()
 ```

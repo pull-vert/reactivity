@@ -1,5 +1,5 @@
 # Reactivity HTTP2
 
-Full reactive pure HTTP2 server, based on Reactivity [Reactive Streams](http://www.reactive-streams.org/) implementation.
+Full reactive pure HTTP2 server, based on Reactivity implementation.
 
-Use [kotlinx-coroutines-nio](https://github.com/Kotlin/kotlinx.coroutines/tree/master/integration/kotlinx-coroutines-nio) for asynchronous IO on JDK7+ (Android API level 26).
+Use [kotlinx-coroutines-io](https://github.com/Kotlin/kotlinx.coroutines/tree/master/core/kotlinx-coroutines-io) for asynchronous IO using NIO.

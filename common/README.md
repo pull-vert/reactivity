@@ -1,7 +1,7 @@
-# Common reactivity core
+# Reactivity core for Kotlin/Common
 
-This directory contains modules that provide `expect` declarations for common reactivity support across
-various platforms for [mutliplatform Kotlin projects](https://kotlinlang.org/docs/reference/multiplatform.html).
+This directory contains modules that provide `expect` declarations for reactivity support across
+various platforms (JVM, Javascript and native to come) for [mutliplatform Kotlin projects](https://kotlinlang.org/docs/reference/multiplatform.html).
 
 ## Modules
 
