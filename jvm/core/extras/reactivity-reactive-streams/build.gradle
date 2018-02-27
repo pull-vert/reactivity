@@ -1,0 +1,8 @@
+buildscript {
+    ext.reactive_streams_version = '1.0.2'
+}
+
+dependencies {
+    // Reactive Streams
+    compile "org.reactivestreams:reactive-streams:$reactive_streams_version"
+}

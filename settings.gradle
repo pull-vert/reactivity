@@ -9,6 +9,7 @@ include 'reactivity-js'
 //include 'reactivity-native'
 
 include 'reactivity-jdk8'
+include 'reactivity-reactive-streams'
 include 'reactivity-http2'
 
 // samples
@@ -25,4 +26,5 @@ project(':reactivity-javafx').projectDir = file('jvm/samples/reactivity-javafx')
 project(':reactivity-swing').projectDir = file('jvm/samples/reactivity-swing')
 project(':reactivity-http2').projectDir = file('jvm/reactivity-http2')
 project(':reactivity-js').projectDir = file('js/reactivity-js')
+project(':reactivity-reactive-streams').projectDir = file('jvm/core/extras/reactivity-reactive-streams')
 //project(':reactivity-native').projectDir = file('native/reactivity-native')
