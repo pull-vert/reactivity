@@ -54,7 +54,7 @@ sequenceOf("lower", "case").toMulti()
     .delay(10)
     .map { it.toUpperCase() }
     // iterate over the source fully
-    source.consumeEach { println(it) }
+    .consumeEach { println(it) }
 ```
 
 ### Solo cold publisher

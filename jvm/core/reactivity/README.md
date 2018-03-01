@@ -36,6 +36,7 @@ TODO explain the steps with maven project
 ```kotlin
 Multi
     .range(1, N)
+    .async(buffer = 32)
     .filter { it.isGood() }
     .fold(0, { a, b -> a + b })
 ```

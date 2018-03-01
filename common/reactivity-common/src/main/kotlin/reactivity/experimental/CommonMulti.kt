@@ -42,8 +42,8 @@ interface MultiScope<in E> : CoroutineScope, Sink<E> {
 
 private class MultiCoroutine<in T>(
         parentContext: CoroutineContext,
-        private val inSink: Sink<T>
-) : AbstractCoroutine<Unit>(parentContext, true), MultiScope<T>, Sink<T> by inSink {
+        private val _sink: Sink<T>
+) : AbstractCoroutine<Unit>(parentContext, true), MultiScope<T>, Sink<T> by _sink {
     override val sink: Sink<T>
         get() = this
 }
