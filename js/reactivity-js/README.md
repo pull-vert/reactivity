@@ -46,7 +46,7 @@ sequenceOf("lower", "case").toMulti()
     .delay(10)
     .map { it.toUpperCase() }
     // iterate over the source fully
-    source.consumeEach { println(it) }
+    .consumeEach { println(it) }
 ```
 
 ### Solo cold publisher
@@ -55,5 +55,5 @@ sequenceOf("lower", "case").toMulti()
 val han = 12.toSolo()
     .map { it.toString() }
     .delay(10)
-    .await()
+    .toPromise()
 ```
