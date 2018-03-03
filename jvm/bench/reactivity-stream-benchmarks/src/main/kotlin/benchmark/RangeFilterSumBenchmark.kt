@@ -147,30 +147,6 @@ open class RangeFilterSumBenchmark {
 //            .fold(0, { a, b -> a + b })
 //
 //    @Benchmark
-//    fun testObservable(): Int =
-//        Observable
-//            .range(1, N)
-//            .filter { it.isGood() }
-//            .collect({ IntBox(0) }, { b, x -> b.v += x })
-//            .blockingGet().v
-//
-//    @Benchmark
-//    fun testFlowable(): Int =
-//        Flowable
-//            .range(1, N)
-//            .filter { it.isGood() }
-//            .collect({ IntBox(0) }, { b, x -> b.v += x })
-//            .blockingGet().v
-//
-//    @Benchmark
-//    fun testFlux(): Int =
-//        Flux
-//            .range(1, N)
-//            .filter { it.isGood() }
-//            .collect({ IntBox(0) }, { b, x -> b.v += x })
-//            .block()!!.v
-//
-//    @Benchmark
 //    fun testObservableThread(): Int =
 //        Observable
 //            .range(1, N)
@@ -357,23 +333,6 @@ open class RangeFilterSumBenchmark {
 //    }
 //
 //    @Benchmark
-//    fun testMulti(): Int = runBlocking {
-//        Multi
-//                .range(1, N)
-//                .filter { it.isGood() }
-//                .fold(0, { a, b -> a + b })
-//    }
-
-    @Benchmark
-    fun testMultiThreadBuffer128(): Int = runBlocking {
-        Multi
-                .range(1, N)
-                .async(buffer = 128)
-                .filter { it.isGood() }
-                .fold(0, { a, b -> a + b })
-    }
-
-//    @Benchmark
 //    fun testSrcManBase(): Int = SrcManBase.noSuspend { cont ->
 //        SrcManBase
 //                .range(1, N)
@@ -391,6 +350,47 @@ open class RangeFilterSumBenchmark {
 //    @Benchmark
 //    fun testSuspendingSequence(): Int = runBlocking {
 //        suspendingSequenceRange(1, N)
+//                .filter { it.isGood() }
+//                .fold(0, { a, b -> a + b })
+//    }
+
+    @Benchmark
+    fun testObservable(): Int =
+            Observable
+                    .range(1, N)
+                    .filter { it.isGood() }
+                    .collect({ IntBox(0) }, { b, x -> b.v += x })
+                    .blockingGet().v
+
+    @Benchmark
+    fun testFlowable(): Int =
+            Flowable
+                    .range(1, N)
+                    .filter { it.isGood() }
+                    .collect({ IntBox(0) }, { b, x -> b.v += x })
+                    .blockingGet().v
+
+    @Benchmark
+    fun testFlux(): Int =
+            Flux
+                    .range(1, N)
+                    .filter { it.isGood() }
+                    .collect({ IntBox(0) }, { b, x -> b.v += x })
+                    .block()!!.v
+
+    @Benchmark
+    fun testMulti(): Int = runBlocking {
+        Multi
+                .range(1, N)
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+    }
+
+//    @Benchmark
+//    fun testMultiThreadBuffer128(): Int = runBlocking {
+//        Multi
+//                .range(1, N)
+//                .async(buffer = 128)
 //                .filter { it.isGood() }
 //                .fold(0, { a, b -> a + b })
 //    }
