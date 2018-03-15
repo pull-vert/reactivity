@@ -151,3 +151,17 @@ expect fun <E> Multi<E>.filter(predicate: (E) -> Boolean) : Multi<E>
  * @param mapper the mapper function
  */
 expect fun <E, F> Multi<E>.map(mapper: (E) -> F) : Multi<F>
+
+inline fun <E, R> Multi<E>.reduce(initial: R, crossinline operation: (acc: R, E) -> R)= object : Solo<R> {
+    override suspend fun await(): R {
+        var acc = initial
+        this@reduce.consume(object : Sink<E> {
+            override suspend fun send(item: E) {
+                acc = operation(acc, item)
+            }
+
+            override fun close(cause: Throwable?) { cause?.let { throw it } }
+        })
+        return acc
+    }
+}
