@@ -12,7 +12,7 @@ interface Multi<out E> {
 
 interface Sink<in E> {
     suspend fun send(item: E)
-    fun close(cause: Throwable?)
+    fun close(cause: Throwable? = null)
 }
 
 // cold Multi Coroutine
@@ -164,4 +164,21 @@ inline fun <E, R> Multi<E>.reduce(initial: R, crossinline operation: (acc: R, E)
         })
         return acc
     }
+}
+
+fun <E> Multi<E>.first()= object : Solo<E?> {
+    override suspend fun await(): E? {
+        var first: E? = null
+        this@first.consume(object : Sink<E> {
+            override suspend fun send(item: E) {
+                // send first, then close
+                first = item
+                close()
+            }
+
+            override fun close(cause: Throwable?) { cause?.let { throw it } }
+        })
+        return first
+    }
+
 }
