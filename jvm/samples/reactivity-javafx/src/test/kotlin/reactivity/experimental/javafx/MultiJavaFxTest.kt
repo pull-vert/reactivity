@@ -14,7 +14,7 @@ class MultiJavaFxTest : TestBase() {
         assertFalse(Platform.isFxApplicationThread())
         launch(JavaFx) {
             Multi.range(1, 3)
-                    .delay(10)
+                    .delayEach(10)
                     .consumeEach { assertTrue(Platform.isFxApplicationThread()) }
         }
     }

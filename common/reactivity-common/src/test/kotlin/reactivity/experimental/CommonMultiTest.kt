@@ -32,7 +32,7 @@ class CommonMultiTest : TestBase() {
     fun multiDelay() = runTest {
         val value = Multi
                 .range(1, 10)
-                .delay(10)
+                .delayEach(10)
                 .filter { it.isGood() }
                 .fold(0, { a, b -> a + b })
         println("multiDelay : value = $value")

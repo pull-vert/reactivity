@@ -14,7 +14,7 @@ class MultiSwingTest : TestBase() {
         assertFalse(SwingUtilities.isEventDispatchThread())
         launch(Swing) {
             Multi.range(1, 3)
-                    .delay(10)
+                    .delayEach(10)
                     .consumeEach { assertTrue(SwingUtilities.isEventDispatchThread()) }
         }
     }

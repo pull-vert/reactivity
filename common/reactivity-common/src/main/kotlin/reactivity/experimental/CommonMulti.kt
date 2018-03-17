@@ -123,11 +123,11 @@ suspend inline fun <E> Multi<E>.consumeEach(crossinline action: (E) -> Unit) =
 
 // -------------- Intermediate (transforming) operations
 
-fun <E> Multi<E>.delay(time: Int) = object : Multi<E> {
+fun <E> Multi<E>.delayEach(time: Int) = object : Multi<E> {
     override suspend fun consume(sink: Sink<E>) {
         var cause: Throwable? = null
         try {
-            this@delay.consume(object : Sink<E> {
+            this@delayEach.consume(object : Sink<E> {
                 override suspend fun send(item: E) {
                     kotlinx.coroutines.experimental.delay(time)
                     sink.send(item)
