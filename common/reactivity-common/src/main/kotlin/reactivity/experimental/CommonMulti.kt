@@ -12,7 +12,7 @@ interface Multi<out E> {
 
 interface Sink<in E> {
     suspend fun send(item: E)
-    fun close(cause: Throwable? = null)
+    fun close(cause: Throwable?)
 }
 
 // cold Multi Coroutine
@@ -152,33 +152,28 @@ expect fun <E> Multi<E>.filter(predicate: (E) -> Boolean) : Multi<E>
  */
 expect fun <E, F> Multi<E>.map(mapper: (E) -> F) : Multi<F>
 
-inline fun <E, R> Multi<E>.reduce(initial: R, crossinline operation: (acc: R, E) -> R)= object : Solo<R> {
-    override suspend fun await(): R {
-        var acc = initial
-        this@reduce.consume(object : Sink<E> {
-            override suspend fun send(item: E) {
-                acc = operation(acc, item)
-            }
+expect fun <E, R> Multi<E>.reduce(initial: R, operation: (acc: R, E) -> R): Solo<R>
 
-            override fun close(cause: Throwable?) { cause?.let { throw it } }
-        })
-        return acc
-    }
-}
+class ValueReachedException : Exception()
 
 fun <E> Multi<E>.first()= object : Solo<E?> {
     override suspend fun await(): E? {
         var first: E? = null
-        this@first.consume(object : Sink<E> {
-            override suspend fun send(item: E) {
-                // send first, then close
-                first = item
-                close()
-            }
+        try {
+            this@first.consume(object : Sink<E> {
+                override suspend fun send(item: E) {
+                    first = item
+                    close(ValueReachedException())
+                }
 
-            override fun close(cause: Throwable?) { cause?.let { throw it } }
-        })
-        return first
+                override fun close(cause: Throwable?) {
+                    cause?.let { throw it }
+                }
+            })
+        } catch (e: ValueReachedException) {
+            return first
+        }
+        return null
     }
 
 }
