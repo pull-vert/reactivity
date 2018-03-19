@@ -63,3 +63,16 @@ fun <E> Solo<E>.delay(time: Int) = object : Solo<E> {
 fun <E, F> Solo<E>.map(mapper: (E) -> F) = object : Solo<F> {
     override suspend fun await() = mapper(this@map.await())
 }
+
+/**
+ * Returns a [Solo] that uses the [mapper] to transform the element from [E]
+ * to [F] and then send it when transformation is done
+ *
+ * @param mapper the mapper function
+ */
+fun <E, F> Solo<E>.flatMap(toMulti: (E) -> Multi<F>) = object : Multi<F> {
+    override suspend fun consume(sink: Sink<F>) {
+        toMulti(this@flatMap.await()).consume(sink)
+    }
+
+}
