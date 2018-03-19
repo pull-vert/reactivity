@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 
 class CommonSoloTest : TestBase() {
     @Test
-    fun testSoloMap() = runTest {
+    fun soloMap() = runTest {
         val value = 12.toSolo()
                 .map { it.toString() }
                 .await()
@@ -14,7 +14,7 @@ class CommonSoloTest : TestBase() {
     }
 
     @Test
-    fun testSoloDelay() = runTest {
+    fun soloDelay() = runTest {
         val value = 12.toSolo()
                 .delay(10)
                 .await()
@@ -23,8 +23,22 @@ class CommonSoloTest : TestBase() {
     }
 
     @Test
-    fun testSoloConsumeUnique() = runTest {
+    fun soloConsumeUnique() = runTest {
         12.toSolo()
                 .consumeUnique { assertEquals(12, it) }
+    }
+
+    @Test
+    fun soloFlatMap() = runTest {
+        val value = "123456789".toSolo()
+                .flatMap { it.split(Regex.fromLiteral("(?!^)")).toMulti() }
+                .map {
+                    println(it)
+                    it.toInt()
+                }
+                .filter { it.isGood() }
+                .fold(0, { a, b -> a + b })
+        println("soloFlatMap : value = $value")
+        assertEquals(12, value)
     }
 }
