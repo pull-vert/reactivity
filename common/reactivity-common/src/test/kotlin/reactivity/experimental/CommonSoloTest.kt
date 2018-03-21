@@ -31,7 +31,7 @@ class CommonSoloTest : TestBase() {
     @Test
     fun soloFlatMap() = runTest {
         val value = "123456789".toSolo()
-                .flatMap { it.split(Regex.fromLiteral("(?!^)")).toMulti() }
+                .flatMap { it.split(Regex.fromLiteral("")).filter { it.isNotBlank() }.toMulti() }
                 .map {
                     println(it)
                     it.toInt()
