@@ -18,7 +18,6 @@ package reactivity.experimental
 
 import kotlinx.coroutines.experimental.CoroutineStart
 import kotlinx.coroutines.experimental.await
-import kotlinx.coroutines.experimental.promise
 import kotlin.js.Promise
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,7 +25,7 @@ import kotlin.test.assertTrue
 
 class SoloPromiseTest : TestBase() {
     @Test
-    fun testPromiseResolvedToSolo() = promise {
+    fun testPromiseResolvedToSolo() = runTest {
         val promise = Promise<String> { resolve, _ ->
             resolve("OK")
         }
@@ -35,7 +34,7 @@ class SoloPromiseTest : TestBase() {
     }
     
     @Test
-    fun testPromiseRejectedToSolo() = promise {
+    fun testPromiseRejectedToSolo() = runTest {
         lateinit var promiseReject: (Throwable) -> Unit
         val promise = Promise<String> { _, reject ->
             promiseReject = reject
@@ -53,7 +52,7 @@ class SoloPromiseTest : TestBase() {
     }
 
     @Test
-    fun testCompletedSoloToPromise() = promise {
+    fun testCompletedSoloToPromise() = runTest {
         val solo = solo(coroutineContext, CoroutineStart.UNDISPATCHED) {
             // completed right away
             "OK"
@@ -63,7 +62,7 @@ class SoloPromiseTest : TestBase() {
     }
 
     @Test
-    fun testWaitForSoloToPromise() = promise {
+    fun testWaitForSoloToPromise() = runTest {
         val solo = solo(coroutineContext) {
             // will complete later
             "OK"
@@ -73,7 +72,7 @@ class SoloPromiseTest : TestBase() {
     }
 
     @Test
-    fun testToPromiseToSolo() = promise {
+    fun testToPromiseToSolo() = runTest {
         val solo = solo { "OK" }
         val promise = solo.toPromise()
         val s2 = promise.toSolo()
