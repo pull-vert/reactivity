@@ -1,7 +1,7 @@
 dependencies {
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-nio:$kotlinx_coroutines_version"
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-io:$kotlinx_coroutines_version"
-    compile "io.github.microutils:kotlin-logging:1.5.3"
+//    compile "org.jetbrains.kotlinx:kotlinx-coroutines-nio:$kotlinx_coroutines_version"
+//    compile "org.jetbrains.kotlinx:kotlinx-coroutines-io:$kotlinx_coroutines_version"
+    compile "io.github.microutils:kotlin-logging:1.5.4"
 
     compileOnly "org.mortbay.jetty.alpn:alpn-boot:8.1.11.v20170118"
 

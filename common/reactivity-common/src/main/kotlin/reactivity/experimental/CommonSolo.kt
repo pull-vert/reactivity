@@ -11,14 +11,14 @@ interface Solo<out E> {
 
 // cold Solo Coroutine (using async from kotlinx-coroutines)
 
-fun <T> solo(
+fun <T> CoroutineScope.solo(
         context: CoroutineContext = DefaultDispatcher,
         start: CoroutineStart = CoroutineStart.DEFAULT,
         parent: Job? = null,
         block: suspend CoroutineScope.() -> T
 ): Solo<T> = object : Solo<T> {
     override suspend fun await(): T {
-        return async(context, start, parent, block).await()
+        return async(context, start, null, block).await()
     }
 }
 
